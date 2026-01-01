@@ -1,0 +1,225 @@
+/* Estilos específicos del Dashboard (resumen, secciones, layout) */
+/* ================================
+   Dashboard: secciones por estado
+   ================================ */
+
+/* Fondo homogéneo día/noche para las “cajas” de estado */
+.theme-dark .section-tapiz{
+  background: rgba(15, 23, 42, 0.55) !important;
+}
+.section-tapiz{
+  background: rgba(255, 255, 255, 0.70) !important;
+}
+
+/* ================================
+   Resumen ejecutivo (estilo Apple)
+   ================================ */
+
+.exec-summary{
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    0 18px 60px rgba(0,0,0,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.exec-summary::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1200px 320px at 10% 0%, rgba(56,189,248,0.10), transparent 60%),
+    radial-gradient(900px 280px at 80% 10%, rgba(99,102,241,0.10), transparent 55%);
+  opacity: 0.9;
+}
+
+.exec-header{
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.exec-title{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exec-title-icon{
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.exec-title-icon i{ font-size: 16px; }
+
+.exec-title-text{
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.exec-subtitle{
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.72;
+}
+
+.exec-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.exec-grid{
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.exec-card{
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.exec-card:hover{
+  transform: translateY(-1px);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.exec-card-top{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exec-card-icon{
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+}
+
+.exec-card-icon i{ font-size: 16px; opacity: 0.92; }
+
+.exec-card-icon-warn{
+  background: rgba(245,158,11,0.12);
+  border-color: rgba(245,158,11,0.30);
+}
+
+.exec-label{
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.70;
+  font-weight: 650;
+}
+
+.exec-value{
+  margin-top: 6px;
+  font-size: 44px;
+  font-weight: 780;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.exec-note{
+  margin-top: 10px;
+  font-size: 13px;
+  opacity: 0.78;
+}
+
+.exec-progress{
+  margin-top: 14px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(148,163,184,0.18);
+  overflow: hidden;
+}
+
+.exec-progress-fill{
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(56,189,248,0.95), rgba(99,102,241,0.95));
+}
+
+.exec-chips{
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 1024px){
+  .exec-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .exec-value{ font-size: 40px; }
+}
+
+@media (max-width: 640px){
+  .exec-header{ flex-direction: column; align-items: flex-start; }
+  .exec-grid{ grid-template-columns: 1fr; }
+  .exec-value{ font-size: 38px; }
+}
+
+/* Ajustes de contraste en modo claro */
+:root:not(.theme-dark) .exec-summary{
+  box-shadow:
+    0 14px 45px rgba(15,23,42,0.10),
+    inset 0 1px 0 rgba(255,255,255,0.65);
+}
+
+:root:not(.theme-dark) .exec-card{
+  background: rgba(255,255,255,0.55);
+  border-color: rgba(15,23,42,0.08);
+}
+
+:root:not(.theme-dark) .exec-title-icon,
+:root:not(.theme-dark) .exec-card-icon,
+:root:not(.theme-dark) .exec-pill{
+  background: rgba(255,255,255,0.65);
+  border-color: rgba(15,23,42,0.10);
+}
+
+/* ================================
+   Apple uniform: tapices y contenedores
+   ================================ */
+.section-tapiz{
+  border-radius: var(--radius-panel) !important;
+  border: 1px solid var(--hairline) !important;
+  backdrop-filter: blur(var(--blur));
+  box-shadow: var(--shadow-elev-2);
+  overflow: hidden;
+}

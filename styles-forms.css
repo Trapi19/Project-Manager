@@ -1,0 +1,35 @@
+/* Estilos específicos de Formularios (inputs/selects en modo oscuro) */
+/* =========================================
+   Ajuste de legibilidad en formularios (modo oscuro)
+   - Inputs/Selects/Textareas con fondo oscuro y texto claro
+   - Placeholders con mayor contraste
+   ========================================= */
+.theme-dark input,
+.theme-dark textarea,
+.theme-dark select {
+    background-color: rgba(17, 24, 39, 0.68) !important;
+    color: rgba(241, 245, 249, 0.96) !important;
+    border-color: rgba(148, 163, 184, 0.32) !important;
+}
+
+/* Placeholder legible */
+.theme-dark input::placeholder,
+.theme-dark textarea::placeholder {
+    color: rgba(226, 232, 240, 0.70) !important;
+    opacity: 1 !important; /* Evita placeholders demasiado “lavados” */
+}
+
+/* Dropdown legible en selects (menú desplegable del navegador) */
+.theme-dark select option {
+    background-color: rgb(11, 18, 32);
+    color: rgba(241, 245, 249, 0.96);
+}
+
+/* Evita que inputs autofill de Chrome queden con amarillo en modo oscuro */
+.theme-dark input:-webkit-autofill,
+.theme-dark textarea:-webkit-autofill,
+.theme-dark select:-webkit-autofill {
+    -webkit-text-fill-color: rgba(241, 245, 249, 0.96) !important;
+    -webkit-box-shadow: 0 0 0px 1000px rgba(17, 24, 39, 0.68) inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
