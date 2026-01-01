@@ -95,3 +95,39 @@
 @media print {
     .theme-fab { display: none !important; }
 }
+
+/* --- Print fixes: status pills (píldoras de estado) --- */
+.status-pill{
+  /* Keep consistent visual size in PDF */
+  min-width: 90px !important;
+  height: 18px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  /* Improve legibility */
+  font-weight: 600 !important;
+  letter-spacing: 0.2px !important;
+}
+
+/* Ensure text stays readable even if the page is in dark theme */
+@media print{
+  .theme-dark .status-default,
+  .theme-dark .status-next,
+  .theme-dark .status-pending,
+  .theme-dark .status-inprogress,
+  .theme-dark .status-completed{
+    color: #111 !important;
+  }
+
+  /* Ask the browser to print backgrounds when possible */
+  .status-default,
+  .status-next,
+  .status-pending,
+  .status-inprogress,
+  .status-completed{
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
