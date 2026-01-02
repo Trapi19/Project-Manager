@@ -1,18 +1,31 @@
 /* Estilos específicos de Estados (tapiz por estado, colores) */
 /* Borde (perímetro) del “tapiz” por estado: acento sutil, estilo Apple */
-.section-tapiz.section-estado-ejecucion{
+/* Nomenclatura BEM: .section--<estado> como modificador de .section-tapiz */
+
+.section-tapiz.section--ejecucion{
   border-color: rgba(var(--color-ejecucion), 0.68) !important; /* Azul */
-  box-shadow: var(--shadow-elev-2), 0 0 0 1px rgba(var(--color-ejecucion), 0.18) inset, 0 0 22px rgba(var(--color-ejecucion), 0.08);
+  box-shadow: var(--shadow-elev-2),
+              0 0 0 1px rgba(var(--color-ejecucion), 0.18) inset,
+              0 0 22px rgba(var(--color-ejecucion), 0.08);
 }
-.section-tapiz.section-estado-completado{
+
+.section-tapiz.section--completado{
   border-color: rgba(var(--color-completado), 0.68) !important; /* Verde */
-  box-shadow: var(--shadow-elev-2), 0 0 0 1px rgba(var(--color-completado), 0.18) inset, 0 0 22px rgba(var(--color-completado), 0.08);
+  box-shadow: var(--shadow-elev-2),
+              0 0 0 1px rgba(var(--color-completado), 0.18) inset,
+              0 0 22px rgba(var(--color-completado), 0.08);
 }
-.section-tapiz.section-estado-revision{
+
+.section-tapiz.section--revision{
   border-color: rgba(var(--color-revision), 0.68) !important; /* Morado */
-  box-shadow: var(--shadow-elev-2), 0 0 0 1px rgba(var(--color-revision), 0.18) inset, 0 0 22px rgba(var(--color-revision), 0.08);
+  box-shadow: var(--shadow-elev-2),
+              0 0 0 1px rgba(var(--color-revision), 0.18) inset,
+              0 0 22px rgba(var(--color-revision), 0.08);
 }
-.section-tapiz.section-estado-pausa{
+
+.section-tapiz.section--pausa{
   border-color: rgba(var(--color-pausa), 0.68) !important; /* Rojo */
-  box-shadow: var(--shadow-elev-2), 0 0 0 1px rgba(var(--color-pausa), 0.18) inset, 0 0 22px rgba(var(--color-pausa), 0.08);
+  box-shadow: var(--shadow-elev-2),
+              0 0 0 1px rgba(var(--color-pausa), 0.18) inset,
+              0 0 22px rgba(var(--color-pausa), 0.08);
 }

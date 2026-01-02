@@ -5,6 +5,12 @@
 :root {
     --brand: #0888C8;
     --brand-dark: #056A9B;
+/* Acentos de estado (tripletas RGB para usar con rgba()) */
+--color-ejecucion: 59, 130, 246;   /* Azul */
+--color-completado: 16, 185, 129;  /* Verde */
+--color-revision: 139, 92, 246;    /* Morado */
+--color-pausa: 239, 68, 68;        /* Rojo */
+
     --brand-soft: #E6F4FB;
 
     /* Light theme tokens */
@@ -19,12 +25,6 @@
     --progress-track: #EEF2F7;
     --progress-text: #111827;
 
-
-/* Acentos de estado (tripletas RGB para usar con rgba()) */
---color-ejecucion: 59, 130, 246;   /* Azul */
---color-completado: 16, 185, 129;  /* Verde */
---color-revision: 139, 92, 246;    /* Morado */
---color-pausa: 239, 68, 68;        /* Rojo */
 }
 
 /* Dark theme tokens */
