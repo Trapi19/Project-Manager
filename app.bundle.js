@@ -907,8 +907,9 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     // EXPORTACIONES
     const exportHTML = () => {
         const dataJson = JSON.stringify(data, null, 4);
+        const safeJson = dataJson.replace(/<\/script/gi, '<\/script');
         // Inyectamos el template
-        const finalHTML = getClientTemplate(dataJson);
+        const finalHTML = getClientTemplate(safeJson);
         const blob = new Blob([finalHTML], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
