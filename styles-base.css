@@ -7,13 +7,6 @@
     --brand-dark: #056A9B;
     --brand-soft: #E6F4FB;
 
-
-    /* Estado (tripletas RGB para usar con rgba()) */
-    --color-ejecucion: 59, 130, 246;   /* Azul */
-    --color-completado: 16, 185, 129;  /* Verde */
-    --color-revision: 139, 92, 246;    /* Morado */
-    --color-pausa: 239, 68, 68;        /* Rojo */
-
     /* Light theme tokens */
     --bg: #f3f4f6;
     --bg-gradient: linear-gradient(135deg, var(--brand-soft), #fff 60%);

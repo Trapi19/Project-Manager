@@ -56,8 +56,18 @@ const IconOptions = [
     { id: 'users', label: 'Usuarios' }, { id: 'key', label: 'Llave' },
     { id: 'alert', label: 'Alerta' }, { id: 'lock', label: 'Candado' }
 ];
-// --- HELPERS: ESTADOS Y DEPENDENCIAS (PRÓXIMO) ---
-const normalizeEstado = (estado) => estado || 'Pendiente';
+// --- HELPERS: ESTADOS Y DEPENDENCIAS (SIN ESTADO PRÓXIMO) ---
+const normalizeEstado = (estado) => {
+    const raw = (estado ?? '').toString().trim();
+    if (!raw) return 'Pendiente';
+    // Compatibilidad: estado antiguo "Próximo" -> "Pendiente"
+    if (raw === 'Próximo' || raw === 'Proximo') return 'Pendiente';
+    // Normaliza variantes
+    if (raw.toLowerCase() === 'en curso' || raw.toLowerCase() === 'en-curso') return 'En Curso';
+    if (raw.toLowerCase() === 'completado') return 'Completado';
+    if (raw.toLowerCase() === 'pendiente') return 'Pendiente';
+    return raw;
+};
 // Normaliza el estado del PROYECTO (meta.estado) para evitar problemas por mayúsculas/minúsculas, tildes, etc.
 const normalizeProjectEstado = (estado) => {
     const raw = (estado !== null && estado !== void 0 ? estado : 'En Ejecución').toString().trim();
@@ -91,14 +101,14 @@ const isTaskBlocked = (task, taskIndex) => {
 const effectiveEstado = (task, taskIndex) => {
     const blocked = isTaskBlocked(task, taskIndex);
     const estado = normalizeEstado(task.estado);
-    if (blocked)
-        return 'Próximo';
+    if (blocked && estado !== 'Completado')
+        return 'Pendiente';
     return estado;
 };
 const computeProjectStats = (tasks) => {
     const idx = buildTaskIndex(tasks);
     const total = tasks.length || 0;
-    let completed = 0, inProgress = 0, pending = 0, next = 0;
+    let completed = 0, inProgress = 0, pending = 0;
     tasks.forEach(t => {
         const e = effectiveEstado(t, idx);
         if (e === 'Completado')
@@ -107,13 +117,11 @@ const computeProjectStats = (tasks) => {
             inProgress++;
         else if (e === 'Pendiente')
             pending++;
-        else if (e === 'Próximo')
-            next++;
         else
             pending++;
     });
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-    return { total, completed, inProgress, pending, next, progress };
+    return { total, completed, inProgress, pending, progress };
 };
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() },
     React.createElement("button", { type: "button", onClick: onToggle, className: "w-10 h-10 rounded-xl border border-[color:var(--border)] bg-white/80 hover:bg-white flex items-center justify-center text-[color:var(--brand-dark)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]", title: "Cambiar icono" }, Icons[value] || Icons.monitor),
@@ -164,8 +172,7 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
                 React.createElement("div", { className: "w-full h-2 rounded-full bg-gray-100 overflow-hidden flex" },
                     React.createElement("div", { className: "h-full bg-emerald-500", style: { width: w(stats.completed) } }),
                     React.createElement("div", { className: "h-full bg-amber-500", style: { width: w(stats.inProgress) } }),
-                    React.createElement("div", { className: "h-full bg-rose-500", style: { width: w(stats.pending) } }),
-                    React.createElement("div", { className: "h-full bg-slate-300", style: { width: w(stats.next) } })),
+                    React.createElement("div", { className: "h-full bg-rose-500", style: { width: w(stats.pending) } })),
                 React.createElement("div", { className: "flex flex-wrap gap-2 text-[11px] text-gray-500" },
                     React.createElement("span", { className: "inline-flex items-center gap-1" },
                         React.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500" }),
@@ -178,11 +185,7 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
                     React.createElement("span", { className: "inline-flex items-center gap-1" },
                         React.createElement("span", { className: "h-2 w-2 rounded-full bg-rose-500" }),
                         "Pend. ",
-                        stats.pending),
-                    React.createElement("span", { className: "inline-flex items-center gap-1" },
-                        React.createElement("span", { className: "h-2 w-2 rounded-full bg-slate-300" }),
-                        "Pr\u00F3x. ",
-                        stats.next)))),
+                        stats.pending)))),
         React.createElement("div", { className: "mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500" },
             React.createElement("span", { className: "apple-chip apple-chip--small" },
                 p.tasks.length,
@@ -196,6 +199,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
     const normClient = (p) => ((p.meta && p.meta.cliente) ? p.meta.cliente : 'Sin cliente').trim() || 'Sin cliente';
     const clients = Array.from(new Set(projects.map(normClient))).sort((a, b) => a.localeCompare(b, 'es'));
     const [clientFilter, setClientFilter] = useState('Todos');
+    const [searchTerm, setSearchTerm] = useState('');
     // --- DRAG & DROP (sin librerías externas; compatible con abrir index.html en local) ---
     const [draggingProjectId, setDraggingProjectId] = useState(null);
     const [dragOverProjectId, setDragOverProjectId] = useState(null);
@@ -279,9 +283,14 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         setDragOverProjectId(null);
         cleanupProjectDnd();
     };
-    const filteredProjects = clientFilter === 'Todos'
-        ? projects
-        : projects.filter(p => normClient(p) === clientFilter);
+    const filteredProjects = projects.filter(p => {
+        const matchesClient = clientFilter === 'Todos' || normClient(p) === clientFilter;
+        const q = (searchTerm || '').toString().trim().toLowerCase();
+        if (!q) return matchesClient;
+        const m = (p && p.meta) ? p.meta : {};
+        const hay = ((m.titulo || '') + ' ' + (m.subtitulo || '') + ' ' + (m.cliente || '') + ' ' + (m.pep || '')).toLowerCase();
+        return matchesClient && hay.includes(q);
+    });
     const activeProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Ejecución'; });
     const pausedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Pausa'; });
     const reviewProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Revisión'; });
@@ -322,15 +331,47 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         let tasksTotal = 0;
         let tasksOpen = 0; // Pendientes + En curso
         let tasksCompleted = 0;
+
         let redProjects = 0;
+        const redProjectDetails = [];
+
+        let blockedProjects = 0;
+        let blockedTasks = 0;
+        const blockedProjectDetails = [];
+
         nonCompletedProjects.forEach(p => {
-            const stats = computeProjectStats((p === null || p === void 0 ? void 0 : p.tasks) || []);
+            const tasks = (p === null || p === void 0 ? void 0 : p.tasks) || [];
+            const stats = computeProjectStats(tasks);
             tasksTotal += stats.total || 0;
             tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
             tasksCompleted += stats.completed || 0;
-            const isRed = hasOverdueOpenTask(p) || hasTooManyPending(stats);
-            if (isRed)
+
+            const pid = String((p === null || p === void 0 ? void 0 : p.id) || '');
+            const title = (((p === null || p === void 0 ? void 0 : p.meta) && (p.meta.titulo)) ? String(p.meta.titulo) : (pid || 'Proyecto'));
+
+            // Dependencias bloqueantes (tareas abiertas con dependsOn no completada)
+            if (tasks.length) {
+                const idx = buildTaskIndex(tasks);
+                const blockedCount = tasks.filter(t => normalizeEstado(t === null || t === void 0 ? void 0 : t.estado) !== 'Completado' && isTaskBlocked(t, idx)).length;
+                if (blockedCount > 0) {
+                    blockedProjects += 1;
+                    blockedTasks += blockedCount;
+                    blockedProjectDetails.push({ id: pid, title, blockedCount });
+                }
+            }
+
+            const overdue = hasOverdueOpenTask(p);
+            const tooMany = hasTooManyPending(stats);
+            const isRed = overdue || tooMany;
+            if (isRed) {
                 redProjects += 1;
+                const reasons = [];
+                if (overdue)
+                    reasons.push('tareas vencidas');
+                if (tooMany)
+                    reasons.push('demasiadas pendientes');
+                redProjectDetails.push({ id: pid, title, reasons });
+            }
         });
         const progressAvg = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
         return {
@@ -338,9 +379,132 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
             progressAvg,
             tasksTotal,
             tasksOpen,
-            redProjects
+            redProjects,
+            redProjectDetails,
+            blockedProjects,
+            blockedTasks,
+            blockedProjectDetails
         };
     })();
+
+
+    const __gpEscapeHtml = (v) => {
+        const s = String(v == null ? '' : v);
+        return s
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+    const __gpShowModal = (title, bodyHtml) => {
+        try {
+            const existing = document.getElementById('gp-modal-overlay');
+            if (existing) existing.remove();
+            const overlay = document.createElement('div');
+            overlay.id = 'gp-modal-overlay';
+            overlay.style.cssText = [
+                'position:fixed',
+                'inset:0',
+                'background:rgba(0,0,0,0.45)',
+                'display:flex',
+                'align-items:center',
+                'justify-content:center',
+                'z-index:9999',
+                'padding:16px'
+            ].join(';');
+
+            const panel = document.createElement('div');
+            panel.style.cssText = [
+                'background:#ffffff',
+                'border-radius:16px',
+                'max-width:760px',
+                'width:100%',
+                'box-shadow:0 20px 60px rgba(0,0,0,0.25)',
+                'border:1px solid rgba(0,0,0,0.10)',
+                'overflow:hidden'
+            ].join(';');
+
+            panel.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(0,0,0,0.08);">
+                    <div style="font-weight:800;font-size:16px;color:#111827;">${__gpEscapeHtml(title)}</div>
+                    <button id="gp-modal-close" type="button"
+                        style="border:1px solid rgba(0,0,0,0.12);background:#ffffff;border-radius:10px;padding:8px 12px;font-weight:700;color:#111827;cursor:pointer;">
+                        Cerrar
+                    </button>
+                </div>
+                <div style="padding:16px 18px;color:#111827;font-size:14px;line-height:1.5;max-height:70vh;overflow:auto;">
+                    ${bodyHtml}
+                </div>
+            `;
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+
+            const cleanup = () => {
+                try { overlay.remove(); } catch {}
+                document.removeEventListener('keydown', onKeyDown);
+            };
+            const onKeyDown = (ev) => { if (ev.key === 'Escape') cleanup(); };
+
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(); });
+            const btn = overlay.querySelector('#gp-modal-close');
+            if (btn) btn.addEventListener('click', cleanup);
+            document.addEventListener('keydown', onKeyDown);
+        } catch (e) {
+            console.error(e);
+            alert('No se pudo mostrar el detalle.');
+        }
+    };
+
+    const showBlockDetails = () => {
+        try {
+            const blocked = (executiveSummary.blockedProjectDetails || []);
+            const red = (executiveSummary.redProjectDetails || []);
+
+            const parts = [];
+
+            // Bloqueos por dependencias
+            parts.push(`<div style="margin-bottom:14px;">
+                <div style="font-weight:800;margin-bottom:6px;">Bloqueos por dependencias</div>
+                <div style="color:#6B7280;margin-bottom:10px;">Una tarea queda bloqueada si depende de otra que aún no está en “Completado”.</div>
+            </div>`);
+
+            if (blocked.length) {
+                const items = blocked
+                    .slice()
+                    .sort((a, b) => (b.blockedCount || 0) - (a.blockedCount || 0))
+                    .map(x => `<li><span style="font-weight:700;">${__gpEscapeHtml(x.title)}</span>: ${__gpEscapeHtml(x.blockedCount)}</li>`)
+                    .join('');
+                parts.push(`<ul style="margin:0 0 16px 18px; padding:0; list-style:disc;">${items}</ul>`);
+            } else {
+                parts.push(`<div style="margin-bottom:16px;color:#111827;">No hay tareas bloqueadas por dependencias en los proyectos filtrados.</div>`);
+            }
+
+            // Alertas (rojo)
+            parts.push(`<div style="margin-top:6px;margin-bottom:10px;">
+                <div style="font-weight:800;margin-bottom:6px;">Alertas (rojo)</div>
+                <div style="color:#6B7280;">
+                    Vencidas: existe al menos 1 tarea abierta con fecha límite anterior a hoy. <br/>
+                    Muchas pendientes: ≥60% de tareas en “Pendiente” (mín. 5 tareas) y avance &lt; 50%.
+                </div>
+            </div>`);
+
+            if (red.length) {
+                const items = red
+                    .map(x => `<li><span style="font-weight:700;">${__gpEscapeHtml(x.title)}</span>: ${__gpEscapeHtml((x.reasons || []).join(' y '))}</li>`)
+                    .join('');
+                parts.push(`<ul style="margin:0 0 6px 18px; padding:0; list-style:disc;">${items}</ul>`);
+            } else {
+                parts.push(`<div style="color:#111827;">No hay proyectos en rojo con los filtros actuales.</div>`);
+            }
+
+            __gpShowModal('Detalle de bloqueos y alertas', parts.join(''));
+        }
+        catch (e) {
+            console.error(e);
+            alert('No se pudo mostrar el detalle de bloqueos y alertas.');
+        }
+    };
     return (React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10" },
         React.createElement("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4" },
             React.createElement("div", { className: "flex items-start gap-4" },
@@ -351,11 +515,15 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" },
                         React.createElement("i", { className: "fas fa-hdd text-orange-500" }),
                         " Modo Personal (Local)"),
-                    React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-2" },
-                        React.createElement("span", { className: "text-xs font-semibold text-gray-600 uppercase" }, "Cliente"),
-                        React.createElement("select", { className: "w-full sm:w-auto border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
-                            React.createElement("option", { value: "Todos" }, "Todos"),
-                            clients.map(c => React.createElement("option", { key: c, value: c }, c)))))),
+                    React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
+                        React.createElement("div", { className: "relative group" },
+                            React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
+                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input" })),
+                        React.createElement("div", { className: "flex items-center gap-2" },
+                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"),
+                            React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
+                                React.createElement("option", { value: "Todos" }, "Todos"),
+                                clients.map(c => React.createElement("option", { key: c, value: c }, c))))))),
             React.createElement("div", { className: "flex items-center gap-2 no-print" },
                 React.createElement("button", { onClick: onCreate, className: "btn-apple-primary no-print", title: "Crear nuevo proyecto" },
                     React.createElement("i", { className: "fas fa-plus" }),
@@ -430,12 +598,14 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     React.createElement("div", { className: "exec-card" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
-                                React.createElement("div", { className: "exec-label" }, "Bloqueos"),
-                                React.createElement("div", { className: "exec-value" }, executiveSummary.redProjects),
-                                React.createElement("div", { className: "exec-note" }, "En rojo: tareas vencidas o demasiadas pendientes.")),
-                            React.createElement("div", { className: "exec-card-icon exec-card-icon-warn", "aria-hidden": "true" },
+                                React.createElement("div", { className: "exec-label" }, "Bloqueos (dependencias)"),
+                                React.createElement("div", { className: "exec-value" }, executiveSummary.blockedTasks),
+                                React.createElement("div", { className: "exec-note" }, "Tareas bloqueadas por dependencias (hasta completar la previa)."),
+                                React.createElement("div", { className: "exec-note" }, "Impacto: ", executiveSummary.blockedProjects, " proyecto(s)."),
+                                (executiveSummary.redProjects > 0) && React.createElement("div", { className: "exec-note" }, "Alertas (rojo): ", executiveSummary.redProjects, " proyecto(s) con riesgo (vencidas / muchas pendientes).")),
+                            React.createElement("div", { className: "exec-card-icon exec-card-icon-warn", role: "button", tabIndex: 0, title: "Ver detalle", onClick: showBlockDetails, onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showBlockDetails(); } }, "aria-label": "Ver detalle de bloqueos y alertas" },
                                 React.createElement("i", { className: "fas fa-triangle-exclamation" })))))),
-            React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
+            React.createElement("div", { className: "section-tapiz section-estado-ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
                 React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }),
                     " En Ejecuci\u00F3n",
@@ -449,7 +619,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en curso.")),
-            React.createElement("div", { className: "section-tapiz section--pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
+            React.createElement("div", { className: "section-tapiz section-estado-pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
                 React.createElement("h2", { className: "text-lg font-bold text-slate-800 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-slate-500 w-2 h-2 rounded-full" }),
                     " En Pausa",
@@ -463,7 +633,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en pausa.")),
-            React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
+            React.createElement("div", { className: "section-tapiz section-estado-revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
                 React.createElement("h2", { className: "text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-violet-500 w-2 h-2 rounded-full" }),
                     " En Revisi\u00F3n",
@@ -477,7 +647,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en revisi\u00F3n.")),
-            completedProjects.length > 0 && (React.createElement("div", { className: "section-tapiz section--completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
+            completedProjects.length > 0 && (React.createElement("div", { className: "section-tapiz section-estado-completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
                 React.createElement("h2", { className: "text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 opacity-75" },
                     React.createElement("span", { className: "bg-green-500 w-2 h-2 rounded-full" }),
                     " Hist\u00F3rico / Completados"),
@@ -501,8 +671,7 @@ const ProjectPreview = ({ data }) => {
             case 'Completado': return 'status-completed';
             case 'Pendiente': return 'status-pending';
             case 'En Curso': return 'status-inprogress';
-            case 'Próximo': return 'status-next';
-            default: return 'status-default';
+                        default: return 'status-default';
         }
     };
     const taskIndex = buildTaskIndex(data.tasks);
@@ -890,8 +1059,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 if (field === 'dependsOn') {
                     const idx = buildTaskIndex(prev.tasks);
                     const blocked = isTaskBlocked(updated, idx);
-                    if (blocked)
-                        updated.estado = 'Próximo';
+                    if (blocked && normalizeEstado(updated.estado) !== 'Completado')
+                        updated.estado = 'Pendiente';
                 }
                 return updated;
             });
@@ -906,9 +1075,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     } };
     // EXPORTACIONES
     const exportHTML = () => {
-        const dataJson = JSON.stringify(data, null, 4);
-        // Inyectamos el template
-        const finalHTML = getClientTemplate(dataJson);
+        const finalHTML = getClientTemplate(data);
         const blob = new Blob([finalHTML], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -1096,21 +1263,19 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                             React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
                                 React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : task.estado === 'Próximo' ? 'bg-slate-50 text-slate-700 border-slate-200'
-                                                : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => {
+                                            : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => {
                                         const newEstado = e.target.value;
                                         const blocked = isTaskBlocked(task, taskIndex);
-                                        if (blocked && (newEstado === 'Pendiente' || newEstado === 'En Curso')) {
-                                            alert('Esta tarea está bloqueada por una dependencia. Marca la tarea previa como Completado para poder iniciarla.');
-                                            updateTask(task.id, 'estado', 'Próximo');
+                                        if (blocked && (newEstado === 'En Curso' || newEstado === 'Completado')) {
+                                            alert('Esta tarea depende de otra aún no completada. Marca la tarea previa como Completado para poder iniciarla.');
+                                            updateTask(task.id, 'estado', 'Pendiente');
                                             return;
                                         }
                                         updateTask(task.id, 'estado', newEstado);
                                     } },
                                     React.createElement("option", { value: "Pendiente" }, "Pendiente"),
                                     React.createElement("option", { value: "En Curso" }, "En Curso"),
-                                    React.createElement("option", { value: "Completado" }, "Completado"),
-                                    React.createElement("option", { value: "Pr\u00F3ximo" }, "Pr\u00F3ximo"))),
+                                    React.createElement("option", { value: "Completado" }, "Completado"))),
                             React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "A\u00F1adir notas..." })),
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
@@ -1131,6 +1296,8 @@ const MainApp = () => {
     const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
     const [view, setView] = useState('loading');
     const [projects, setProjects] = useState([]);
+    const projectsRef = React.useRef([]);
+    useEffect(() => { projectsRef.current = projects || []; }, [projects]);
     const [currentProject, setCurrentProject] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [backupToast, setBackupToast] = useState(false);
@@ -1236,6 +1403,7 @@ const MainApp = () => {
             setProjects(importCandidate.projects || []);
             setCurrentProject(null);
             setView('list');
+                setRoute('#/list');
             setImportConfirmOpen(false);
             setImportCandidate(null);
             setImportToast(true);
@@ -1248,38 +1416,109 @@ const MainApp = () => {
     };
     const loadProjectsLocal = () => {
         const saved = localStorage.getItem('unitecnic_projects');
-        return saved ? JSON.parse(saved) : [];
+        const list = saved ? JSON.parse(saved) : [];
+        // Migración ligera: estado antiguo "Próximo" -> "Pendiente"
+        try {
+            list.forEach(p => {
+                (p === null || p === void 0 ? void 0 : p.tasks || []).forEach(t => {
+                    const e = (t === null || t === void 0 ? void 0 : t.estado);
+                    if (e === 'Próximo' || e === 'Proximo')
+                        t.estado = 'Pendiente';
+                });
+            });
+        }
+        catch (_a) { }
+        return list;
     };
     const saveProjectsLocal = (newProjectsList) => {
         localStorage.setItem('unitecnic_projects', JSON.stringify(newProjectsList));
         setProjects(newProjectsList);
     };
+
+    // --- RUTAS (hash) para permitir Atrás / Adelante del navegador ---
+    const setRoute = (hash) => {
+        try {
+            if (window.location.hash !== hash)
+                window.location.hash = hash;
+        }
+        catch (e) { }
+    };
+    const makeDraftProject = () => ({
+        id: 'draft_' + Date.now(),
+        __isDraft: true,
+        meta: {
+            titulo: "Nuevo Proyecto",
+            subtitulo: "Informe de Inicio",
+            cliente: "Sin cliente",
+            clientLogoData: "",
+            empresa: "UNITECNIC",
+            estado: "En Ejecución",
+            responsableProyecto: "",
+            pep: ""
+        },
+        tasks: []
+    });
+    const applyRouteFromHash = (list) => {
+        try {
+            const raw = String(window.location.hash || '').replace(/^#\/?/, '');
+            const parts = raw.split('/').filter(Boolean);
+            if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
+                setCurrentProject(null);
+                setView('list');
+                return;
+            }
+            if (parts[0] === 'new') {
+                setCurrentProject(makeDraftProject());
+                setView('editor');
+                return;
+            }
+            if (parts[0] === 'project' && parts[1]) {
+                const id = decodeURIComponent(parts[1]);
+                const p = (list || []).find(x => String(x.id) === String(id));
+                if (p) {
+                    setCurrentProject(p);
+                    setView('editor');
+                }
+                else {
+                    setCurrentProject(null);
+                    setView('list');
+                }
+                return;
+            }
+            // Ruta desconocida
+            setCurrentProject(null);
+            setView('list');
+        }
+        catch (e) {
+            console.error(e);
+            setCurrentProject(null);
+            setView('list');
+        }
+    };
     useEffect(() => {
-        setProjects(loadProjectsLocal());
-        setView('list');
+        const list = loadProjectsLocal();
+        setProjects(list);
+        // Default route
+        if (!window.location.hash)
+            setRoute('#/list');
+        // Aplicar ruta actual (permite entrar directo a #/project/<id>)
+        applyRouteFromHash(list);
+    }, []);
+    useEffect(() => {
+        const handler = () => applyRouteFromHash(projectsRef.current || []);
+        window.addEventListener('hashchange', handler);
+        return () => window.removeEventListener('hashchange', handler);
     }, []);
     const createProject = async () => {
-        const draftProject = {
-            id: 'draft_' + Date.now(),
-            __isDraft: true,
-            meta: {
-                titulo: "Nuevo Proyecto",
-                subtitulo: "Informe de Inicio",
-                cliente: "Sin cliente",
-                clientLogoData: "",
-                empresa: "UNITECNIC",
-                estado: "En Ejecución",
-                responsableProyecto: "",
-                pep: ""
-            },
-            tasks: []
-        };
+        const draftProject = makeDraftProject();
         setCurrentProject(draftProject);
         setView('editor');
+        setRoute('#/new');
     };
     const selectProject = (p) => {
         setCurrentProject(p);
         setView('editor');
+        setRoute(`#/project/${encodeURIComponent(String(p.id || ''))}`);
     };
     const saveProject = async (updatedData) => {
         setIsSaving(true);
@@ -1295,6 +1534,7 @@ const MainApp = () => {
                 // Volvemos al dashboard al crear (flujo "Nuevo → Editar → Guardar → Dashboard")
                 setCurrentProject(null);
                 setView('list');
+                setRoute('#/list');
                 setProjectToast(true);
                 setTimeout(() => setProjectToast(false), 2600);
                 await new Promise(r => setTimeout(r, 450)); // UX
@@ -1304,6 +1544,7 @@ const MainApp = () => {
                 const updatedList = projects.map(p => p.id === clean.id ? clean : p);
                 saveProjectsLocal(updatedList);
                 setCurrentProject(clean);
+                setRoute(`#/project/${encodeURIComponent(String(clean.id || ''))}`);
                 await new Promise(r => setTimeout(r, 450)); // UX
                 return { created: false, project: clean };
             }
@@ -1360,7 +1601,7 @@ const MainApp = () => {
     return (React.createElement("div", null,
         React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
-        view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
+        view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
             React.createElement("div", { className: "modal-card" },
                 React.createElement("div", { className: "modal-title" }, "Importar backup"),
