@@ -56,8 +56,18 @@ const IconOptions = [
     { id: 'users', label: 'Usuarios' }, { id: 'key', label: 'Llave' },
     { id: 'alert', label: 'Alerta' }, { id: 'lock', label: 'Candado' }
 ];
-// --- HELPERS: ESTADOS Y DEPENDENCIAS (PRÓXIMO) ---
-const normalizeEstado = (estado) => estado || 'Pendiente';
+// --- HELPERS: ESTADOS Y DEPENDENCIAS (SIN ESTADO PRÓXIMO) ---
+const normalizeEstado = (estado) => {
+    const raw = (estado ?? '').toString().trim();
+    if (!raw) return 'Pendiente';
+    // Compatibilidad: estado antiguo "Próximo" -> "Pendiente"
+    if (raw === 'Próximo' || raw === 'Proximo') return 'Pendiente';
+    // Normaliza variantes
+    if (raw.toLowerCase() === 'en curso' || raw.toLowerCase() === 'en-curso') return 'En Curso';
+    if (raw.toLowerCase() === 'completado') return 'Completado';
+    if (raw.toLowerCase() === 'pendiente') return 'Pendiente';
+    return raw;
+};
 // Normaliza el estado del PROYECTO (meta.estado) para evitar problemas por mayúsculas/minúsculas, tildes, etc.
 const normalizeProjectEstado = (estado) => {
     const raw = (estado !== null && estado !== void 0 ? estado : 'En Ejecución').toString().trim();
@@ -91,14 +101,14 @@ const isTaskBlocked = (task, taskIndex) => {
 const effectiveEstado = (task, taskIndex) => {
     const blocked = isTaskBlocked(task, taskIndex);
     const estado = normalizeEstado(task.estado);
-    if (blocked)
-        return 'Próximo';
+    if (blocked && estado !== 'Completado')
+        return 'Pendiente';
     return estado;
 };
 const computeProjectStats = (tasks) => {
     const idx = buildTaskIndex(tasks);
     const total = tasks.length || 0;
-    let completed = 0, inProgress = 0, pending = 0, next = 0;
+    let completed = 0, inProgress = 0, pending = 0;
     tasks.forEach(t => {
         const e = effectiveEstado(t, idx);
         if (e === 'Completado')
@@ -107,13 +117,11 @@ const computeProjectStats = (tasks) => {
             inProgress++;
         else if (e === 'Pendiente')
             pending++;
-        else if (e === 'Próximo')
-            next++;
         else
             pending++;
     });
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-    return { total, completed, inProgress, pending, next, progress };
+    return { total, completed, inProgress, pending, progress };
 };
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() },
     React.createElement("button", { type: "button", onClick: onToggle, className: "w-10 h-10 rounded-xl border border-[color:var(--border)] bg-white/80 hover:bg-white flex items-center justify-center text-[color:var(--brand-dark)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]", title: "Cambiar icono" }, Icons[value] || Icons.monitor),
@@ -164,8 +172,7 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
                 React.createElement("div", { className: "w-full h-2 rounded-full bg-gray-100 overflow-hidden flex" },
                     React.createElement("div", { className: "h-full bg-emerald-500", style: { width: w(stats.completed) } }),
                     React.createElement("div", { className: "h-full bg-amber-500", style: { width: w(stats.inProgress) } }),
-                    React.createElement("div", { className: "h-full bg-rose-500", style: { width: w(stats.pending) } }),
-                    React.createElement("div", { className: "h-full bg-slate-300", style: { width: w(stats.next) } })),
+                    React.createElement("div", { className: "h-full bg-rose-500", style: { width: w(stats.pending) } })),
                 React.createElement("div", { className: "flex flex-wrap gap-2 text-[11px] text-gray-500" },
                     React.createElement("span", { className: "inline-flex items-center gap-1" },
                         React.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500" }),
@@ -178,11 +185,7 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
                     React.createElement("span", { className: "inline-flex items-center gap-1" },
                         React.createElement("span", { className: "h-2 w-2 rounded-full bg-rose-500" }),
                         "Pend. ",
-                        stats.pending),
-                    React.createElement("span", { className: "inline-flex items-center gap-1" },
-                        React.createElement("span", { className: "h-2 w-2 rounded-full bg-slate-300" }),
-                        "Pr\u00F3x. ",
-                        stats.next)))),
+                        stats.pending)))),
         React.createElement("div", { className: "mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500" },
             React.createElement("span", { className: "apple-chip apple-chip--small" },
                 p.tasks.length,
@@ -501,8 +504,7 @@ const ProjectPreview = ({ data }) => {
             case 'Completado': return 'status-completed';
             case 'Pendiente': return 'status-pending';
             case 'En Curso': return 'status-inprogress';
-            case 'Próximo': return 'status-next';
-            default: return 'status-default';
+                        default: return 'status-default';
         }
     };
     const taskIndex = buildTaskIndex(data.tasks);
@@ -890,8 +892,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 if (field === 'dependsOn') {
                     const idx = buildTaskIndex(prev.tasks);
                     const blocked = isTaskBlocked(updated, idx);
-                    if (blocked)
-                        updated.estado = 'Próximo';
+                    if (blocked && normalizeEstado(updated.estado) !== 'Completado')
+                        updated.estado = 'Pendiente';
                 }
                 return updated;
             });
@@ -906,10 +908,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     } };
     // EXPORTACIONES
     const exportHTML = () => {
-        const dataJson = JSON.stringify(data, null, 4);
-        const safeJson = dataJson.replace(/<\/script/gi, '<\/script');
-        // Inyectamos el template
-        const finalHTML = getClientTemplate(safeJson);
+        const finalHTML = getClientTemplate(data);
         const blob = new Blob([finalHTML], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -1097,21 +1096,19 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                             React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
                                 React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : task.estado === 'Próximo' ? 'bg-slate-50 text-slate-700 border-slate-200'
-                                                : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => {
+                                            : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => {
                                         const newEstado = e.target.value;
                                         const blocked = isTaskBlocked(task, taskIndex);
-                                        if (blocked && (newEstado === 'Pendiente' || newEstado === 'En Curso')) {
-                                            alert('Esta tarea está bloqueada por una dependencia. Marca la tarea previa como Completado para poder iniciarla.');
-                                            updateTask(task.id, 'estado', 'Próximo');
+                                        if (blocked && (newEstado === 'En Curso' || newEstado === 'Completado')) {
+                                            alert('Esta tarea depende de otra aún no completada. Marca la tarea previa como Completado para poder iniciarla.');
+                                            updateTask(task.id, 'estado', 'Pendiente');
                                             return;
                                         }
                                         updateTask(task.id, 'estado', newEstado);
                                     } },
                                     React.createElement("option", { value: "Pendiente" }, "Pendiente"),
                                     React.createElement("option", { value: "En Curso" }, "En Curso"),
-                                    React.createElement("option", { value: "Completado" }, "Completado"),
-                                    React.createElement("option", { value: "Pr\u00F3ximo" }, "Pr\u00F3ximo"))),
+                                    React.createElement("option", { value: "Completado" }, "Completado"))),
                             React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "A\u00F1adir notas..." })),
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
@@ -1249,7 +1246,19 @@ const MainApp = () => {
     };
     const loadProjectsLocal = () => {
         const saved = localStorage.getItem('unitecnic_projects');
-        return saved ? JSON.parse(saved) : [];
+        const list = saved ? JSON.parse(saved) : [];
+        // Migración ligera: estado antiguo "Próximo" -> "Pendiente"
+        try {
+            list.forEach(p => {
+                (p === null || p === void 0 ? void 0 : p.tasks || []).forEach(t => {
+                    const e = (t === null || t === void 0 ? void 0 : t.estado);
+                    if (e === 'Próximo' || e === 'Proximo')
+                        t.estado = 'Pendiente';
+                });
+            });
+        }
+        catch (_a) { }
+        return list;
     };
     const saveProjectsLocal = (newProjectsList) => {
         localStorage.setItem('unitecnic_projects', JSON.stringify(newProjectsList));
