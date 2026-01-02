@@ -199,6 +199,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
     const normClient = (p) => ((p.meta && p.meta.cliente) ? p.meta.cliente : 'Sin cliente').trim() || 'Sin cliente';
     const clients = Array.from(new Set(projects.map(normClient))).sort((a, b) => a.localeCompare(b, 'es'));
     const [clientFilter, setClientFilter] = useState('Todos');
+    const [searchTerm, setSearchTerm] = useState('');
     // --- DRAG & DROP (sin librerías externas; compatible con abrir index.html en local) ---
     const [draggingProjectId, setDraggingProjectId] = useState(null);
     const [dragOverProjectId, setDragOverProjectId] = useState(null);
@@ -282,9 +283,14 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         setDragOverProjectId(null);
         cleanupProjectDnd();
     };
-    const filteredProjects = clientFilter === 'Todos'
-        ? projects
-        : projects.filter(p => normClient(p) === clientFilter);
+    const filteredProjects = projects.filter(p => {
+        const matchesClient = clientFilter === 'Todos' || normClient(p) === clientFilter;
+        const q = (searchTerm || '').toString().trim().toLowerCase();
+        if (!q) return matchesClient;
+        const m = (p && p.meta) ? p.meta : {};
+        const hay = ((m.titulo || '') + ' ' + (m.subtitulo || '') + ' ' + (m.cliente || '') + ' ' + (m.pep || '')).toLowerCase();
+        return matchesClient && hay.includes(q);
+    });
     const activeProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Ejecución'; });
     const pausedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Pausa'; });
     const reviewProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Revisión'; });
@@ -509,11 +515,15 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" },
                         React.createElement("i", { className: "fas fa-hdd text-orange-500" }),
                         " Modo Personal (Local)"),
-                    React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-2" },
-                        React.createElement("span", { className: "text-xs font-semibold text-gray-600 uppercase" }, "Cliente"),
-                        React.createElement("select", { className: "w-full sm:w-auto border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
-                            React.createElement("option", { value: "Todos" }, "Todos"),
-                            clients.map(c => React.createElement("option", { key: c, value: c }, c)))))),
+                    React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
+                        React.createElement("div", { className: "relative group" },
+                            React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
+                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input" })),
+                        React.createElement("div", { className: "flex items-center gap-2" },
+                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"),
+                            React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
+                                React.createElement("option", { value: "Todos" }, "Todos"),
+                                clients.map(c => React.createElement("option", { key: c, value: c }, c))))))),
             React.createElement("div", { className: "flex items-center gap-2 no-print" },
                 React.createElement("button", { onClick: onCreate, className: "btn-apple-primary no-print", title: "Crear nuevo proyecto" },
                     React.createElement("i", { className: "fas fa-plus" }),
