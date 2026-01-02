@@ -19,6 +19,12 @@
     --progress-track: #EEF2F7;
     --progress-text: #111827;
 
+
+/* State section accents (Dashboard) */
+--color-ejecucion-rgb: 59, 130, 246;    /* Azul (En Ejecución) */
+--color-completado-rgb: 16, 185, 129;  /* Verde (Completado) */
+--color-revision-rgb: 139, 92, 246;    /* Morado (En Revisión) */
+--color-pausa-rgb: 239, 68, 68;        /* Rojo (En Pausa) */
 }
 
 /* Dark theme tokens */

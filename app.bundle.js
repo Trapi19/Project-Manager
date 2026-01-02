@@ -605,7 +605,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                                 (executiveSummary.redProjects > 0) && React.createElement("div", { className: "exec-note" }, "Alertas (rojo): ", executiveSummary.redProjects, " proyecto(s) con riesgo (vencidas / muchas pendientes).")),
                             React.createElement("div", { className: "exec-card-icon exec-card-icon-warn", role: "button", tabIndex: 0, title: "Ver detalle", onClick: showBlockDetails, onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showBlockDetails(); } }, "aria-label": "Ver detalle de bloqueos y alertas" },
                                 React.createElement("i", { className: "fas fa-triangle-exclamation" })))))),
-            React.createElement("div", { className: "section-tapiz section-estado-ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
+            React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
                 React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }),
                     " En Ejecuci\u00F3n",
@@ -619,7 +619,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en curso.")),
-            React.createElement("div", { className: "section-tapiz section-estado-pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
+            React.createElement("div", { className: "section-tapiz section--pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
                 React.createElement("h2", { className: "text-lg font-bold text-slate-800 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-slate-500 w-2 h-2 rounded-full" }),
                     " En Pausa",
@@ -633,7 +633,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en pausa.")),
-            React.createElement("div", { className: "section-tapiz section-estado-revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
+            React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
                 React.createElement("h2", { className: "text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-violet-500 w-2 h-2 rounded-full" }),
                     " En Revisi\u00F3n",
@@ -647,7 +647,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en revisi\u00F3n.")),
-            completedProjects.length > 0 && (React.createElement("div", { className: "section-tapiz section-estado-completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
+            completedProjects.length > 0 && (React.createElement("div", { className: "section-tapiz section--completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
                 React.createElement("h2", { className: "text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 opacity-75" },
                     React.createElement("span", { className: "bg-green-500 w-2 h-2 rounded-full" }),
                     " Hist\u00F3rico / Completados"),
