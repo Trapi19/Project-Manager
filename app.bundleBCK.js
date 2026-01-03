@@ -1,8 +1,6 @@
 // @ts-nocheck
 // --- 3. COMPONENTES REACT (APP PRINCIPAL) ---
 const { useState, useEffect } = React;
-// --- BACKEND AWS (Lambda Function URL) ---
-const AWS_API_URL = 'https://nc4ragigphowii54wo4tgavx3a0vsjis.lambda-url.eu-west-1.on.aws/';
 const Icons = {
     check: React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
         React.createElement("path", { d: "M22 11.08V12a10 10 0 1 1-5.93-9.14" }),
@@ -1395,19 +1393,17 @@ const MainApp = () => {
             alert("No se pudo iniciar la importación.");
         }
     };
-    const confirmImport = async () => {
+    const confirmImport = () => {
         if (!importCandidate)
             return;
         try {
-            // Logos: se mantienen en localStorage (no afectan a la colaboración)
+            localStorage.setItem('unitecnic_projects', JSON.stringify(importCandidate.projects || []));
             localStorage.setItem('clientLogoMap', JSON.stringify(importCandidate.clientLogoMap || {}));
-
-            // Proyectos: ahora se guardan en AWS (con fallback local)
-            await saveProjectsLocal(importCandidate.projects || []);
-
+            // Refrescar estado en memoria
+            setProjects(importCandidate.projects || []);
             setCurrentProject(null);
             setView('list');
-            setRoute('#/list');
+                setRoute('#/list');
             setImportConfirmOpen(false);
             setImportCandidate(null);
             setImportToast(true);
@@ -1418,90 +1414,25 @@ const MainApp = () => {
             alert("No se pudo importar el backup.");
         }
     };
-    const loadProjectsLocal = async () => {
+    const loadProjectsLocal = () => {
+        const saved = localStorage.getItem('unitecnic_projects');
+        const list = saved ? JSON.parse(saved) : [];
+        // Migración ligera: estado antiguo "Próximo" -> "Pendiente"
         try {
-            const res = await fetch(AWS_API_URL, { method: 'GET' });
-            if (!res.ok)
-                throw new Error(`GET ${res.status}`);
-
-            let data = await res.json();
-
-            // Compatibilidad: algunas Lambdas devuelven { statusCode, body: "..." }
-            if (data && typeof data === 'object' && typeof data.body === 'string') {
-                try {
-                    data = JSON.parse(data.body);
-                }
-                catch (_a) { }
-            }
-
-            const list = Array.isArray(data) ? data
-                : (data && Array.isArray(data.projects)) ? data.projects
-                    : (data && Array.isArray(data.items)) ? data.items
-                        : (data && Array.isArray(data.Items)) ? data.Items
-                            : [];
-
-            // Migración ligera: estado antiguo "Próximo" -> "Pendiente"
-            try {
-                list.forEach(p => {
-                    (p === null || p === void 0 ? void 0 : p.tasks || []).forEach(t => {
-                        const e = (t === null || t === void 0 ? void 0 : t.estado);
-                        if (e === 'Próximo' || e === 'Proximo')
-                            t.estado = 'Pendiente';
-                    });
+            list.forEach(p => {
+                (p === null || p === void 0 ? void 0 : p.tasks || []).forEach(t => {
+                    const e = (t === null || t === void 0 ? void 0 : t.estado);
+                    if (e === 'Próximo' || e === 'Proximo')
+                        t.estado = 'Pendiente';
                 });
-            }
-            catch (_b) { }
-
-            // Cache local para offline / fallback
-            try {
-                localStorage.setItem('unitecnic_projects', JSON.stringify(list || []));
-            }
-            catch (_c) { }
-
-            return list || [];
-        }
-        catch (err) {
-            console.error('Error al cargar proyectos desde AWS', err);
-            const saved = localStorage.getItem('unitecnic_projects');
-            const list = saved ? JSON.parse(saved) : [];
-
-            // Mantener migración también en el fallback local
-            try {
-                (list || []).forEach(p => {
-                    (p === null || p === void 0 ? void 0 : p.tasks || []).forEach(t => {
-                        const e = (t === null || t === void 0 ? void 0 : t.estado);
-                        if (e === 'Próximo' || e === 'Proximo')
-                            t.estado = 'Pendiente';
-                    });
-                });
-            }
-            catch (_d) { }
-
-            return Array.isArray(list) ? list : [];
-        }
-    };
-    const saveProjectsLocal = async (newProjectsList) => {
-        const list = Array.isArray(newProjectsList) ? newProjectsList : [];
-
-        // UX: actualizamos inmediatamente el estado local
-        try {
-            localStorage.setItem('unitecnic_projects', JSON.stringify(list));
-        }
-        catch (_a) { }
-        setProjects(list);
-
-        // Persistencia colaborativa (AWS)
-        try {
-            await fetch(AWS_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(list)
             });
         }
-        catch (err) {
-            console.error('Error al guardar proyectos en AWS', err);
-            // No bloqueamos la app: el usuario sigue teniendo el backup local
-        }
+        catch (_a) { }
+        return list;
+    };
+    const saveProjectsLocal = (newProjectsList) => {
+        localStorage.setItem('unitecnic_projects', JSON.stringify(newProjectsList));
+        setProjects(newProjectsList);
     };
 
     // --- RUTAS (hash) para permitir Atrás / Adelante del navegador ---
@@ -1565,15 +1496,13 @@ const MainApp = () => {
         }
     };
     useEffect(() => {
-        (async () => {
-            const list = await loadProjectsLocal();
-            setProjects(list);
-            // Default route
-            if (!window.location.hash)
-                setRoute('#/list');
-            // Aplicar ruta actual (permite entrar directo a #/project/<id>)
-            applyRouteFromHash(list);
-        })();
+        const list = loadProjectsLocal();
+        setProjects(list);
+        // Default route
+        if (!window.location.hash)
+            setRoute('#/list');
+        // Aplicar ruta actual (permite entrar directo a #/project/<id>)
+        applyRouteFromHash(list);
     }, []);
     useEffect(() => {
         const handler = () => applyRouteFromHash(projectsRef.current || []);
