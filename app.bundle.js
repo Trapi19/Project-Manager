@@ -1,8 +1,6 @@
 // @ts-nocheck
 // --- 3. COMPONENTES REACT (APP PRINCIPAL) ---
 const { useState, useEffect } = React;
-// --- BACKEND AWS (Lambda Function URL) ---
-const AWS_API_URL = 'https://nc4ragigphowii54wo4tgavx3a0vsjis.lambda-url.eu-west-1.on.aws/';
 const Icons = {
     check: React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
         React.createElement("path", { d: "M22 11.08V12a10 10 0 1 1-5.93-9.14" }),
@@ -516,7 +514,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     React.createElement("h1", { className: "text-3xl font-bold text-gray-900" }, "Dashboard Unitecnic"),
                     React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" },
                         React.createElement("i", { className: "fas fa-hdd text-orange-500" }),
-                        " Modo Personal (Local)"),
+                        " Modo Cloud (AWS)"),
                     React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
                         React.createElement("div", { className: "relative group" },
                             React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
@@ -1291,6 +1289,11 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
 // --- APP PRINCIPAL ---
 const MainApp = () => {
     const [theme, setTheme] = React.useState(() => localStorage.getItem('gp_theme') || 'light');
+
+    // --- CONFIGURACIÓN DE BACKEND ---
+    // URL de la función Lambda en AWS para cargar y guardar proyectos.
+    // Se usa como fuente principal de datos, dejando localStorage como caché o fallback offline.
+    const AWS_API_URL = 'https://nc4ragigphowii54wo4tgavx3a0vsjis.lambda-url.eu-west-1.on.aws/';
     React.useEffect(() => {
         document.documentElement.classList.toggle('theme-dark', theme === 'dark');
         localStorage.setItem('gp_theme', theme);
@@ -1395,16 +1398,15 @@ const MainApp = () => {
             alert("No se pudo iniciar la importación.");
         }
     };
+    // Confirma la importación de un backup. Ahora es asíncrona porque sincroniza con AWS.
     const confirmImport = async () => {
-        if (!importCandidate)
-            return;
+        if (!importCandidate) return;
         try {
-            // Logos: se mantienen en localStorage (no afectan a la colaboración)
+            // Guardar logos en local; no se comparten en la nube.
             localStorage.setItem('clientLogoMap', JSON.stringify(importCandidate.clientLogoMap || {}));
-
-            // Proyectos: ahora se guardan en AWS (con fallback local)
+            // Guardar proyectos en la nube y en caché local.
             await saveProjectsLocal(importCandidate.projects || []);
-
+            // Refrescar estado en memoria y volver al dashboard.
             setCurrentProject(null);
             setView('list');
             setRoute('#/list');
@@ -1412,96 +1414,61 @@ const MainApp = () => {
             setImportCandidate(null);
             setImportToast(true);
             setTimeout(() => setImportToast(false), 2600);
-        }
-        catch (err) {
+        } catch (err) {
             console.error(err);
             alert("No se pudo importar el backup.");
         }
     };
+
+    // Carga la lista de proyectos. Intenta primero desde AWS; si falla usa la cache local.
     const loadProjectsLocal = async () => {
         try {
+            // GET a la función Lambda
             const res = await fetch(AWS_API_URL, { method: 'GET' });
-            if (!res.ok)
-                throw new Error(`GET ${res.status}`);
-
-            let data = await res.json();
-
-            // Compatibilidad: algunas Lambdas devuelven { statusCode, body: "..." }
-            if (data && typeof data === 'object' && typeof data.body === 'string') {
-                try {
-                    data = JSON.parse(data.body);
-                }
-                catch (_a) { }
-            }
-
-            const list = Array.isArray(data) ? data
-                : (data && Array.isArray(data.projects)) ? data.projects
-                    : (data && Array.isArray(data.items)) ? data.items
-                        : (data && Array.isArray(data.Items)) ? data.Items
-                            : [];
-
-            // Migración ligera: estado antiguo "Próximo" -> "Pendiente"
+            if (!res.ok) throw new Error(`GET ${res.status}`);
+            const data = await res.json();
+            // La API puede devolver un array directo o un objeto con 'projects' o 'Items'
+            const list = Array.isArray(data)
+                ? data
+                : Array.isArray(data.projects)
+                    ? data.projects
+                    : Array.isArray(data.Items)
+                        ? data.Items
+                        : [];
+            // Normalizar estados antiguos
             try {
-                list.forEach(p => {
-                    (p === null || p === void 0 ? void 0 : p.tasks || []).forEach(t => {
-                        const e = (t === null || t === void 0 ? void 0 : t.estado);
-                        if (e === 'Próximo' || e === 'Proximo')
-                            t.estado = 'Pendiente';
-                    });
-                });
-            }
-            catch (_b) { }
-
-            // Cache local para offline / fallback
-            try {
-                localStorage.setItem('unitecnic_projects', JSON.stringify(list || []));
-            }
-            catch (_c) { }
-
+                list.forEach(p => (p?.tasks || []).forEach(t => {
+                    const e = t?.estado;
+                    if (e === 'Próximo' || e === 'Proximo') t.estado = 'Pendiente';
+                }));
+            } catch (_) {}
+            // Guardar en cache local
+            localStorage.setItem('unitecnic_projects', JSON.stringify(list || []));
             return list || [];
-        }
-        catch (err) {
+        } catch (err) {
             console.error('Error al cargar proyectos desde AWS', err);
+            // Fallback: cargar desde localStorage
             const saved = localStorage.getItem('unitecnic_projects');
             const list = saved ? JSON.parse(saved) : [];
-
-            // Mantener migración también en el fallback local
-            try {
-                (list || []).forEach(p => {
-                    (p === null || p === void 0 ? void 0 : p.tasks || []).forEach(t => {
-                        const e = (t === null || t === void 0 ? void 0 : t.estado);
-                        if (e === 'Próximo' || e === 'Proximo')
-                            t.estado = 'Pendiente';
-                    });
-                });
-            }
-            catch (_d) { }
-
             return Array.isArray(list) ? list : [];
         }
     };
+
+    // Guarda la lista de proyectos. Envía a AWS y actualiza la cache local. No detiene la UX si falla.
     const saveProjectsLocal = async (newProjectsList) => {
         const list = Array.isArray(newProjectsList) ? newProjectsList : [];
-
-        // UX: actualizamos inmediatamente el estado local
-        try {
-            localStorage.setItem('unitecnic_projects', JSON.stringify(list));
-        }
-        catch (_a) { }
-        setProjects(list);
-
-        // Persistencia colaborativa (AWS)
         try {
             await fetch(AWS_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(list)
             });
-        }
-        catch (err) {
+        } catch (err) {
             console.error('Error al guardar proyectos en AWS', err);
-            // No bloqueamos la app: el usuario sigue teniendo el backup local
+            // En caso de error, continuamos usando localStorage
         }
+        localStorage.setItem('unitecnic_projects', JSON.stringify(list));
+        setProjects(list);
     };
 
     // --- RUTAS (hash) para permitir Atrás / Adelante del navegador ---
@@ -1565,13 +1532,11 @@ const MainApp = () => {
         }
     };
     useEffect(() => {
+        // Carga inicial asíncrona: lee de AWS y luego de cache
         (async () => {
             const list = await loadProjectsLocal();
             setProjects(list);
-            // Default route
-            if (!window.location.hash)
-                setRoute('#/list');
-            // Aplicar ruta actual (permite entrar directo a #/project/<id>)
+            if (!window.location.hash) setRoute('#/list');
             applyRouteFromHash(list);
         })();
     }, []);
@@ -1601,7 +1566,7 @@ const MainApp = () => {
             if (isNew) {
                 const created = { ...clean, id: 'local_' + Date.now() };
                 const updatedList = [...projects, created];
-                saveProjectsLocal(updatedList);
+                await saveProjectsLocal(updatedList);
                 // Volvemos al dashboard al crear (flujo "Nuevo → Editar → Guardar → Dashboard")
                 setCurrentProject(null);
                 setView('list');
@@ -1613,7 +1578,7 @@ const MainApp = () => {
             }
             else {
                 const updatedList = projects.map(p => p.id === clean.id ? clean : p);
-                saveProjectsLocal(updatedList);
+                await saveProjectsLocal(updatedList);
                 setCurrentProject(clean);
                 setRoute(`#/project/${encodeURIComponent(String(clean.id || ''))}`);
                 await new Promise(r => setTimeout(r, 450)); // UX
@@ -1633,9 +1598,9 @@ const MainApp = () => {
         if (!confirm("¿Eliminar proyecto permanentemente?"))
             return;
         const updatedList = projects.filter(p => p.id !== id);
-        saveProjectsLocal(updatedList);
+        await saveProjectsLocal(updatedList);
     };
-    const moveProject = (projectId, targetEstado, beforeProjectId) => {
+    const moveProject = async (projectId, targetEstado, beforeProjectId) => {
         const target = normalizeProjectEstado(targetEstado);
         const draggedId = String(projectId);
         const beforeId = beforeProjectId ? String(beforeProjectId) : null;
@@ -1664,7 +1629,7 @@ const MainApp = () => {
                 insertIdx = Math.max(...sameStateIdx) + 1;
         }
         currentList.splice(insertIdx, 0, moving);
-        saveProjectsLocal(currentList);
+        await saveProjectsLocal(currentList);
     };
     if (view === 'loading')
         return React.createElement("div", { className: "h-screen flex items-center justify-center bg-gray-50" },
