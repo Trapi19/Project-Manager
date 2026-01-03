@@ -1293,7 +1293,7 @@ const MainApp = () => {
     // --- CONFIGURACIÓN DE BACKEND ---
     // URL de la función Lambda en AWS para cargar y guardar proyectos.
     // Se usa como fuente principal de datos, dejando localStorage como caché o fallback offline.
-    const AWS_API_URL = 'https://nc4ragigphowii54wo4tgavx3a0vsjis.lambda-url.eu-west-1.on.aws/';
+    const AWS_API_URL = 'https://2qucj5d6k3qspjcc76f4n45zoa0rphnp.lambda-url.eu-west-1.on.aws/';
     React.useEffect(() => {
         document.documentElement.classList.toggle('theme-dark', theme === 'dark');
         localStorage.setItem('gp_theme', theme);
