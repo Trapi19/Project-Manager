@@ -381,3 +381,43 @@
 .project-card:nth-child(2) { animation-delay: 0.15s; }
 .project-card:nth-child(3) { animation-delay: 0.2s; }
 .project-card:nth-child(4) { animation-delay: 0.25s; }
+
+/* Barra de progreso: brillo animado claramente visible */
+.exec-progress-fill{
+  position: relative;
+  overflow: hidden;
+  height: 100% !important;
+  border-radius: 999px !important;
+
+  /* Base (puedes dejar tu degradado actual o este) */
+  background: linear-gradient(90deg, #38bdf8, #818cf8) !important;
+}
+
+/* Brillo móvil */
+.exec-progress-fill::after{
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.55) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  transform: skewX(-20deg);
+  animation: progressSheen 2.4s linear infinite;
+}
+
+@keyframes progressSheen{
+  0%   { left: -60%; }
+  100% { left: 120%; }
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce){
+  .exec-progress-fill::after{ animation: none; }
+}
+
