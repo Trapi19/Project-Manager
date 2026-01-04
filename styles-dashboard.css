@@ -284,3 +284,30 @@
 .apple-select-filter:hover{
   border-color: var(--hairline-strong);
 }
+/* Efectos generales al pasar el ratón (se mantienen) */
+.project-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Colores de borde específicos según el estado */
+
+/* Azul para proyectos En Ejecución */
+.project-card[data-estado="En Ejecución"]:hover {
+    border-color: rgba(var(--color-ejecucion-rgb), 1) !important;
+}
+
+/* Verde para proyectos Completados */
+.project-card[data-estado="Completado"]:hover {
+    border-color: rgba(var(--color-completado-rgb), 1) !important;
+}
+
+/* Rojo para proyectos En Pausa */
+.project-card[data-estado="En Pausa"]:hover {
+    border-color: rgba(var(--color-pausa-rgb), 1) !important;
+}
+
+/* Morado para proyectos En Revisión */
+.project-card[data-estado="En Revisión"]:hover {
+    border-color: rgba(var(--color-revision-rgb), 1) !important;
+}
