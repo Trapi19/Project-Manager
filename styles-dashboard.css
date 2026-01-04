@@ -225,64 +225,64 @@
 }
 
 
-/* --- Buscador Apple-like (dashboard) --- */
-.apple-search-input{
-  height: 38px;
-  width: 240px;
-  padding: 0 16px 0 38px; /* Espacio para el icono de lupa */
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 999px;
-  background: var(--glass-chip);
-  border: 1px solid var(--hairline);
-  backdrop-filter: blur(var(--blur));
-  -webkit-backdrop-filter: blur(var(--blur));
-  color: var(--text);
-  transition: all 0.2s ease;
-  outline: none;
+/* === BLOQUE DEFINITIVO: BUSCADOR CON LUPA Y ANIMACIÓN === */
+
+/* El campo de búsqueda */
+.apple-search-input {
+    height: 42px !important;
+    width: 260px !important;
+    /* Hacemos hueco a la izquierda (46px) para que quepa el icono */
+    padding: 0 16px 0 46px !important;
+    font-size: 14px !important;
+    border-radius: 12px !important;
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    
+    /* AQUÍ ESTÁ LA LUPA (Icono gris para modo claro) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 14px center; /* Posición del icono */
+    background-size: 20px; /* Tamaño del icono */
 }
 
-.apple-search-input:focus{
-  width: 280px;
-  border-color: var(--brand);
-  background: var(--surface);
-  box-shadow: 0 0 0 4px rgba(8, 136, 200, 0.10);
+/* Efecto al hacer clic (se estira) */
+.apple-search-input:focus {
+    width: 320px !important;
+    background-color: #ffffff !important;
+    border-color: var(--brand) !important;
+    box-shadow: 0 0 0 4px rgba(8, 136, 200, 0.15) !important;
+    outline: none;
 }
 
-.theme-dark .apple-search-input:focus{
-  box-shadow: 0 0 0 4px rgba(8, 136, 200, 0.18);
+/* El filtro de al lado (para que combine bien) */
+.apple-select-filter {
+    height: 42px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.apple-search-input::placeholder{
-  color: var(--muted);
-  opacity: 0.75;
+/* === AJUSTES PARA MODO OSCURO === */
+.theme-dark .apple-search-input {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    /* LUPA MÁS CLARA para modo oscuro */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e5e7eb'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'%3E%3C/path%3E%3C/svg%3E") !important;
 }
 
-/* Estilo para el select de filtro tipo Apple */
-.apple-select-filter{
-  height: 38px;
-  padding: 0 34px 0 16px;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 999px;
-  background: var(--glass-chip);
-  border: 1px solid var(--hairline);
-  color: var(--text);
-  cursor: pointer;
-  outline: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 14px;
+.theme-dark .apple-select-filter {
+     background-color: rgba(255, 255, 255, 0.05) !important;
+     border-color: rgba(255, 255, 255, 0.1) !important;
+     color: white !important;
 }
 
-.theme-dark .apple-select-filter{
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-}
-
-.apple-select-filter:hover{
-  border-color: var(--hairline-strong);
+.theme-dark .apple-search-input:focus {
+    background-color: rgba(255, 255, 255, 0.15) !important;
 }
 /* Efectos generales al pasar el ratón (se mantienen) */
 .project-card:hover {
