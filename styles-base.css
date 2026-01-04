@@ -256,41 +256,32 @@ body {
    3. ESTILOS DEL GANTT (GRÁFICO) 
    ========================================= */
 
-/* 1. TAREAS EN CURSO (Amarillo) */
-/* Pintamos tanto la barra (.bar) como el progreso (.bar-progress) */
+/* 1. TAREAS EN CURSO (Amarillo Moderno) */
 .gantt .bar-wrapper.bar-in-progress .bar,
-.gantt .bar-wrapper.bar-in-progress .bar-progress,
-.gantt .bar-group.bar-in-progress .bar,
-.gantt .bar-group.bar-in-progress .bar-progress {
-    fill: #f59e0b !important;  /* Amarillo intenso */
+.gantt .bar-wrapper.bar-in-progress .bar-progress {
+    fill: #f59e0b !important; /* El mismo amarillo de tus píldoras */
+    rx: 4; /* Bordes redondeados en las barras */
 }
 
-/* 2. TAREAS COMPLETADAS (Verde) */
+/* 2. TAREAS COMPLETADAS (Verde Moderno) */
 .gantt .bar-wrapper.bar-completed .bar,
-.gantt .bar-wrapper.bar-completed .bar-progress,
-.gantt .bar-group.bar-completed .bar,
-.gantt .bar-group.bar-completed .bar-progress {
-    fill: #10b981 !important;  /* Verde éxito */
+.gantt .bar-wrapper.bar-completed .bar-progress {
+    fill: #10b981 !important; /* El mismo verde de tus píldoras */
+    rx: 4;
 }
 
-/* 3. TAREAS PENDIENTES (Rojo) */
+/* 3. TAREAS PENDIENTES (Rojo Moderno) */
 .gantt .bar-wrapper.bar-pending .bar,
-.gantt .bar-wrapper.bar-pending .bar-progress,
-.gantt .bar-group.bar-pending .bar,
-.gantt .bar-group.bar-pending .bar-progress {
-    fill: #ef4444 !important;  /* Rojo alerta */
+.gantt .bar-wrapper.bar-pending .bar-progress {
+    fill: #ef4444 !important; /* El mismo rojo de tus píldoras */
+    rx: 4;
 }
 
-/* 4. BLOQUEADAS / PRÓXIMAS (Gris y Violeta) */
-.gantt .bar-wrapper.bar-blocked .bar,
-.gantt .bar-wrapper.bar-blocked .bar-progress {
-    fill: #6b7280 !important;  /* Gris oscuro */
-    opacity: 0.6;
-}
-
-.gantt .bar-wrapper.bar-upcoming .bar,
-.gantt .bar-wrapper.bar-upcoming .bar-progress {
-    fill: #d1d5db !important;  /* Gris claro */
+/* Ajuste de los textos dentro del gráfico para que se lean mejor */
+.gantt .bar-label { 
+    fill: #111827 !important; 
+    font-weight: 600 !important;
+    font-size: 12px !important;
 }
 
 

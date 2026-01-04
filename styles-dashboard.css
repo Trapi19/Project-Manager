@@ -311,3 +311,24 @@
 .project-card[data-estado="En Revisión"]:hover {
     border-color: rgba(var(--color-revision-rgb), 1) !important;
 }
+/* MEJORA: Animación de aparición suave para las tarjetas */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.project-card {
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Esto hace que no todas salgan a la vez, sino una tras otra (cascada) */
+.project-card:nth-child(1) { animation-delay: 0.1s; }
+.project-card:nth-child(2) { animation-delay: 0.15s; }
+.project-card:nth-child(3) { animation-delay: 0.2s; }
+.project-card:nth-child(4) { animation-delay: 0.25s; }
