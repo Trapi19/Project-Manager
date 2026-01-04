@@ -131,3 +131,123 @@
     print-color-adjust: exact !important;
   }
 }
+/* =========================
+   PRINT IMPROVEMENTS (v2)
+   Objetivo: reducir espacios en blanco, evitar que las fechas se partan en varias líneas,
+   y mejorar el ajuste de la tabla a A4.
+   ========================= */
+
+@media print {
+  /* Márgenes algo más compactos para ganar vertical */
+  @page { margin: 1cm; size: A4; }
+
+  /* Ritmo vertical más compacto */
+  .print-header{
+    padding-bottom: 12px !important;
+    margin-bottom: 16px !important;
+  }
+
+  h1 { font-size: 18px !important; }
+  h2, h3 { margin-top: 10px !important; margin-bottom: 6px !important; }
+
+  /* Si usas utilidades tipo Tailwind, estas reglas suelen reducir “aire” sin romper layout */
+  .p-6 { padding: 12px !important; }
+  .p-8 { padding: 16px !important; }
+  .py-8 { padding-top: 16px !important; padding-bottom: 16px !important; }
+  .py-10, .py-12 { padding-top: 18px !important; padding-bottom: 18px !important; }
+  .mt-8 { margin-top: 16px !important; }
+  .mb-8 { margin-bottom: 16px !important; }
+
+  /* Tailwind space-y (si aplica) */
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 12px !important; }
+  .space-y-8 > :not([hidden]) ~ :not([hidden]) { margin-top: 16px !important; }
+
+  /* Tabla: mejora de wrapping y anchos */
+  table{
+    font-size: 11px !important;
+  }
+
+  th, td{
+    /* break-word hace que “01-01-2026” se rompa; usamos un wrapping más controlado */
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+    padding: 5px !important;
+  }
+
+  /* Evitar que una fila se parta entre páginas */
+  tr { page-break-inside: avoid !important; }
+
+  /* Rebalanceo de anchos: ganamos espacio para INICIO/LÍMITE */
+  th:nth-child(1), td:nth-child(1) { width: 17% !important; } /* Área */
+  th:nth-child(2), td:nth-child(2) { width: 23% !important; } /* Tarea */
+  th:nth-child(3), td:nth-child(3) { width: 14% !important; } /* Estado */
+  th:nth-child(4), td:nth-child(4) { width: 26% !important; } /* Detalles */
+  th:nth-child(5), td:nth-child(5) { width: 10% !important; } /* Inicio */
+  th:nth-child(6), td:nth-child(6) { width: 10% !important; } /* Límite */
+
+  /* Fechas: nunca partir en líneas */
+  th:nth-child(5), td:nth-child(5),
+  th:nth-child(6), td:nth-child(6){
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+    text-align: center !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  /* Píldoras: priorizar ajuste al contenido en impresión */
+  .status-pill{
+    min-width: auto !important;
+    height: auto !important;
+    padding: 2px 6px !important;
+    font-size: 9px !important;
+  }
+}
+/* =========================
+   PRINT FIXES (v3)
+   - Fechas: evitar solapes (layout auto + más ancho/menos padding + fuente menor)
+   - Circular progress: forzar color del texto del % en SVG/canvas-like UIs
+   ========================= */
+
+@media print {
+  /* TABLA: dejar que el navegador asigne anchos según contenido */
+  table { table-layout: auto !important; }
+
+  /* Más control para que no se "pisen" textos */
+  th, td {
+    line-height: 1.15 !important;
+  }
+
+  /* Columnas de fechas: no-wrap + fuente y padding más compactos */
+  th:nth-child(5), td:nth-child(5),
+  th:nth-child(6), td:nth-child(6){
+    white-space: nowrap !important;
+    font-size: 10px !important;
+    padding: 4px 3px !important;
+  }
+
+  /* Si aun así van justas, dales algo más de ancho */
+  th:nth-child(5), td:nth-child(5) { width: 12% !important; }
+  th:nth-child(6), td:nth-child(6) { width: 12% !important; }
+
+  /* Compensación (reduce un poco Detalles para ganar a fechas) */
+  th:nth-child(4), td:nth-child(4) { width: 22% !important; }
+
+  /* PROGRESS RING: el porcentaje suele ser texto dentro de SVG; en print a veces queda muy claro */
+  svg text, svg tspan {
+    fill: #000 !important;
+    opacity: 1 !important;
+  }
+
+  /* Si el % se pinta con clases tipo Tailwind (text-slate-xxx, text-gray-xxx), forza negro */
+  .text-slate-300, .text-slate-400, .text-slate-500,
+  .text-gray-300, .text-gray-400, .text-gray-500,
+  .text-neutral-300, .text-neutral-400, .text-neutral-500 {
+    color: #000 !important;
+  }
+
+  /* Asegura que se impriman colores/fondos del SVG si el navegador lo permite */
+  svg, svg * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
