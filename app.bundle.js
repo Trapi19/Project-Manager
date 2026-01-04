@@ -742,7 +742,20 @@ const ProjectPreview = ({ data }) => {
                             return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" },
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("div", { className: "flex items-center" },
-                                        React.createElement("div", { className: "p-1.5 bg-gray-100 rounded-lg mr-2 text-gray-600 no-print" }, Icons[row.iconType] || Icons.monitor),
+                                        React.createElement("div", { 
+    className: "p-1.5 rounded-lg mr-2 no-print flex items-center justify-center " + (
+        row.iconType === 'wifi' ? 'bg-blue-100 text-blue-600' :
+        row.iconType === 'server' ? 'bg-orange-100 text-orange-600' :
+        row.iconType === 'monitor' ? 'bg-indigo-100 text-indigo-600' :
+        row.iconType === 'tv' ? 'bg-purple-100 text-purple-600' :
+        row.iconType === 'users' ? 'bg-green-100 text-green-600' :
+        row.iconType === 'key' ? 'bg-yellow-100 text-yellow-600' :
+        row.iconType === 'alert' ? 'bg-red-100 text-red-600' :
+        row.iconType === 'lock' ? 'bg-slate-200 text-slate-700' :
+        'bg-gray-100 text-gray-600'
+    ),
+    style: { width: '32px', height: '32px' }
+}, Icons[row.iconType] || Icons.monitor),
                                         React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("div", { className: "flex flex-col gap-1" },

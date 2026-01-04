@@ -720,3 +720,23 @@ table td {
     transform: scale(0.95) translateY(1px) !important;
     filter: brightness(0.9); /* Se oscurece un poco al pulsar */
 }
+
+/* MEJORA: El agarrador para mover tareas */
+.task-drag-handle {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    color: #94a3b8 !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-radius: 8px !important;
+    cursor: grab !important;
+    transition: all 0.2s ease !important;
+}
+
+.task-drag-handle:hover {
+    background-color: var(--brand) !important;
+    color: white !important;
+    transform: scale(1.1);
+}
+
+.task-drag-handle:active {
+    cursor: grabbing !important;
+}
