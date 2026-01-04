@@ -11,138 +11,30 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.4.0/css/all.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5/dist/aws-amplify.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
+    <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.umd.js"></script>
 
     <link rel="stylesheet" href="styles-base.css">
+    <link rel="stylesheet" href="styles-print.css" media="print">
     <link rel="stylesheet" href="styles-dashboard.css">
+    <link rel="stylesheet" href="styles-states.css">
     <link rel="stylesheet" href="styles-forms.css">
 
-    <style>
-        #login-gate {
-            position: fixed; inset: 0; background: #f1f5f9; 
-            display: flex; align-items: center; justify-content: center; z-index: 10000;
-        }
-        .login-box {
-            background: white; padding: 40px; border-radius: 24px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 100%; max-width: 420px; text-align: center;
-        }
-        .auth-input {
-            width: 100%; height: 44px; padding: 0 15px; margin-top: 5px;
-            background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
-        }
-        .login-btn {
-            width: 100%; padding: 14px; background: #0888C8; color: white; 
-            border-radius: 12px; font-weight: 700; border: none; margin-top: 20px; cursor: pointer;
-        }
-        /* Ajustes Modo Oscuro */
-        .theme-dark #login-gate { background: #0b1220; }
-        .theme-dark .login-box { background: #111827; border: 1px solid rgba(255,255,255,0.1); color: white; }
-        .theme-dark .auth-input { background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: white; }
-    </style>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('gp_theme') || 'light';
+          if (t === 'dark') document.documentElement.classList.add('theme-dark');
+        } catch (e) {}
+      })();
+    </script>
 </head>
 <body>
-    <div id="root" style="display: none;"></div>
+    <div id="root"></div>
 
-    <div id="login-gate">
-        <div class="login-box">
-            <div id="view-login">
-                <h2 style="font-weight: 800; font-size: 22px; margin-bottom: 5px;">Acceso Unitecnic</h2>
-                <p style="font-size: 14px; margin-bottom: 25px;">Introduce tus credenciales</p>
-                <input type="email" id="l-email" class="auth-input" placeholder="Email corporativo">
-                <input type="password" id="l-pass" class="auth-input" placeholder="Contraseña">
-                <button onclick="handleLogin()" class="login-btn">Entrar</button>
-                <p style="margin-top: 20px; font-size: 13px;">¿No tienes cuenta? <a href="#" onclick="switchView('view-signup')">Regístrate</a></p>
-            </div>
+    <script src="app.js?v=7"></script>
+    <script src="assets.js?v=7"></script>
+    <script src="app.bundle.js?v=7"></script>
 
-            <div id="view-signup" style="display: none;">
-                <h2 style="font-weight: 800; font-size: 22px; margin-bottom: 5px;">Crear Cuenta</h2>
-                <input type="email" id="s-email" class="auth-input" placeholder="nombre@unitecnic.com">
-                <input type="password" id="s-pass" class="auth-input" placeholder="Nueva Contraseña">
-                <button onclick="handleSignUp()" class="login-btn">Registrarse</button>
-                <p style="margin-top: 20px; font-size: 13px;"><a href="#" onclick="switchView('view-login')">Volver al login</a></p>
-            </div>
-
-            <div id="view-verify" style="display: none;">
-                <h2 style="font-weight: 800; font-size: 22px; margin-bottom: 5px;">Verifica tu email</h2>
-                <input type="text" id="v-code" class="auth-input" placeholder="Código de 6 dígitos">
-                <button onclick="handleVerify()" class="login-btn">Confirmar</button>
-            </div>
-
-            <p id="msg-error" style="color: #ef4444; font-size: 12px; margin-top: 15px; display: none;"></p>
-        </div>
-    </div>
-
-    <script>
-        // === CONFIGURACIÓN DE AMPLIFY ===
-        // Estos valores los obtienes de tu archivo 'amplify_outputs.json' tras el despliegue
-        const config = {
-            Auth: {
-                region: 'eu-west-1',
-                userPoolId: 'TU_USER_POOL_ID',
-                userPoolWebClientId: 'TU_CLIENT_ID'
-            }
-        };
-
-        window.onload = async () => {
-            const { Amplify, Auth } = window.Amplify;
-            Amplify.configure(config);
-
-            try {
-                // Verificar si ya hay una sesión activa
-                await Auth.currentAuthenticatedUser();
-                document.getElementById('login-gate').style.display = 'none';
-                document.getElementById('root').style.display = 'block';
-            } catch (e) {}
-        };
-
-        let tempEmail = "";
-
-        function switchView(viewId) {
-            ['view-login', 'view-signup', 'view-verify'].forEach(v => document.getElementById(v).style.display = 'none');
-            document.getElementById(viewId).style.display = 'block';
-        }
-
-        async function handleLogin() {
-            const { Auth } = window.Amplify;
-            try {
-                const user = await Auth.signIn(document.getElementById('l-email').value, document.getElementById('l-pass').value);
-                location.reload(); // Recargar para entrar a la app
-            } catch (err) {
-                showError(err.message);
-            }
-        }
-
-        async function handleSignUp() {
-            const { Auth } = window.Amplify;
-            tempEmail = document.getElementById('s-email').value;
-            try {
-                await Auth.signUp({ username: tempEmail, password: document.getElementById('s-pass').value, attributes: { email: tempEmail } });
-                switchView('view-verify');
-            } catch (err) {
-                showError(err.message);
-            }
-        }
-
-        async function handleVerify() {
-            const { Auth } = window.Amplify;
-            try {
-                await Auth.confirmSignUp(tempEmail, document.getElementById('v-code').value);
-                alert("Cuenta verificada. Ya puedes iniciar sesión.");
-                switchView('view-login');
-            } catch (err) {
-                showError(err.message);
-            }
-        }
-
-        function showError(msg) {
-            const err = document.getElementById('msg-error');
-            err.innerText = msg;
-            err.style.display = 'block';
-        }
-    </script>
-
-    <script src="app.js"></script>
-    <script src="assets.js"></script>
-    <script src="app.bundle.js"></script>
 </body>
 </html>
