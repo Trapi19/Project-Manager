@@ -291,25 +291,28 @@
 }
 
 /* Colores de borde específicos según el estado */
-
-/* Azul para proyectos En Ejecución */
+/* Azul - En Ejecución */
 .project-card[data-estado="En Ejecución"]:hover {
     border-color: rgba(var(--color-ejecucion-rgb), 1) !important;
+    box-shadow: 0 20px 40px rgba(var(--color-ejecucion-rgb), 0.15) !important; /* Resplandor azul */
 }
 
-/* Verde para proyectos Completados */
+/* Verde - Completado */
 .project-card[data-estado="Completado"]:hover {
     border-color: rgba(var(--color-completado-rgb), 1) !important;
+    box-shadow: 0 20px 40px rgba(var(--color-completado-rgb), 0.15) !important; /* Resplandor verde */
 }
 
-/* Rojo para proyectos En Pausa */
+/* Rojo - En Pausa */
 .project-card[data-estado="En Pausa"]:hover {
     border-color: rgba(var(--color-pausa-rgb), 1) !important;
+    box-shadow: 0 20px 40px rgba(var(--color-pausa-rgb), 0.15) !important; /* Resplandor rojo */
 }
 
-/* Morado para proyectos En Revisión */
+/* Morado - En Revisión */
 .project-card[data-estado="En Revisión"]:hover {
     border-color: rgba(var(--color-revision-rgb), 1) !important;
+    box-shadow: 0 20px 40px rgba(var(--color-revision-rgb), 0.15) !important; /* Resplandor morado */
 }
 /* MEJORA: Animación de aparición suave para las tarjetas */
 @keyframes fadeInUp {

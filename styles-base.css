@@ -685,3 +685,38 @@ body {
   transition: transform .18s ease, opacity .18s ease;
 }
 .apple-link:hover{ opacity: 0.95; transform: translateX(2px); }
+
+/* MEJORA: Filas de tabla más elegantes y espaciosas */
+table tbody tr {
+    transition: background-color 0.2s ease !important;
+}
+
+/* Resaltado sutil al pasar el ratón por una fila de la tabla */
+table tbody tr:hover {
+    background-color: rgba(8, 136, 200, 0.04) !important;
+}
+
+/* Más espacio en las celdas */
+table td {
+    padding: 14px 12px !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Ajuste para modo oscuro */
+.theme-dark table td {
+    border-top-color: rgba(255, 255, 255, 0.05) !important;
+}
+.theme-dark table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* MEJORA: Efecto de pulsación física en botones */
+.btn-apple, .btn-apple-primary, .btn-apple-danger, .btn-apple-icon, .btn-apple-secondary {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Al mantener pulsado, el botón se encoge un 5% y baja 1 píxel */
+.btn-apple:active, .btn-apple-primary:active, .btn-apple-danger:active, .btn-apple-icon:active {
+    transform: scale(0.95) translateY(1px) !important;
+    filter: brightness(0.9); /* Se oscurece un poco al pulsar */
+}
