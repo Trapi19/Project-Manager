@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://unpkg.com/frappe-gantt/dist/frappe-gantt.css">
     <script src="https://unpkg.com/frappe-gantt/dist/frappe-gantt.umd.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-amplify/6.0.5/aws-amplify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5/dist/aws-amplify.min.js"></script>
 
     <link rel="stylesheet" href="styles-base.css">
     <link rel="stylesheet" href="styles-print.css" media="print">
@@ -62,6 +62,7 @@
         }
         .theme-dark h2 { color: white !important; }
         .theme-dark p { color: #9ca3af !important; }
+        .theme-dark .login-label { color: #64748b !important; }
     </style>
 
     <script>
@@ -132,7 +133,28 @@
     <script src="app.bundle.js?v=7"></script>
 
     <script>
-        const { Auth } = window.Amplify;
+        // === CONFIGURACIÓN OBLIGATORIA DE AWS ===
+        // Busca estos valores en tu archivo amplify_outputs.json
+        const awsConfig = {
+            Auth: {
+                region: 'eu-west-1', // Tu región (ej: eu-west-1)
+                userPoolId: 'PONER_AQUÍ_ID_USER_POOL', 
+                userPoolWebClientId: 'PONER_AQUÍ_ID_CLIENTE_WEB'
+            }
+        };
+
+        // Esperar a que Amplify cargue correctamente
+        window.onload = async () => {
+            if (window.Amplify) {
+                window.Amplify.configure(awsConfig);
+                try {
+                    await window.Amplify.Auth.currentAuthenticatedUser();
+                    document.getElementById('login-gate').style.display = 'none';
+                    document.getElementById('root').style.display = 'block';
+                } catch (e) { }
+            }
+        };
+
         let tempEmail = ""; 
 
         function switchView(viewId) {
@@ -153,14 +175,14 @@
             const email = document.getElementById('l-email').value;
             const pass = document.getElementById('l-pass').value;
             try {
-                await window.Amplify.Auth.signIn({ username: email, password: pass });
+                await window.Amplify.Auth.signIn(email, pass);
                 document.getElementById('login-gate').style.display = 'none';
                 document.getElementById('root').style.display = 'block';
             } catch (err) {
-                if(err.name === "UserNotConfirmedException") {
+                if(err.code === "UserNotConfirmedException") {
                     tempEmail = email;
                     switchView('view-verify');
-                    showError("Tu cuenta no está confirmada. Introduce el código enviado a tu email.");
+                    showError("Cuenta no confirmada. Introduce el código de tu email.");
                 } else {
                     showError("Error: Usuario o contraseña incorrectos.");
                 }
@@ -170,9 +192,17 @@
         async function handleSignUp() {
             const email = document.getElementById('s-email').value;
             const pass = document.getElementById('s-pass').value;
-            if(!email.endsWith('@unitecnic.com')) return showError("Solo se permiten correos @unitecnic.com");
+            
+            if(!email.endsWith('@unitecnic.com')) {
+                return showError("Solo se permiten correos @unitecnic.com");
+            }
+
             try {
-                await window.Amplify.Auth.signUp({ username: email, password: pass, options: { userAttributes: { email } } });
+                await window.Amplify.Auth.signUp({
+                    username: email,
+                    password: pass,
+                    attributes: { email }
+                });
                 tempEmail = email;
                 switchView('view-verify');
             } catch (err) {
@@ -183,21 +213,13 @@
         async function handleVerify() {
             const code = document.getElementById('v-code').value;
             try {
-                await window.Amplify.Auth.confirmSignUp({ username: tempEmail, confirmationCode: code });
+                await window.Amplify.Auth.confirmSignUp(tempEmail, code);
                 switchView('view-login');
-                alert("¡Cuenta verificada! Ya puedes iniciar sesión.");
+                alert("¡Verificado! Ya puedes entrar.");
             } catch (err) {
                 showError("Código incorrecto: " + err.message);
             }
         }
-
-        window.onload = async () => {
-            try {
-                await Auth.getCurrentUser();
-                document.getElementById('login-gate').style.display = 'none';
-                document.getElementById('root').style.display = 'block';
-            } catch (e) {}
-        };
     </script>
 </body>
 </html>
