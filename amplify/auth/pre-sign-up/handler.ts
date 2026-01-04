@@ -1,7 +1,7 @@
 import type { PreSignUpTriggerHandler } from 'aws-lambda';
 
 export const handler: PreSignUpTriggerHandler = async (event) => {
-  const email = event.request.userAttributes['email'];
+  const email = (event.request.userAttributes?.email ?? '').toLowerCase();
 
   if (!email.endsWith('@unitecnic.com')) {
     throw new Error('Acceso denegado: Solo se permiten correos de @unitecnic.com');
@@ -9,3 +9,4 @@ export const handler: PreSignUpTriggerHandler = async (event) => {
 
   return event;
 };
+
