@@ -509,3 +509,14 @@
     background-color: #818cf8 !important; /* Un azul más claro/eléctrico */
     box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
 }
+
+/* Tarjetas dobles 5 y 6 */
+.exec-grid .exec-card:nth-child(5) { border-left: 4px solid #6366f1 !important; }
+.exec-grid .exec-card:nth-child(6) { border-left: 4px solid #10b981 !important; }
+
+@media (min-width: 1024px) {
+    .exec-grid .exec-card:nth-child(5),
+    .exec-grid .exec-card:nth-child(6) {
+        grid-column: span 2 / span 2;
+    }
+}
