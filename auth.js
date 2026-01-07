@@ -15,13 +15,13 @@
   // =========================
   const CONFIG = {
     // Example: "unitecnic-project-manager" (without https:// and without .auth.<region>.amazoncognito.com)
-    cognitoDomainPrefix: "RELLENA_ESTO",
+    cognitoDomainPrefix: "eu-west-1oarpemav6",
 
     // Example: "eu-west-1"
-    cognitoRegion: "RELLENA_ESTO",
+    cognitoRegion: "eu-west-1",
 
     // Cognito App client id (public client, no secret)
-    cognitoClientId: "RELLENA_ESTO",
+    cognitoClientId: "4v7k5263ns0vuenil4ba30sr4",
 
     // Must match Cognito App client Callback URL exactly (include trailing slash if you configured it)
     redirectUri: window.location.origin + window.location.pathname,
@@ -30,7 +30,7 @@
     logoutUri: window.location.origin + window.location.pathname,
 
     // Your API base URL (recommended: API Gateway URL). Example: "https://abc123.execute-api.eu-west-1.amazonaws.com"
-    apiBaseUrl: "RELLENA_ESTO"
+    apiBaseUrl: "https://2qucj5d6k3qspjcc76f4n45zoa0rphnp.lambda-url.eu-west-1.on.aws/"
   };
 
   // =========================
