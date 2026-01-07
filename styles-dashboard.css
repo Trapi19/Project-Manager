@@ -96,7 +96,8 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Cambiamos de 4 columnas a auto-fit para que la 5ª tarjeta se acomode sola */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
 }
 
@@ -373,6 +374,23 @@
     background: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent) !important;
 }
 .exec-grid .exec-card:nth-child(4) .exec-value { color: #dc2626; }
+/* 5. Tarjeta de Carga de Trabajo (Índigo/Violeta) */
+.exec-grid .exec-card:nth-child(5) {
+    border-left: 4px solid #6366f1 !important;
+    background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent) !important;
+}
+.exec-grid .exec-card:nth-child(5) .exec-value { color: #4f46e5; }
+
+/* Brillo al pasar el ratón para la 5ª tarjeta */
+.exec-card:nth-child(5):hover { 
+    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15); 
+}
+
+/* Color de las barras de carga en modo oscuro */
+.theme-dark .exec-card:nth-child(5) .bg-blue-500 {
+    background-color: #818cf8 !important;
+    box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
+}
 
 /* MEJORA: Estilo para mensajes de "No hay proyectos" */
 .section-tapiz p.italic {
@@ -469,4 +487,18 @@
 .exec-card:hover .exec-card-icon i {
     transform: scale(1.1) rotate(5deg);
     transition: transform 0.3s ease;
+}
+/* 5. Tarjeta de Carga de Trabajo (Índigo/Violeta) */
+.exec-grid .exec-card:nth-child(5) {
+    border-left: 4px solid #6366f1 !important;
+    background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent) !important;
+}
+.exec-grid .exec-card:nth-child(5) .exec-value { 
+    color: #4f46e5; 
+}
+
+/* Ajuste para que las barras de carga brillen un poco en modo oscuro */
+.theme-dark .exec-card:nth-child(5) .bg-blue-500 {
+    background-color: #818cf8 !important; /* Un azul más claro/eléctrico */
+    box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
 }
