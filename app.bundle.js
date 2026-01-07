@@ -300,6 +300,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
 const executiveSummary = (() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+
         const parseISO = (iso) => {
             if (!iso) return null;
             const t = String(iso).trim();
@@ -307,49 +308,69 @@ const executiveSummary = (() => {
             const [y, m, d] = t.split('-').map(n => parseInt(n, 10));
             return new Date(y, (m || 1) - 1, d || 1);
         };
+
         const hasOverdueOpenTask = (p) => {
             const tasks = (p?.tasks) || [];
+            if (!tasks.length) return false;
             const idx = buildTaskIndex(tasks);
             return tasks.some(t => {
                 const lim = parseISO(t?.fechaLimite);
                 if (!lim) return false;
-                return effectiveEstado(t, idx) !== 'Completado' && lim < today;
+                const e = effectiveEstado(t, idx);
+                return e !== 'Completado' && lim < today;
             });
+        };
+
+        const hasTooManyPending = (stats) => {
+            if (!stats || (stats.total || 0) < 5) return false;
+            const fracPending = (stats.pending || 0) / Math.max(1, stats.total || 0);
+            return fracPending >= 0.60 && (stats.progress || 0) < 50;
         };
 
         let tasksTotal = 0;
         let tasksOpen = 0;
         let tasksCompleted = 0;
         let redProjects = 0;
-        let blockedTasks = 0;
         let blockedProjects = 0;
-        const workloadMap = {}; // Nuevo: Mapa de carga de trabajo
+        let blockedTasks = 0;
+        
+        // Inicializamos las listas de detalles
+        const redProjectDetails = [];
+        const blockedProjectDetails = [];
 
         nonCompletedProjects.forEach(p => {
             const tasks = p.tasks || [];
             const stats = computeProjectStats(tasks);
-            tasksTotal += stats.total;
-            tasksOpen += (stats.pending + stats.inProgress);
-            tasksCompleted += stats.completed;
+            const pid = String(p.id || '');
+            const title = (p.meta?.titulo) ? String(p.meta.titulo) : (pid || 'Proyecto');
 
-            // Lógica de carga de trabajo por responsable
-            const resp = (p.meta && p.meta.responsableProyecto) ? String(p.meta.responsableProyecto) : 'Sin asignar';
-            workloadMap[resp] = (workloadMap[resp] || 0) + (stats.pending + stats.inProgress);
+            tasksTotal += stats.total || 0;
+            tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
+            tasksCompleted += stats.completed || 0;
 
-            if (hasOverdueOpenTask(p)) redProjects++;
-            const idx = buildTaskIndex(tasks);
-            const blocked = tasks.filter(t => normalizeEstado(t.estado) !== 'Completado' && isTaskBlocked(t, idx)).length;
-            if (blocked > 0) {
-                blockedTasks += blocked;
-                blockedProjects++;
+            // Lógica de Bloqueos
+            if (tasks.length) {
+                const idx = buildTaskIndex(tasks);
+                const blockedCount = tasks.filter(t => normalizeEstado(t.estado) !== 'Completado' && isTaskBlocked(t, idx)).length;
+                if (blockedCount > 0) {
+                    blockedProjects += 1;
+                    blockedTasks += blockedCount;
+                    // IMPORTANTE: Guardamos el detalle aquí
+                    blockedProjectDetails.push({ id: pid, title: title, blockedCount: blockedCount });
+                }
+            }
+
+            // Lógica de Alertas (Rojo)
+            const overdue = hasOverdueOpenTask(p);
+            const tooMany = hasTooManyPending(stats);
+            if (overdue || tooMany) {
+                redProjects += 1;
+                const reasons = [];
+                if (overdue) reasons.push('tareas vencidas');
+                if (tooMany) reasons.push('demasiadas pendientes');
+                redProjectDetails.push({ id: pid, title: title, reasons: reasons });
             }
         });
-
-        // Convertimos el mapa en un array ordenado para el gráfico
-        const workloadData = Object.entries(workloadMap)
-            .map(([name, count]) => ({ name, count }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 4); // Mostramos los top 4 para no saturar
 
         return {
             projectsActive: nonCompletedProjects.length,
@@ -357,9 +378,10 @@ const executiveSummary = (() => {
             tasksTotal,
             tasksOpen,
             redProjects,
-            blockedTasks,
+            redProjectDetails,
             blockedProjects,
-            workloadData // Pasamos los datos del gráfico
+            blockedTasks,
+            blockedProjectDetails
         };
     })();
 
