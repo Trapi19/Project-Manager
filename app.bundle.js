@@ -297,67 +297,96 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
     const completedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'Completado'; });
     // --- RESUMEN EJECUTIVO (CENTRO DE CONTROL) ---
     const nonCompletedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) !== 'Completado'; });
-const executiveSummary = (() => {
+    const executiveSummary = (() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+        const parseISO = (iso) => {
+            if (!iso)
+                return null;
+            const t = String(iso).trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(t))
+                return null;
+            const [y, m, d] = t.split('-').map(n => parseInt(n, 10));
+            return new Date(y, (m || 1) - 1, d || 1);
+        };
+        const hasOverdueOpenTask = (p) => {
+            const tasks = (p === null || p === void 0 ? void 0 : p.tasks) || [];
+            if (!tasks.length)
+                return false;
+            const idx = buildTaskIndex(tasks);
+            return tasks.some(t => {
+                const lim = parseISO(t === null || t === void 0 ? void 0 : t.fechaLimite);
+                if (!lim)
+                    return false;
+                const e = effectiveEstado(t, idx);
+                return e !== 'Completado' && lim < today;
+            });
+        };
+        const hasTooManyPending = (stats) => {
+            if (!stats || (stats.total || 0) < 5)
+                return false;
+            const fracPending = (stats.pending || 0) / Math.max(1, stats.total || 0);
+            return fracPending >= 0.60 && (stats.progress || 0) < 50;
+        };
         let tasksTotal = 0;
-        let tasksOpen = 0;
+        let tasksOpen = 0; // Pendientes + En curso
         let tasksCompleted = 0;
+
         let redProjects = 0;
+        const redProjectDetails = [];
+
         let blockedProjects = 0;
         let blockedTasks = 0;
-        
-        // Objeto para contar tareas por responsable
-        const workloadMap = {};
+        const blockedProjectDetails = [];
 
         nonCompletedProjects.forEach(p => {
-            const tasks = p.tasks || [];
+            const tasks = (p === null || p === void 0 ? void 0 : p.tasks) || [];
             const stats = computeProjectStats(tasks);
-            tasksTotal += stats.total;
-            tasksOpen += (stats.pending + stats.inProgress);
-            tasksCompleted += stats.completed;
+            tasksTotal += stats.total || 0;
+            tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
+            tasksCompleted += stats.completed || 0;
 
-            // Lógica de carga de trabajo
-            const resp = (p.meta && p.meta.responsableProyecto) ? p.meta.responsableProyecto : 'Sin asignar';
-            if (!workloadMap[resp]) workloadMap[resp] = 0;
-            workloadMap[resp] += (stats.pending + stats.inProgress);
+            const pid = String((p === null || p === void 0 ? void 0 : p.id) || '');
+            const title = (((p === null || p === void 0 ? void 0 : p.meta) && (p.meta.titulo)) ? String(p.meta.titulo) : (pid || 'Proyecto'));
 
-            // Lógica de bloqueos
+            // Dependencias bloqueantes (tareas abiertas con dependsOn no completada)
             if (tasks.length) {
                 const idx = buildTaskIndex(tasks);
-                const blockedCount = tasks.filter(t => normalizeEstado(t.estado) !== 'Completado' && isTaskBlocked(t, idx)).length;
+                const blockedCount = tasks.filter(t => normalizeEstado(t === null || t === void 0 ? void 0 : t.estado) !== 'Completado' && isTaskBlocked(t, idx)).length;
                 if (blockedCount > 0) {
-                    blockedProjects++;
+                    blockedProjects += 1;
                     blockedTasks += blockedCount;
+                    blockedProjectDetails.push({ id: pid, title, blockedCount });
                 }
             }
 
-            // Lógica de proyectos en rojo (vencidos)
-            const hasOverdue = tasks.some(t => {
-                if (!t.fechaLimite || normalizeEstado(t.estado) === 'Completado') return false;
-                const lim = new Date(t.fechaLimite);
-                return lim < today;
-            });
-            if (hasOverdue) redProjects++;
+            const overdue = hasOverdueOpenTask(p);
+            const tooMany = hasTooManyPending(stats);
+            const isRed = overdue || tooMany;
+            if (isRed) {
+                redProjects += 1;
+                const reasons = [];
+                if (overdue)
+                    reasons.push('tareas vencidas');
+                if (tooMany)
+                    reasons.push('demasiadas pendientes');
+                redProjectDetails.push({ id: pid, title, reasons });
+            }
         });
-
-        // Convertimos el mapa en un array ordenado para el gráfico
-        const workloadData = Object.entries(workloadMap)
-            .map(([name, count]) => ({ name, count }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 5); // Solo mostramos los 5 con más carga
-
+        const progressAvg = tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0;
         return {
             projectsActive: nonCompletedProjects.length,
-            progressAvg: tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0,
+            progressAvg,
             tasksTotal,
             tasksOpen,
-            blockedTasks,
+            redProjects,
+            redProjectDetails,
             blockedProjects,
-            workloadData
+            blockedTasks,
+            blockedProjectDetails
         };
     })();
+
 
     const __gpEscapeHtml = (v) => {
         const s = String(v == null ? '' : v);
@@ -526,7 +555,7 @@ const executiveSummary = (() => {
                     React.createElement("div", { className: "exec-pill", title: "Se recalcula con los filtros activos" },
                         React.createElement("i", { className: "fas fa-sliders", "aria-hidden": "true" }),
                         React.createElement("span", null, "Seg\u00FAn filtros"))),
-// --- CUADRO DE MANDO INTERACTIVO (5 TARJETAS) ---
+// --- CUADRO DE MANDO INTERACTIVO ---
                 React.createElement("div", { className: "exec-grid" },
                     // 1. PROYECTOS
                     React.createElement("div", { className: "exec-card", onClick: () => setClientFilter('Todos'), title: "Ver todos" },
@@ -562,7 +591,7 @@ const executiveSummary = (() => {
                             React.createElement("div", { className: "exec-card-icon" },
                                 React.createElement("i", { className: "fas fa-list-check" })))),
 
-                    // 4. BLOQUEOS
+                    // 4. BLOQUEOS (Icono de Escudo Glass)
                     React.createElement("div", { className: "exec-card", onClick: showBlockDetails, title: "Ver detalles de alertas" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
@@ -573,35 +602,9 @@ const executiveSummary = (() => {
                                 React.createElement("i", { className: "fas fa-shield-halved" }))),
                         React.createElement("div", { className: "mt-4 flex items-center gap-2" },
                             React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}` }),
-                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-tight" }, executiveSummary.blockedProjects, " Proyectos afectados"))),
-
-                    // 5. GRÁFICO DE CARGA POR RESPONSABLE
-                    React.createElement("div", { className: "exec-card workload-card" },
-                        React.createElement("div", { className: "exec-label mb-4" }, "Carga por Responsable"),
-                        React.createElement("div", { className: "workload-chart-container" },
-                            executiveSummary.workloadData && executiveSummary.workloadData.length > 0 ? (
-                                executiveSummary.workloadData.map((item, idx) => (
-                                    React.createElement("div", { key: idx, className: "workload-row" },
-                                        React.createElement("div", { className: "workload-info" },
-                                            React.createElement("span", { className: "workload-name" }, item.name),
-                                            React.createElement("span", { className: "workload-count" }, item.count, " t.")
-                                        ),
-                                        React.createElement("div", { className: "workload-bar-bg" },
-                                            React.createElement("div", { 
-                                                className: "workload-bar-fill", 
-                                                style: { 
-                                                    width: `${Math.min(100, (item.count / Math.max(1, ...executiveSummary.workloadData.map(d => d.count))) * 100)}%` 
-                                                } 
-                                            }))
-                                    ))
-                                ))
-                            ) : (
-                                React.createElement("div", { className: "text-[11px] text-gray-400 italic text-center py-4" }, "No hay tareas asignadas")
-                            )
-                        )
-                    )
-                ) // <--- Cierra exec-grid (Ahora contiene las 5 tarjetas)
-            ), // <--- Cierra la sección entera del Resumen Ejecutivo (section-tapiz)
+                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-tight" }, executiveSummary.blockedProjects, " Proyectos afectados")))
+                ) // <--- Cierra exec-grid
+            ), // <--- ESTE ES EL QUE FALTABA (Cierra la sección entera del Resumen Ejecutivo)
 
             // A PARTIR DE AQUÍ LAS SECCIONES DE PROYECTOS QUEDAN FUERA
             React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
