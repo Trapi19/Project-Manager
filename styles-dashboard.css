@@ -510,13 +510,48 @@
     box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
 }
 
-/* Tarjetas dobles 5 y 6 */
-.exec-grid .exec-card:nth-child(5) { border-left: 4px solid #6366f1 !important; }
-.exec-grid .exec-card:nth-child(6) { border-left: 4px solid #10b981 !important; }
+/* =========================================
+   ESTILOS PARA LAS TARJETAS DOBLES (5 y 6)
+   ========================================= */
 
+/* --- Tarjeta 5: Carga de Trabajo (Índigo/Violeta) --- */
+.exec-grid .exec-card:nth-child(5) {
+    border-left: 4px solid #6366f1 !important;
+    background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent) !important;
+    transition: all 0.3s ease;
+}
+
+/* --- Tarjeta 6: Próximos Vencimientos (NUEVO COLOR: Cian) --- */
+.exec-grid .exec-card:nth-child(6) {
+    border-left: 4px solid #06b6d4 !important; /* Color Cian vibrante */
+    background: linear-gradient(to right, rgba(6, 182, 212, 0.05), transparent) !important;
+    transition: all 0.3s ease;
+}
+/* Truco: forzar que el texto de la fecha sea cian en lugar de esmeralda */
+.exec-grid .exec-card:nth-child(6) .text-emerald-600 {
+    color: #0891b2 !important; /* Cian un poco más oscuro para que se lea bien */
+}
+
+
+/* --- Reglas de Layout (Ancho doble en pantallas grandes) --- */
 @media (min-width: 1024px) {
     .exec-grid .exec-card:nth-child(5),
     .exec-grid .exec-card:nth-child(6) {
         grid-column: span 2 / span 2;
     }
+}
+
+
+/* --- EFECTOS HOVER (El brillo al pasar el ratón) --- */
+
+/* Brillo Índigo para la 5ª */
+.exec-card:nth-child(5):hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Brillo Cian para la 6ª */
+.exec-card:nth-child(6):hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(6, 182, 212, 0.15) !important;
 }
