@@ -1443,93 +1443,103 @@ const MainApp = () => {
     const PENDING_KEY = 'unitecnic_projects_pending';
     const PENDING_TS_KEY = 'unitecnic_projects_pending_ts';
 
-// Función interna para obtener la llave de acceso manualmente
-    const getAuthHeader = () => {
-        try {
-            const s = JSON.parse(localStorage.getItem('unitecnic_auth_session'));
-            if (s && s.access_token) return { 'Authorization': 'Bearer ' + s.access_token };
-        } catch(e) { console.error("Error obteniendo token:", e); }
-        return {};
-    };
-
-    // Reintenta enviar cambios que se quedaron "atascados"
+    // Si hubo guardados offline, guardamos la última lista pendiente y la reintentamos cuando vuelva la conexión.
     const flushPendingToAWS = async () => {
         try {
             const pendingStr = localStorage.getItem(PENDING_KEY);
-            if (!pendingStr) return false;
-            
+            if (!pendingStr)
+                return false;
             const pendingList = JSON.parse(pendingStr);
             if (!Array.isArray(pendingList)) {
                 localStorage.removeItem(PENDING_KEY);
+                localStorage.removeItem(PENDING_TS_KEY);
                 return false;
             }
-
-            console.log("Intentando sincronizar cambios pendientes...");
-            const res = await fetch(AWS_API_URL, {
+            await fetch(AWS_API_URL, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    ...getAuthHeader() // Forzamos la llave de acceso
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(pendingList)
             });
-
-            if (!res.ok) throw new Error("Error en servidor: " + res.status);
-
             localStorage.removeItem(PENDING_KEY);
             localStorage.removeItem(PENDING_TS_KEY);
-            if (window.gpSetSyncStatus) window.gpSetSyncStatus('ok');
-            console.log("Sincronización pendiente exitosa");
+            if (window.gpSetSyncStatus)
+                window.gpSetSyncStatus('ok');
             return true;
         }
         catch (err) {
-            console.error('Fallo en reintento de sincronización:', err);
+            console.error('Error al reintentar sincronización pendiente', err);
+            if (window.gpSetSyncStatus)
+                window.gpSetSyncStatus((typeof navigator !== 'undefined' && navigator.onLine) ? 'pending' : 'offline');
             return false;
         }
     };
 
-    // Guarda los cambios (Nube + Local)
-    const saveProjectsLocal = async (newProjectsList) => {
-        const list = Array.isArray(newProjectsList) ? newProjectsList : [];
-        
-        // 1. Guardamos en el navegador (Copia de seguridad inmediata)
+// Carga la lista de proyectos. Intenta primero desde AWS; si falla usa la cache local.
+    const loadProjectsLocal = async () => {
         try {
-            localStorage.setItem('unitecnic_projects', JSON.stringify(list));
-        } catch (e) { console.error('Error en memoria local', e); }
-        
-        setProjects(list);
-
-        // 2. Intentamos enviar a la nube (AWS)
-        try {
-            if (window.gpSetSyncStatus) window.gpSetSyncStatus('pending');
-
-            const res = await fetch(AWS_API_URL, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    ...getAuthHeader() // Forzamos la llave de acceso
-                },
-                body: JSON.stringify(list)
-            });
-
-            if (!res.ok) throw new Error("AWS rechazó el guardado: " + res.status);
-
-            // Si llegamos aquí, todo ha ido bien
-            localStorage.removeItem(PENDING_KEY);
-            localStorage.removeItem(PENDING_TS_KEY);
-            if (window.gpSetSyncStatus) window.gpSetSyncStatus('ok');
-            
-        } catch (err) {
-            console.error('Error guardando en la nube, se queda en pendiente:', err);
-            // Si falla, marcamos como pendiente para reintentar luego
+            // GET a la función Lambda
+            const res = await fetch(AWS_API_URL, { method: 'GET' });
+            if (!res.ok) throw new Error(`GET ${res.status}`);
+            const data = await res.json();
+            // La API puede devolver un array directo o un objeto con 'projects' o 'Items'
+            const list = Array.isArray(data)
+                ? data
+                : Array.isArray(data.projects)
+                    ? data.projects
+                    : Array.isArray(data.Items)
+                        ? data.Items
+                        : [];
+            // Normalizar estados antiguos
             try {
-                localStorage.setItem(PENDING_KEY, JSON.stringify(list));
-                localStorage.setItem(PENDING_TS_KEY, new Date().toISOString());
-            } catch (_) { }
+                list.forEach(p => (p?.tasks || []).forEach(t => {
+                    const e = t?.estado;
+                    if (e === 'Próximo' || e === 'Proximo') t.estado = 'Pendiente';
+                }));
+            } catch (_) {}
+            // Guardar en cache local
+            localStorage.setItem('unitecnic_projects', JSON.stringify(list || []));
+            return list || [];
+        } catch (err) {
+            console.error('Error al cargar proyectos desde AWS', err);
+            // Fallback: cargar desde localStorage
+            const saved = localStorage.getItem('unitecnic_projects');
+            const list = saved ? JSON.parse(saved) : [];
+            return Array.isArray(list) ? list : [];
+        }
+    };
+
+// Carga la lista de proyectos. Intenta primero desde AWS; si falla usa la cache local.
+    const loadProjectsLocal = async () => {
+        try {
+            // Añadimos un "timestamp" para que AWS no nos devuelva datos cacheados
+            const urlConCacheBuster = AWS_API_URL + '?t=' + Date.now();
+            const res = await fetch(urlConCacheBuster, { 
+                method: 'GET',
+                headers: { 
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
             
-            if (window.gpSetSyncStatus) {
-                window.gpSetSyncStatus(navigator.onLine ? 'pending' : 'offline');
-            }
+            if (!res.ok) throw new Error(`Error en la nube: ${res.status}`);
+            const data = await res.json();
+            
+            const list = Array.isArray(data)
+                ? data
+                : Array.isArray(data.projects)
+                    ? data.projects
+                    : Array.isArray(data.Items)
+                        ? data.Items
+                        : [];
+            
+            // Guardar copia de seguridad en el navegador
+            localStorage.setItem('unitecnic_projects', JSON.stringify(list || []));
+            return list || [];
+        } catch (err) {
+            console.error('Error al cargar desde AWS, usando copia local:', err);
+            const saved = localStorage.getItem('unitecnic_projects');
+            const list = saved ? JSON.parse(saved) : [];
+            return Array.isArray(list) ? list : [];
         }
     };
 
@@ -1593,7 +1603,9 @@ const MainApp = () => {
             setView('list');
         }
     };
-useEffect(() => {
+    useEffect(() => {
+
+        useEffect(() => {
         const fetchAndSync = async () => {
             // 1. Intentamos traer lo último de la nube
             const cloudList = await loadProjectsLocal();
