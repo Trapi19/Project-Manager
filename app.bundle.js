@@ -1413,8 +1413,14 @@ const MainApp = () => {
     };
     // Confirma la importación de un backup. Ahora es asíncrona porque sincroniza con AWS.
     const confirmImport = async () => {
-        if (!importCandidate) return;
+        if (!importCandidate)
+            return;
         try {
+            // Salvaguarda: exporta un backup del estado actual antes de sobrescribir con el import.
+            try {
+                exportBackupJSON();
+            }
+            catch (_) { }
             // Guardar logos en local; no se comparten en la nube.
             localStorage.setItem('clientLogoMap', JSON.stringify(importCandidate.clientLogoMap || {}));
             // Guardar proyectos en la nube y en caché local.
@@ -1433,7 +1439,42 @@ const MainApp = () => {
         }
     };
 
-    // Carga la lista de proyectos. Intenta primero desde AWS; si falla usa la cache local.
+    
+    const PENDING_KEY = 'unitecnic_projects_pending';
+    const PENDING_TS_KEY = 'unitecnic_projects_pending_ts';
+
+    // Si hubo guardados offline, guardamos la última lista pendiente y la reintentamos cuando vuelva la conexión.
+    const flushPendingToAWS = async () => {
+        try {
+            const pendingStr = localStorage.getItem(PENDING_KEY);
+            if (!pendingStr)
+                return false;
+            const pendingList = JSON.parse(pendingStr);
+            if (!Array.isArray(pendingList)) {
+                localStorage.removeItem(PENDING_KEY);
+                localStorage.removeItem(PENDING_TS_KEY);
+                return false;
+            }
+            await fetch(AWS_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pendingList)
+            });
+            localStorage.removeItem(PENDING_KEY);
+            localStorage.removeItem(PENDING_TS_KEY);
+            if (window.gpSetSyncStatus)
+                window.gpSetSyncStatus('ok');
+            return true;
+        }
+        catch (err) {
+            console.error('Error al reintentar sincronización pendiente', err);
+            if (window.gpSetSyncStatus)
+                window.gpSetSyncStatus((typeof navigator !== 'undefined' && navigator.onLine) ? 'pending' : 'offline');
+            return false;
+        }
+    };
+
+// Carga la lista de proyectos. Intenta primero desde AWS; si falla usa la cache local.
     const loadProjectsLocal = async () => {
         try {
             // GET a la función Lambda
@@ -1470,18 +1511,36 @@ const MainApp = () => {
     // Guarda la lista de proyectos. Envía a AWS y actualiza la cache local. No detiene la UX si falla.
     const saveProjectsLocal = async (newProjectsList) => {
         const list = Array.isArray(newProjectsList) ? newProjectsList : [];
+        // Guardar local primero (no bloquea UX y permite modo offline)
+        try {
+            localStorage.setItem('unitecnic_projects', JSON.stringify(list));
+        }
+        catch (e) {
+            console.error('No se pudo escribir en localStorage', e);
+        }
+        setProjects(list);
+        // Intento de sincronización con AWS. Si falla, dejamos una copia "pendiente" para reintentar.
         try {
             await fetch(AWS_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(list)
             });
-        } catch (err) {
-            console.error('Error al guardar proyectos en AWS', err);
-            // En caso de error, continuamos usando localStorage
+            localStorage.removeItem(PENDING_KEY);
+            localStorage.removeItem(PENDING_TS_KEY);
+            if (window.gpSetSyncStatus)
+                window.gpSetSyncStatus('ok');
         }
-        localStorage.setItem('unitecnic_projects', JSON.stringify(list));
-        setProjects(list);
+        catch (err) {
+            console.error('Error al guardar proyectos en AWS', err);
+            try {
+                localStorage.setItem(PENDING_KEY, JSON.stringify(list));
+                localStorage.setItem(PENDING_TS_KEY, new Date().toISOString());
+            }
+            catch (_) { }
+            if (window.gpSetSyncStatus)
+                window.gpSetSyncStatus((typeof navigator !== 'undefined' && navigator.onLine) ? 'pending' : 'offline');
+        }
     };
 
     // --- RUTAS (hash) para permitir Atrás / Adelante del navegador ---
@@ -1545,12 +1604,33 @@ const MainApp = () => {
         }
     };
     useEffect(() => {
-        // Carga inicial asíncrona: lee de AWS y luego de cache
+        // Carga inicial asíncrona: lee de AWS y luego de cache.
+        // Si hubo cambios "pendientes" (guardados sin conexión), priorizamos esa lista en la UI y la reintentamos enviar.
         (async () => {
+            let pendingList = null;
+            try {
+                const pendingStr = localStorage.getItem(PENDING_KEY);
+                if (pendingStr) {
+                    const parsed = JSON.parse(pendingStr);
+                    if (Array.isArray(parsed))
+                        pendingList = parsed;
+                }
+            }
+            catch (_) { }
             const list = await loadProjectsLocal();
-            setProjects(list);
-            if (!window.location.hash) setRoute('#/list');
-            applyRouteFromHash(list);
+            const effectiveList = pendingList || list;
+            setProjects(effectiveList);
+            if (!window.location.hash)
+                setRoute('#/list');
+            applyRouteFromHash(effectiveList);
+            // Reintento de sincronización si procede
+            if (typeof navigator !== 'undefined' && navigator.onLine) {
+                await flushPendingToAWS();
+            }
+            else {
+                if (window.gpSetSyncStatus)
+                    window.gpSetSyncStatus('offline');
+            }
         })();
     }, []);
     useEffect(() => {
@@ -1558,6 +1638,12 @@ const MainApp = () => {
         window.addEventListener('hashchange', handler);
         return () => window.removeEventListener('hashchange', handler);
     }, []);
+    useEffect(() => {
+        const onOnline = () => { flushPendingToAWS(); };
+        window.addEventListener('online', onOnline);
+        return () => window.removeEventListener('online', onOnline);
+    }, []);
+
     const createProject = async () => {
         const draftProject = makeDraftProject();
         setCurrentProject(draftProject);
