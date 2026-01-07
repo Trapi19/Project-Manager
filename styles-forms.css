@@ -68,3 +68,25 @@ input:focus, textarea:focus, select:focus {
 .theme-dark select {
     color: #ffffff !important;
 }
+/* --- ARREGLO PARA BOTÓN VISTA PREVIA EN MODO OSCURO --- */
+
+/* Cambia el fondo gris claro por uno oscuro traslúcido */
+.theme-dark .bg-gray-100 {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Cambia el texto gris oscuro por texto blanco */
+.theme-dark .text-gray-700 {
+    color: #ffffff !important;
+}
+
+/* Efecto al pasar el ratón para que se ilumine un poco */
+.theme-dark .hover\:bg-gray-200:hover {
+    background-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Arregla el separador vertical al lado del botón */
+.theme-dark .bg-gray-200 {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
