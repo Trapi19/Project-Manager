@@ -31,7 +31,7 @@
 
     // If true, we will redirect to Cognito /logout (requires Allowed sign-out URLs to be configured).
     // If false, we clear local tokens and force a fresh login prompt.
-    useCognitoLogout: true,
+    useCognitoLogout: false,
 
     // Your API base URL (recommended: API Gateway URL). Example: "https://abc123.execute-api.eu-west-1.amazonaws.com"
     apiBaseUrl: "https://2qucj5d6k3qspjcc76f4n45zoa0rphnp.lambda-url.eu-west-1.on.aws/"
