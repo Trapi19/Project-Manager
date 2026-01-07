@@ -24,10 +24,14 @@
     cognitoClientId: "4v7k5263ns0vuenil4ba30sr4",
 
     // Must match Cognito App client Callback URL exactly (include trailing slash if you configured it)
-    redirectUri: window.location.origin + window.location.pathname,
+    redirectUri: "https://main.dsdu6jhu0hbyk.amplifyapp.com/",
 
     // Must match Cognito App client Sign-out URL exactly
-    logoutUri: window.location.origin + window.location.pathname,
+    logoutUri: "https://main.dsdu6jhu0hbyk.amplifyapp.com/",
+
+    // If true, we will redirect to Cognito /logout (requires Allowed sign-out URLs to be configured).
+    // If false, we clear local tokens and force a fresh login prompt.
+    useCognitoLogout: true,
 
     // Your API base URL (recommended: API Gateway URL). Example: "https://abc123.execute-api.eu-west-1.amazonaws.com"
     apiBaseUrl: "https://2qucj5d6k3qspjcc76f4n45zoa0rphnp.lambda-url.eu-west-1.on.aws/"
@@ -126,16 +130,39 @@
         el.style.right = '12px';
         el.style.bottom = '12px';
         el.style.zIndex = '9999';
-        el.style.fontFamily = 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
-        el.style.fontSize = '12px';
-        el.style.padding = '8px 10px';
-        el.style.borderRadius = '999px';
-        el.style.border = '1px solid rgba(0,0,0,0.12)';
-        el.style.background = 'rgba(255,255,255,0.92)';
-        el.style.backdropFilter = 'blur(8px)';
-        el.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+        el.style.padding = '10px 14px';
+        el.style.borderRadius = '9999px';
+        el.style.fontSize = '13px';
+        el.style.fontFamily = 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+        el.style.userSelect = 'none';
         el.style.cursor = 'pointer';
         el.title = 'Clic para cerrar sesión';
+
+        const applyTheme = () => {
+          const dark = (document.documentElement && document.documentElement.classList.contains('theme-dark')) ||
+                       (document.body && document.body.classList.contains('theme-dark'));
+          if (dark) {
+            el.style.color = '#ffffff';
+            el.style.border = '1px solid rgba(255,255,255,0.18)';
+            el.style.background = 'rgba(15,23,42,0.82)'; // slate-900-ish
+            el.style.boxShadow = '0 10px 24px rgba(0,0,0,0.45)';
+          } else {
+            el.style.color = '#0f172a';
+            el.style.border = '1px solid rgba(0,0,0,0.12)';
+            el.style.background = 'rgba(255,255,255,0.92)';
+            el.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+          }
+          el.style.backdropFilter = 'blur(8px)';
+        };
+
+        // Apply now and keep in sync with theme changes
+        applyTheme();
+        try {
+          const obs = new MutationObserver(() => applyTheme());
+          if (document.documentElement) obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+          if (document.body) obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        } catch (e) {}
+
         el.addEventListener('click', () => window.unitecnicLogout && window.unitecnicLogout());
         document.body.appendChild(el);
       }
@@ -166,6 +193,15 @@
       code_challenge: challenge,
       code_challenge_method: 'S256'
     });
+
+    // If user explicitly clicked "logout", force credential prompt
+    try {
+      const force = sessionStorage.getItem('unitecnic_force_login');
+      if (force === '1') {
+        params.set('prompt', 'login');
+        sessionStorage.removeItem('unitecnic_force_login');
+      }
+    } catch (e) {}
 
     window.location.assign(`${base}/oauth2/authorize?${params.toString()}`);
   }
@@ -232,14 +268,24 @@
   // Logout helper
   // =========================
   window.unitecnicLogout = function () {
+    // Local sign-out first
     try { clearSession(); } catch (e) {}
-    const base = buildCognitoBase();
-    if (!base) return window.location.reload();
-    const params = new URLSearchParams({
-      client_id: CONFIG.cognitoClientId,
-      logout_uri: CONFIG.logoutUri
-    });
-    window.location.assign(`${base}/logout?${params.toString()}`);
+    // Force credential prompt next time (useful when Cognito still has a cookie session)
+    try { sessionStorage.setItem('unitecnic_force_login', '1'); } catch (e) {}
+
+    // If Cognito logout is enabled and correctly configured, redirect to /logout.
+    if (CONFIG.useCognitoLogout) {
+      const base = buildCognitoBase();
+      if (!base) return window.location.reload();
+      const params = new URLSearchParams({
+        client_id: CONFIG.cognitoClientId,
+        logout_uri: CONFIG.logoutUri
+      });
+      return window.location.assign(`${base}/logout?${params.toString()}`);
+    }
+
+    // Otherwise, just return to the app root; auth.js will redirect to login.
+    window.location.assign(CONFIG.logoutUri);
   };
 
   // =========================
