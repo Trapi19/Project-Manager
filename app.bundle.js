@@ -555,56 +555,58 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     React.createElement("div", { className: "exec-pill", title: "Se recalcula con los filtros activos" },
                         React.createElement("i", { className: "fas fa-sliders", "aria-hidden": "true" }),
                         React.createElement("span", null, "Seg\u00FAn filtros"))),
+// --- CUADRO DE MANDO INTERACTIVO ---
                 React.createElement("div", { className: "exec-grid" },
-                    React.createElement("div", { className: "exec-card" },
+                    // 1. PROYECTOS
+                    React.createElement("div", { className: "exec-card", onClick: () => setClientFilter('Todos'), title: "Ver todos" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
                                 React.createElement("div", { className: "exec-label" }, "Proyectos activos"),
                                 React.createElement("div", { className: "exec-value" }, executiveSummary.projectsActive)),
-                            React.createElement("div", { className: "exec-card-icon", "aria-hidden": "true" },
+                            React.createElement("div", { className: "exec-card-icon" },
                                 React.createElement("i", { className: "fas fa-layer-group" }))),
                         React.createElement("div", { className: "exec-chips" },
-                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.45)] text-blue-700 bg-[color:rgba(59,130,246,0.10)]" },
-                                "Ejecuci\u00F3n: ",
-                                activeProjects.length),
-                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.45)] text-red-700 bg-[color:rgba(239,68,68,0.10)]" },
-                                "Pausa: ",
-                                pausedProjects.length),
-                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(139,92,246,0.45)] text-violet-700 bg-[color:rgba(139,92,246,0.10)]" },
-                                "Revisi\u00F3n: ",
-                                reviewProjects.length))),
+                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.3)] text-blue-700 bg-blue-50/50 text-[10px] font-bold" }, "Eje: ", activeProjects.length),
+                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.3)] text-red-700 bg-red-50/50 text-[10px] font-bold" }, "Pausa: ", pausedProjects.length))),
+
+                    // 2. AVANCE
                     React.createElement("div", { className: "exec-card" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
-                                React.createElement("div", { className: "exec-label" }, "% avance medio"),
-                                React.createElement("div", { className: "exec-value" },
-                                    executiveSummary.progressAvg,
-                                    "%"),
-                                React.createElement("div", { className: "exec-note" }, "Ponderado por n\u00BA de tareas")),
-                            React.createElement("div", { className: "exec-card-icon", "aria-hidden": "true" },
+                                React.createElement("div", { className: "exec-label" }, "Avance medio"),
+                                React.createElement("div", { className: "exec-value" }, executiveSummary.progressAvg, "%"),
+                                React.createElement("div", { className: "exec-note" }, "Ponderado por tareas")),
+                            React.createElement("div", { className: "exec-card-icon" },
                                 React.createElement("i", { className: "fas fa-chart-line" }))),
-                        React.createElement("div", { className: "exec-progress", "aria-hidden": "true" },
+                        React.createElement("div", { className: "exec-progress" },
                             React.createElement("div", { className: "exec-progress-fill", style: { width: `${executiveSummary.progressAvg}%` } }))),
+
+                    // 3. TAREAS
                     React.createElement("div", { className: "exec-card" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
-                                React.createElement("div", { className: "exec-label" }, "Tareas"),
+                                React.createElement("div", { className: "exec-label" }, "Carga de trabajo"),
                                 React.createElement("div", { className: "exec-value" }, executiveSummary.tasksTotal),
-                                React.createElement("div", { className: "exec-note" },
-                                    "Abiertas (Pend. + En curso): ",
-                                    React.createElement("span", { className: "font-semibold" }, executiveSummary.tasksOpen))),
-                            React.createElement("div", { className: "exec-card-icon", "aria-hidden": "true" },
+                                React.createElement("div", { className: "exec-note" }, "Abiertas: ", executiveSummary.tasksOpen)),
+                            React.createElement("div", { className: "exec-card-icon" },
                                 React.createElement("i", { className: "fas fa-list-check" })))),
-                    React.createElement("div", { className: "exec-card" },
+
+                    // 4. BLOQUEOS (Icono de Escudo Glass)
+                    React.createElement("div", { className: "exec-card", onClick: showBlockDetails, title: "Ver detalles de alertas" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
-                                React.createElement("div", { className: "exec-label" }, "Bloqueos (dependencias)"),
-                                React.createElement("div", { className: "exec-value" }, executiveSummary.blockedTasks),
-                                React.createElement("div", { className: "exec-note" }, "Tareas bloqueadas por dependencias (hasta completar la previa)."),
-                                React.createElement("div", { className: "exec-note" }, "Impacto: ", executiveSummary.blockedProjects, " proyecto(s)."),
-                                (executiveSummary.redProjects > 0) && React.createElement("div", { className: "exec-note" }, "Alertas (rojo): ", executiveSummary.redProjects, " proyecto(s) con riesgo (vencidas / muchas pendientes).")),
-                            React.createElement("div", { className: "exec-card-icon exec-card-icon-warn", role: "button", tabIndex: 0, title: "Ver detalle", onClick: showBlockDetails, onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showBlockDetails(); } }, "aria-label": "Ver detalle de bloqueos y alertas" },
-                                React.createElement("i", { className: "fas fa-triangle-exclamation" })))))),
+                                React.createElement("div", { className: "exec-label" }, "Bloqueos y Alertas"),
+                                React.createElement("div", { className: "exec-value", style: { color: executiveSummary.blockedTasks > 0 ? '#ef4444' : 'inherit' } }, executiveSummary.blockedTasks),
+                                React.createElement("div", { className: "exec-note" }, executiveSummary.blockedTasks > 0 ? "Requiere atención" : "Sin incidencias")),
+                            React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" },
+                                React.createElement("i", { className: "fas fa-shield-halved" }))),
+                        React.createElement("div", { className: "mt-4 flex items-center gap-2" },
+                            React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}` }),
+                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-tight" }, executiveSummary.blockedProjects, " Proyectos afectados")))
+                ) // <--- Cierra exec-grid
+            ), // <--- ESTE ES EL QUE FALTABA (Cierra la sección entera del Resumen Ejecutivo)
+
+            // A PARTIR DE AQUÍ LAS SECCIONES DE PROYECTOS QUEDAN FUERA
             React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
                 React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }),
@@ -619,6 +621,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en curso.")),
+
             React.createElement("div", { className: "section-tapiz section--pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
                 React.createElement("h2", { className: "text-lg font-bold text-slate-800 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-slate-500 w-2 h-2 rounded-full" }),
@@ -633,6 +636,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en pausa.")),
+
             React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
                 React.createElement("h2", { className: "text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-violet-500 w-2 h-2 rounded-full" }),
@@ -647,6 +651,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en revisi\u00F3n.")),
+
             completedProjects.length > 0 && (React.createElement("div", { className: "section-tapiz section--completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
                 React.createElement("h2", { className: "text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 opacity-75" },
                     React.createElement("span", { className: "bg-green-500 w-2 h-2 rounded-full" }),
