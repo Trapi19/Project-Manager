@@ -34,7 +34,12 @@
     useCognitoLogout: true,
 
     // Your API base URL (recommended: API Gateway URL). Example: "https://abc123.execute-api.eu-west-1.amazonaws.com"
-    apiBaseUrl: "https://2qucj5d6k3qspjcc76f4n45zoa0rphnp.lambda-url.eu-west-1.on.aws/"
+    apiBaseUrl: "https://2qucj5d6k3qspjcc76f4n45zoa0rphnp.lambda-url.eu-west-1.on.aws/",
+
+    // If true, add Authorization: Bearer <token> header to API calls.
+    // NOTE: For Lambda Function URLs this may require allowing the "Authorization" header in CORS.
+    // Recommended: keep false until you move to API Gateway + JWT authorizer.
+    sendAuthHeaderToApi: false
   };
 
   // =========================
@@ -211,7 +216,15 @@
     const expectedState = sessionStorage.getItem('unitecnic_pkce_state');
     const verifier = sessionStorage.getItem('unitecnic_pkce_verifier');
 
-    if (!expectedState || expectedState !== state) throw new Error('Estado OAuth inválido (state mismatch).');
+    if (!expectedState || expectedState !== state) {
+      // This usually happens if the login was started in a different tab/window (sessionStorage differs),
+      // or the flow was restarted before the callback returned.
+      sessionStorage.removeItem('unitecnic_pkce_state');
+      sessionStorage.removeItem('unitecnic_pkce_verifier');
+      // Restart login cleanly
+      await startLogin();
+      return;
+    }
     if (!verifier) throw new Error('Falta code_verifier (PKCE).');
 
     const body = new URLSearchParams({
@@ -291,17 +304,91 @@
   // =========================
   // Fetch patch: add Authorization header to API calls
   // =========================
-  function patchFetch(session) {
+  
+  function patchFetch() {
     if (!window.fetch || window.__unitecnicFetchPatched) return;
+
     const orig = window.fetch.bind(window);
-    window.fetch = function (input, init) {
+
+    // By default, do NOT add Authorization header to Lambda Function URLs because it can break CORS
+    // unless you explicitly allow the "Authorization" header in the Function URL CORS settings.
+    const defaultSendAuth = CONFIG.apiBaseUrl ? !String(CONFIG.apiBaseUrl).includes('.lambda-url.') : true;
+    const sendAuthHeaderToApi = (typeof CONFIG.sendAuthHeaderToApi === 'boolean')
+      ? CONFIG.sendAuthHeaderToApi
+      : defaultSendAuth;
+
+    async function refreshIfNeeded() {
+      const session = getSession();
+      if (!session) return null;
+
+      // Refresh ~30s before expiry
+      const now = Math.floor(Date.now() / 1000);
+      const exp = Number(session.expires_at || 0);
+      if (!session.refresh_token || exp > (now + 30)) return session;
+
       try {
-        const url = (typeof input === 'string') ? input : (input && input.url) ? input.url : '';
-        let rewrittenUrl = url;
-        // Optional rewrite: if your app still calls the old Lambda Function URL, redirect calls to API Gateway
-        if (CONFIG.apiBaseUrl && CONFIG.apiBaseUrl !== 'RELLENA_ESTO' && url && url.includes('.lambda-url.') && !CONFIG.apiBaseUrl.includes('.lambda-url.')) {
-          rewrittenUrl = CONFIG.apiBaseUrl + url.substring(url.indexOf('.on.aws') + '.on.aws'.length);
+        const base = buildCognitoBase();
+        const body = new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: CONFIG.cognitoClientId,
+          refresh_token: session.refresh_token
+        });
+
+        const res = await orig(`${base}/oauth2/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body
+        });
+
+        if (!res.ok) throw new Error(`Refresh token failed (${res.status})`);
+        const tok = await res.json();
+
+        const updated = {
+          ...session,
+          access_token: tok.access_token || session.access_token,
+          id_token: tok.id_token || session.id_token,
+          // Cognito may or may not return refresh_token on refresh; keep existing
+          refresh_token: tok.refresh_token || session.refresh_token,
+          expires_at: now + Number(tok.expires_in || 3600),
+          token_type: tok.token_type || session.token_type || 'Bearer',
+          obtained_at: now
+        };
+
+        setSession(updated);
+        return updated;
+      } catch (e) {
+        // If refresh fails, clear local session; next navigation will force login
+        clearSession();
+        return null;
+      }
+    }
+
+    window.fetch = async function (input, init) {
+      const url = (typeof input === 'string')
+        ? input
+        : (input && input.url) ? input.url : '';
+
+      // Only decorate calls to your configured API base URL
+      const isApi = CONFIG.apiBaseUrl && url && String(url).startsWith(String(CONFIG.apiBaseUrl));
+
+      if (isApi && sendAuthHeaderToApi) {
+        const session = await refreshIfNeeded();
+        if (session && session.access_token) {
+          init = init || {};
+          init.headers = init.headers || {};
+          if (init.headers instanceof Headers) {
+            init.headers.set('Authorization', `Bearer ${session.access_token}`);
+          } else {
+            init.headers['Authorization'] = `Bearer ${session.access_token}`;
+          }
         }
+      }
+
+      return orig(input, init);
+    };
+
+    window.__unitecnicFetchPatched = true;
+  }
         const isApi = CONFIG.apiBaseUrl && rewrittenUrl && rewrittenUrl.startsWith(CONFIG.apiBaseUrl);
         if (isApi && session && session.access_token) {
           init = init || {};
@@ -357,7 +444,7 @@
         url.searchParams.delete('state');
         url.searchParams.delete('session_state');
         history.replaceState({}, document.title, url.toString());
-        patchFetch(session);
+        patchFetch();
         addAuthBadge(session);
         // continue load normally
         return;
@@ -376,7 +463,7 @@
       return;
     }
 
-    patchFetch(session);
+    patchFetch();
     addAuthBadge(session);
   })();
 })();
