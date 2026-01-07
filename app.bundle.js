@@ -1477,11 +1477,19 @@ const MainApp = () => {
 // Carga la lista de proyectos. Intenta primero desde AWS; si falla usa la cache local.
     const loadProjectsLocal = async () => {
         try {
-            // GET a la función Lambda
-            const res = await fetch(AWS_API_URL, { method: 'GET' });
-            if (!res.ok) throw new Error(`GET ${res.status}`);
+            // Añadimos un "timestamp" para que AWS no nos devuelva datos cacheados
+            const urlConCacheBuster = AWS_API_URL + '?t=' + Date.now();
+            const res = await fetch(urlConCacheBuster, { 
+                method: 'GET',
+                headers: { 
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+            
+            if (!res.ok) throw new Error(`Error en la nube: ${res.status}`);
             const data = await res.json();
-            // La API puede devolver un array directo o un objeto con 'projects' o 'Items'
+            
             const list = Array.isArray(data)
                 ? data
                 : Array.isArray(data.projects)
@@ -1489,19 +1497,12 @@ const MainApp = () => {
                     : Array.isArray(data.Items)
                         ? data.Items
                         : [];
-            // Normalizar estados antiguos
-            try {
-                list.forEach(p => (p?.tasks || []).forEach(t => {
-                    const e = t?.estado;
-                    if (e === 'Próximo' || e === 'Proximo') t.estado = 'Pendiente';
-                }));
-            } catch (_) {}
-            // Guardar en cache local
+            
+            // Guardar copia de seguridad en el navegador
             localStorage.setItem('unitecnic_projects', JSON.stringify(list || []));
             return list || [];
         } catch (err) {
-            console.error('Error al cargar proyectos desde AWS', err);
-            // Fallback: cargar desde localStorage
+            console.error('Error al cargar desde AWS, usando copia local:', err);
             const saved = localStorage.getItem('unitecnic_projects');
             const list = saved ? JSON.parse(saved) : [];
             return Array.isArray(list) ? list : [];
@@ -1603,36 +1604,51 @@ const MainApp = () => {
             setView('list');
         }
     };
-    useEffect(() => {
-        // Carga inicial asíncrona: lee de AWS y luego de cache.
-        // Si hubo cambios "pendientes" (guardados sin conexión), priorizamos esa lista en la UI y la reintentamos enviar.
-        (async () => {
+useEffect(() => {
+        const fetchAndSync = async () => {
+            // 1. Intentamos traer lo último de la nube
+            const cloudList = await loadProjectsLocal();
+            
+            // 2. Comprobamos si tenemos algo pendiente de subir nosotros
             let pendingList = null;
             try {
                 const pendingStr = localStorage.getItem(PENDING_KEY);
                 if (pendingStr) {
                     const parsed = JSON.parse(pendingStr);
-                    if (Array.isArray(parsed))
-                        pendingList = parsed;
+                    if (Array.isArray(parsed)) pendingList = parsed;
                 }
-            }
-            catch (_) { }
-            const list = await loadProjectsLocal();
-            const effectiveList = pendingList || list;
+            } catch (_) { }
+
+            // Priorizamos la nube, a menos que estemos offline con cambios sin subir
+            const effectiveList = (pendingList && !navigator.onLine) ? pendingList : cloudList;
+            
             setProjects(effectiveList);
-            if (!window.location.hash)
-                setRoute('#/list');
+            
+            if (!window.location.hash) setRoute('#/list');
             applyRouteFromHash(effectiveList);
-            // Reintento de sincronización si procede
+
+            // Si hay internet, intentamos subir lo que tengamos pendiente
             if (typeof navigator !== 'undefined' && navigator.onLine) {
                 await flushPendingToAWS();
+            } else {
+                if (window.gpSetSyncStatus) window.gpSetSyncStatus('offline');
             }
-            else {
-                if (window.gpSetSyncStatus)
-                    window.gpSetSyncStatus('offline');
+        };
+
+        // Ejecutar al abrir la app
+        fetchAndSync();
+
+        // REFRESCAR AUTOMÁTICAMENTE CADA 30 SEGUNDOS
+        const timer = setInterval(() => {
+            // Solo refresca si estás en el listado para no perder cambios mientras escribes
+            if (view === 'list') { 
+                fetchAndSync();
             }
-        })();
-    }, []);
+        }, 30000);
+
+        return () => clearInterval(timer);
+    }, [view]);
+    
     useEffect(() => {
         const handler = () => applyRouteFromHash(projectsRef.current || []);
         window.addEventListener('hashchange', handler);
