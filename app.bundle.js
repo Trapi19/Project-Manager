@@ -576,7 +576,8 @@ React.createElement("div", { className: "exec-grid" },
                             React.createElement("div", null,
                                 React.createElement("div", { className: "exec-label" }, "Proyectos activos"),
                                 React.createElement("div", { className: "exec-value" }, executiveSummary.projectsActive)),
-                            React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-layer-group" }))),
+                            React.createElement("div", { className: "exec-card-icon" },
+                                React.createElement("i", { className: "fas fa-layer-group" }))),
                         React.createElement("div", { className: "exec-chips" },
                             React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.3)] text-blue-700 bg-blue-50/50 text-[10px] font-bold" }, "Eje: ", activeProjects.length),
                             React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.3)] text-red-700 bg-red-50/50 text-[10px] font-bold" }, "Pausa: ", pausedProjects.length))),
@@ -586,8 +587,10 @@ React.createElement("div", { className: "exec-grid" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
                                 React.createElement("div", { className: "exec-label" }, "Avance medio"),
-                                React.createElement("div", { className: "exec-value" }, executiveSummary.progressAvg, "%")),
-                            React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-chart-line" }))),
+                                React.createElement("div", { className: "exec-value" }, executiveSummary.progressAvg, "%"),
+                                React.createElement("div", { className: "exec-note" }, "Ponderado por tareas")),
+                            React.createElement("div", { className: "exec-card-icon" },
+                                React.createElement("i", { className: "fas fa-chart-line" }))),
                         React.createElement("div", { className: "exec-progress" },
                             React.createElement("div", { className: "exec-progress-fill", style: { width: `${executiveSummary.progressAvg}%` } }))),
 
@@ -598,7 +601,8 @@ React.createElement("div", { className: "exec-grid" },
                                 React.createElement("div", { className: "exec-label" }, "Carga de trabajo"),
                                 React.createElement("div", { className: "exec-value" }, executiveSummary.tasksTotal),
                                 React.createElement("div", { className: "exec-note" }, "Abiertas: ", executiveSummary.tasksOpen)),
-                            React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-list-check" })))),
+                            React.createElement("div", { className: "exec-card-icon" },
+                                React.createElement("i", { className: "fas fa-list-check" })))),
 
                     // 4. BLOQUEOS
                     React.createElement("div", { className: "exec-card", onClick: showBlockDetails, title: "Ver detalles de alertas" },
@@ -607,12 +611,13 @@ React.createElement("div", { className: "exec-grid" },
                                 React.createElement("div", { className: "exec-label" }, "Bloqueos y Alertas"),
                                 React.createElement("div", { className: "exec-value", style: { color: executiveSummary.blockedTasks > 0 ? '#ef4444' : 'inherit' } }, executiveSummary.blockedTasks),
                                 React.createElement("div", { className: "exec-note" }, executiveSummary.blockedTasks > 0 ? "Requiere atención" : "Sin incidencias")),
-                            React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" }, React.createElement("i", { className: "fas fa-shield-halved" }))),
+                            React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" },
+                                React.createElement("i", { className: "fas fa-shield-halved" }))),
                         React.createElement("div", { className: "mt-4 flex items-center gap-2" },
                             React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}` }),
                             React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-tight" }, executiveSummary.blockedProjects, " Proyectos afectados"))),
 
-                    // 5. CARGA POR RESPONSABLE (DOBLE)
+                    // 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
                     React.createElement("div", { className: "exec-card md:col-span-2" },
                         React.createElement("div", { className: "exec-card-top mb-4" },
                             React.createElement("div", { className: "exec-label" }, "Carga por Responsable"),
@@ -628,7 +633,7 @@ React.createElement("div", { className: "exec-grid" },
                                 )
                             )))),
 
-                    // 6. PRÓXIMOS VENCIMIENTOS (DOBLE)
+                    // 6. PRÓXIMOS VENCIMIENTOS (DOBLE - CIAN)
                     React.createElement("div", { className: "exec-card md:col-span-2" },
                         React.createElement("div", { className: "exec-card-top mb-4" },
                             React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"),
@@ -639,7 +644,7 @@ React.createElement("div", { className: "exec-grid" },
                                     React.createElement("div", { className: "min-w-0 flex-1" },
                                         React.createElement("div", { className: "text-[11px] font-bold truncate" }, item.tarea),
                                         React.createElement("div", { className: "text-[9px] text-gray-500 truncate" }, item.proyecto)),
-                                    React.createElement("div", { className: "ml-4 text-[10px] font-bold text-emerald-600" }, window.formatFechaES(item.fecha)))
+                                    React.createElement("div", { className: "ml-4 text-[10px] font-bold text-cyan-600" }, window.formatFechaES(item.fecha)))
                             )) : React.createElement("p", { className: "text-[10px] italic text-gray-400" }, "Sin vencimientos cercanos")))
                 )
             ), // <--- ESTE ES EL QUE FALTABA (Cierra la sección entera del Resumen Ejecutivo)

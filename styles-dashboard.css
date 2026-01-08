@@ -513,33 +513,44 @@
 /* =========================================
    ESTILOS PARA LAS TARJETAS DOBLES (5 y 6)
    ========================================= */
+/* MEJORA DISPOSICIÓN: Gap más amplio para respiración visual */
+.exec-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px; /* Aumentado de 14px */
+}
 
-/* --- Tarjeta 5: Carga de Trabajo (Índigo/Violeta) --- */
+/* --- TARJETA 5: ÍNDIGO --- */
 .exec-grid .exec-card:nth-child(5) {
     border-left: 4px solid #6366f1 !important;
     background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent) !important;
-    transition: all 0.3s ease;
+}
+.exec-card:nth-child(5):hover {
+    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15) !important;
+    transform: translateY(-5px);
 }
 
-/* --- Tarjeta 6: Próximos Vencimientos (NUEVO COLOR: Cian) --- */
+/* --- TARJETA 6: CIAN --- */
 .exec-grid .exec-card:nth-child(6) {
-    border-left: 4px solid #06b6d4 !important; /* Color Cian vibrante */
+    border-left: 4px solid #06b6d4 !important;
     background: linear-gradient(to right, rgba(6, 182, 212, 0.05), transparent) !important;
-    transition: all 0.3s ease;
 }
-/* Truco: forzar que el texto de la fecha sea cian en lugar de esmeralda */
-.exec-grid .exec-card:nth-child(6) .text-emerald-600 {
-    color: #0891b2 !important; /* Cian un poco más oscuro para que se lea bien */
+.exec-card:nth-child(6):hover {
+    box-shadow: 0 20px 40px rgba(6, 182, 212, 0.15) !important;
+    transform: translateY(-5px);
 }
+.exec-card:nth-child(6) .text-cyan-600 { color: #0891b2 !important; }
 
-
-/* --- Reglas de Layout (Ancho doble en pantallas grandes) --- */
+/* REGLA DE DISPOSICIÓN: Ancho doble para las últimas dos */
 @media (min-width: 1024px) {
     .exec-grid .exec-card:nth-child(5),
     .exec-grid .exec-card:nth-child(6) {
         grid-column: span 2 / span 2;
     }
 }
+
 
 
 /* --- EFECTOS HOVER (El brillo al pasar el ratón) --- */
