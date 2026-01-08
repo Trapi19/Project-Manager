@@ -14,20 +14,8 @@
   background: rgba(15, 23, 42, 0.55) !important;
 }
 
-.exec-summary {
-  position: relative; overflow: hidden; border-radius: 24px;
-  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 18px 60px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-
-.exec-summary::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(1200px 320px at 10% 0%, rgba(56,189,248,0.10), transparent 60%),
-              radial-gradient(900px 280px at 80% 10%, rgba(99,102,241,0.10), transparent 55%);
-}
-
 /* ============================================================
-   2. TARJETAS: ESTILO CLÁSICO + ILUMINACIÓN MODERNA
+   2. TARJETAS EJECUTIVAS (ICONOS ARRIBA A LA DERECHA)
    ============================================================ */
 .exec-grid {
     position: relative; z-index: 1; display: grid;
@@ -42,60 +30,94 @@
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
 }
 
-/* --- COLORES DE BORDES Y NÚMEROS (RECUPERADOS EXACTAMENTE) --- */
-/* 1. Proyectos (Azul) */
+/* Contenedor para empujar el icono a la derecha */
+.exec-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.exec-card-icon {
+    width: 36px; height: 36px; border-radius: 12px;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* --- COLORES DE NÚMEROS Y BORDES IZQUIERDOS --- */
 .exec-grid .exec-card:nth-child(1) { border-left: 4px solid #3b82f6 !important; }
 .exec-grid .exec-card:nth-child(1) .exec-value { color: #2563eb; }
 
-/* 2. Avance (Verde) */
 .exec-grid .exec-card:nth-child(2) { border-left: 4px solid #10b981 !important; }
 .exec-grid .exec-card:nth-child(2) .exec-value { color: #059669; }
 
-/* 3. Tareas (Naranja) */
 .exec-grid .exec-card:nth-child(3) { border-left: 4px solid #f59e0b !important; }
 .exec-grid .exec-card:nth-child(3) .exec-value { color: #d97706; }
 
-/* 4. Bloqueos (Rojo) */
 .exec-grid .exec-card:nth-child(4) { border-left: 4px solid #ef4444 !important; }
 .exec-grid .exec-card:nth-child(4) .exec-value { color: #dc2626; }
 
-/* 5. Carga Responsable (Índigo) */
-.exec-grid .exec-card:nth-child(5) { 
-    border-left: 4px solid #6366f1 !important; 
-    background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent) !important;
-}
+.exec-grid .exec-card:nth-child(5) { border-left: 4px solid #6366f1 !important; }
 .exec-grid .exec-card:nth-child(5) .exec-value { color: #4f46e5; }
 
-/* 6. Vencimientos (Cian) */
-.exec-grid .exec-card:nth-child(6) { 
-    border-left: 4px solid #06b6d4 !important;
-    background: linear-gradient(to right, rgba(6, 182, 212, 0.05), transparent) !important;
-}
+.exec-grid .exec-card:nth-child(6) { border-left: 4px solid #06b6d4 !important; }
 .exec-grid .exec-card:nth-child(6) .exec-value { color: #0891b2; }
 
-/* --- ICONO ALERTA PROFESIONAL (ESCUDO ROJO) --- */
+/* ============================================================
+   3. BARRA DE PROGRESO ANIMADA (BRILLO MOVIL)
+   ============================================================ */
+.exec-progress {
+  height: 8px; border-radius: 999px; background: rgba(148,163,184,0.1);
+  overflow: hidden; margin-top: 12px;
+}
+
+.exec-progress-fill {
+  position: relative; overflow: hidden; height: 100% !important;
+  background: linear-gradient(90deg, #38bdf8, #818cf8) !important;
+}
+
+/* El efecto de brillo que pedías */
+.exec-progress-fill::after {
+  content: ""; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  animation: progressSheen 2.5s infinite;
+}
+
+@keyframes progressSheen {
+  0% { left: -100%; }
+  100% { left: 150%; }
+}
+
+/* ============================================================
+   4. ESTADOS Y ALERTAS (CORREGIDO)
+   ============================================================ */
+/* Espaciado entre Eje:1 y Pausa:0 */
+.exec-chips {
+    display: flex; gap: 8px; margin-top: 10px;
+}
+
+/* Icono Alerta Glass (Sin la barra roja fea) */
 .exec-card-icon-warn {
-    background: rgba(239, 68, 68, 0.08) !important;
+    background: rgba(239, 68, 68, 0.1) !important;
     border: 1px solid rgba(239, 68, 68, 0.2) !important;
     color: #ef4444 !important;
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.4), 0 4px 12px rgba(239, 68, 68, 0.1) !important;
     backdrop-filter: blur(4px);
 }
 
 /* ============================================================
-   3. EFECTO HOVER: ILUMINACIÓN TOTAL DEL BORDE
+   5. HOVER E ILUMINACIÓN DE BORDES
    ============================================================ */
 .exec-card:hover { transform: translateY(-6px); }
-
 .exec-grid .exec-card:nth-child(1):hover { border-color: #3b82f6 !important; box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2) !important; }
 .exec-grid .exec-card:nth-child(2):hover { border-color: #10b981 !important; box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2) !important; }
 .exec-grid .exec-card:nth-child(3):hover { border-color: #f59e0b !important; box-shadow: 0 20px 40px rgba(245, 158, 11, 0.2) !important; }
-.exec-grid .exec-card:nth-child(4):hover { border-color: #ef4444 !important; box-shadow: 0 20px 40px rgba(239, 68, 68, 0.25) !important; }
+.exec-grid .exec-card:nth-child(4):hover { border-color: #ef4444 !important; box-shadow: 0 20px 40px rgba(239, 68, 68, 0.2) !important; }
 .exec-grid .exec-card:nth-child(5):hover { border-color: #6366f1 !important; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2) !important; }
 .exec-grid .exec-card:nth-child(6):hover { border-color: #06b6d4 !important; box-shadow: 0 20px 40px rgba(6, 182, 212, 0.2) !important; }
 
 /* ============================================================
-   4. RESPONSIVIDAD (MÓVIL / DESKTOP)
+   6. RESPONSIVIDAD FINAL
    ============================================================ */
 @media (min-width: 640px) { .exec-grid { grid-template-columns: repeat(2, 1fr); } }
 
@@ -106,23 +128,9 @@
 
 @media (max-width: 640px) {
     .exec-value { font-size: 32px !important; }
-    .exec-summary { padding: 16px !important; }
 }
 
-/* --- OTROS AJUSTES (PROGRESO Y BUSCADOR) --- */
-.exec-value { font-size: 44px; font-weight: 780; letter-spacing: -0.04em; line-height: 1; }
-
-.exec-progress-fill {
-  position: relative; overflow: hidden; height: 100% !important; border-radius: 999px !important;
-  background: linear-gradient(90deg, #38bdf8, #818cf8) !important;
-}
-.exec-progress-fill::after {
-  content: ""; position: absolute; top: 0; left: -60%; width: 60%; height: 100%;
-  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.4) 50%, rgba(255,255,255,0));
-  animation: progressSheen 2.4s linear infinite;
-}
-@keyframes progressSheen { 0% { left: -60%; } 100% { left: 120%; } }
-
+/* Buscador */
 .apple-search-input {
     height: 42px !important; width: 100% !important; max-width: 260px !important;
     padding: 0 16px 0 52px !important; font-size: 14px !important; border-radius: 12px !important;
