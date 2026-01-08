@@ -611,3 +611,15 @@
         grid-column: span 2 / span 2 !important;
     }
 }
+/* Ajuste para etiquetas para que no se vean pegadas */
+.apple-chip {
+    padding: 4px 10px !important;
+    line-height: 1.2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+}
+
+/* Espaciado extra en la sección de metadatos del dashboard */
+.project-card .mt-3 {
+    margin-top: 12px !important;
+}

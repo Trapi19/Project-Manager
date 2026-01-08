@@ -154,26 +154,31 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
                 React.createElement("span", { className: "apple-chip apple-chip--muted apple-chip--small" },
                     React.createElement("i", { className: "fas fa-building text-[10px]" }),
                     p.meta.cliente))),
-            (p.meta.responsableProyecto || p.meta.pep) && (React.createElement("div", { className: "mt-2 flex flex-wrap gap-2" },
+            // SECCIÓN DE METADATOS (Responsable y PEP con etiquetas claras)
+            (p.meta.responsableProyecto || p.meta.pep) && (React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
                 p.meta.responsableProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" },
                     React.createElement("i", { className: "fas fa-user-gear text-[10px]" }),
+                    React.createElement("span", { className: "font-semibold mr-1" }, "Resp:"),
                     p.meta.responsableProyecto)),
                 p.meta.pep && (React.createElement("span", { className: "apple-chip apple-chip--muted" },
                     React.createElement("i", { className: "fas fa-hashtag text-[10px]" }),
+                    React.createElement("span", { className: "font-semibold mr-1" }, "PEP:"),
                     p.meta.pep)))),
-                    // Dentro de ProjectCard, junto a los otros chips
-    p.meta.sharepointUrl && (React.createElement("a", { 
-        href: p.meta.sharepointUrl, 
-        target: "_blank", 
-        rel: "noopener noreferrer",
-        onClick: (e) => e.stopPropagation(), // Para que no abra el editor al hacer clic
-        className: "apple-chip apple-chip--muted hover:bg-blue-50 hover:text-blue-600 transition-colors border-blue-100",
-        title: "Abrir carpeta en SharePoint"
-    },
-        React.createElement("i", { className: "fas fa-share-nodes text-[10px]" }),
-        "SharePoint"
-    )),
-            React.createElement("div", { className: "mt-4 space-y-2" },
+
+            // SECCIÓN DE DOCUMENTACIÓN (Botón independiente para evitar amontonamiento)
+            p.meta.sharepointUrl && (React.createElement("div", { className: "mt-3" },
+                React.createElement("a", { 
+                    href: p.meta.sharepointUrl, 
+                    target: "_blank", 
+                    rel: "noopener noreferrer",
+                    onClick: (e) => e.stopPropagation(), 
+                    className: "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 text-[11px] font-bold hover:bg-blue-100 transition-colors"
+                },
+                    React.createElement("i", { className: "fas fa-folder-open" }),
+                    "Documentación SharePoint"
+                ))),
+
+            React.createElement("div", { className: "mt-5 space-y-2" },
                 React.createElement("div", { className: "flex items-center justify-between text-xs text-gray-500" },
                     React.createElement("span", { className: "font-semibold text-[color:var(--brand-dark)]" },
                         stats.progress,
