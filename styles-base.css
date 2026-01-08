@@ -83,6 +83,11 @@ body {
 .theme-dark .text-gray-800,
 .theme-dark .text-gray-700 { color: var(--text) !important; }
 
+/* Nuevo: Forzar el título de Pausa a rojo en modo oscuro */
+.theme-dark .text-slate-800 { 
+    color: #ef4444 !important; 
+}
+
 .theme-dark .text-gray-600,
 .theme-dark .text-gray-500,
 .theme-dark .text-gray-400 { color: var(--muted) !important; }
