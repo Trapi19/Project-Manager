@@ -227,25 +227,30 @@
 
 /* === BUSCADOR CORREGIDO: SIN SOLAPAMIENTO Y CON ANIMACIÓN === */
 
+/* BUSCADOR RESPONSIVE */
 .apple-search-input {
     height: 42px !important;
-    width: 260px !important;
-    /* Aumentamos a 52px para que la lupa no pise el texto "Buscar..." */
+    width: 100% !important; /* Ocupa todo el ancho disponible en móvil */
+    max-width: 260px !important; /* Pero no más de esto en PC */
     padding: 0 16px 0 52px !important; 
     font-size: 14px !important;
     border-radius: 12px !important;
     background-color: rgba(255, 255, 255, 0.7) !important;
     border: 1px solid rgba(0, 0, 0, 0.1) !important;
     backdrop-filter: blur(10px);
-    /* Esta línea es la que hace que se mueva suavemente */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     outline: none !important;
-
-    /* LA LUPA: Posición fija sin repetición */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'%3E%3C/path%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-position: 18px center !important;
     background-size: 20px !important;
+}
+
+/* En móvil, al pinchar no se hace más grande para no romper el layout */
+@media (min-width: 640px) {
+    .apple-search-input:focus {
+        max-width: 320px !important;
+    }
 }
 
 /* RECUPERADO: Efecto de hacerse más grande al pinchar */
@@ -513,13 +518,29 @@
 /* =========================================
    ESTILOS PARA LAS TARJETAS DOBLES (5 y 6)
    ========================================= */
-/* MEJORA DISPOSICIÓN: Gap más amplio para respiración visual */
+/* CUADRÍCULA INTELIGENTE */
 .exec-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 20px; /* Aumentado de 14px */
+    position: relative;
+    z-index: 1;
+    display: grid;
+    /* Por defecto: 1 columna (Móvil) */
+    grid-template-columns: 1fr; 
+    gap: 16px;
+}
+
+/* En tablets: 2 columnas */
+@media (min-width: 640px) {
+    .exec-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* En pantallas grandes: 4 columnas */
+@media (min-width: 1024px) {
+    .exec-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+    }
 }
 
 /* --- TARJETA 5: ÍNDIGO --- */
@@ -565,4 +586,28 @@
 .exec-card:nth-child(6):hover {
     transform: translateY(-5px);
     box-shadow: 0 20px 40px rgba(6, 182, 212, 0.15) !important;
+}
+/* AJUSTES DE DETALLE PARA MÓVIL */
+@media (max-width: 640px) {
+    .exec-value {
+        font-size: 32px !important; /* Números un poco más pequeños para que no se corten */
+    }
+    
+    .exec-summary {
+        padding: 16px !important; /* Menos margen interno para ganar espacio */
+    }
+
+    /* Forzamos que las tarjetas 5 y 6 sean normales en móvil */
+    .exec-grid .exec-card:nth-child(5),
+    .exec-grid .exec-card:nth-child(6) {
+        grid-column: span 1 !important;
+    }
+}
+
+/* Mantener el ancho doble SOLO en pantallas grandes */
+@media (min-width: 1024px) {
+    .exec-grid .exec-card:nth-child(5),
+    .exec-grid .exec-card:nth-child(6) {
+        grid-column: span 2 / span 2 !important;
+    }
 }
