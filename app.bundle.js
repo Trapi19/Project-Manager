@@ -1567,7 +1567,44 @@ const makeDraftProject = () => ({
         return () => window.removeEventListener('online', onOnline);
     }, []);
 
-    const exportBackupJSON = () => { /* ... código de backup ... */ };
+    const exportBackupJSON = () => {
+    try {
+      // 1. Recogemos los proyectos actuales y el mapa de logos de clientes
+      const projectsToExport = projectsRef.current || [];
+      const logosToExport = JSON.parse(localStorage.getItem('clientLogoMap') || '{}');
+
+      // 2. Creamos el objeto de backup con metadatos
+      const backupData = {
+        meta: {
+          exportedAt: new Date().toISOString(),
+          app: "Unitecnic Project Manager",
+          version: "2.0"
+        },
+        projects: projectsToExport,
+        clientLogoMap: logosToExport
+      };
+
+      // 3. Generamos el archivo JSON
+      const dataStr = JSON.stringify(backupData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      // 4. Creamos un link invisible y disparamos la descarga
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `backup_proyectos_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // 5. Mostramos el aviso de éxito (el estado ya existe en tu código)
+      setBackupToast(true);
+      setTimeout(() => setBackupToast(false), 3000);
+    } catch (err) {
+      console.error("Error al generar el backup:", err);
+      alert("No se pudo generar el archivo de copia de seguridad.");
+    }
+  };
     const openImportPicker = () => { if (importFileInputRef.current) importFileInputRef.current.click(); };
     const normalizeImportPayload = (data) => { /* ... */ return null; };
     const handleImportFileSelected = (e) => { /* ... */ };
