@@ -749,3 +749,29 @@ table td {
 .task-drag-handle:active {
     cursor: grabbing !important;
 }
+
+/* styles-base.css */
+
+/* --- ATENUAR BOTÓN SHAREPOINT EN MODO OSCURO --- */
+.theme-dark .bg-blue-50 {
+    background-color: rgba(255, 255, 255, 0.05) !important; /* Fondo casi transparente */
+    border-color: rgba(255, 255, 255, 0.1) !important;      /* Borde muy suave */
+    color: var(--muted) !important;                        /* Texto gris atenuado */
+}
+
+/* Ajuste para el icono del sobre/carpeta */
+.theme-dark .bg-blue-50 i {
+    color: var(--muted) !important;
+    opacity: 0.7;
+}
+
+/* Efecto al pasar el ratón para que se ilumine ligeramente */
+.theme-dark .bg-blue-50:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--text) !important;
+}
+
+.theme-dark .bg-blue-50:hover i {
+    color: var(--text) !important;
+    opacity: 1;
+}
