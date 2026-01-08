@@ -1567,48 +1567,92 @@ const makeDraftProject = () => ({
         return () => window.removeEventListener('online', onOnline);
     }, []);
 
+// --- LÓGICA DE BACKUP ---
     const exportBackupJSON = () => {
-    try {
-      // 1. Recogemos los proyectos actuales y el mapa de logos de clientes
-      const projectsToExport = projectsRef.current || [];
-      const logosToExport = JSON.parse(localStorage.getItem('clientLogoMap') || '{}');
+        try {
+            const projectsToExport = projectsRef.current || [];
+            const logosToExport = JSON.parse(localStorage.getItem('clientLogoMap') || '{}');
 
-      // 2. Creamos el objeto de backup con metadatos
-      const backupData = {
-        meta: {
-          exportedAt: new Date().toISOString(),
-          app: "Unitecnic Project Manager",
-          version: "2.0"
-        },
-        projects: projectsToExport,
-        clientLogoMap: logosToExport
-      };
+            const backupData = {
+                meta: {
+                    exportedAt: new Date().toISOString(),
+                    app: "Unitecnic Project Manager",
+                    version: "2.0"
+                },
+                projects: projectsToExport,
+                clientLogoMap: logosToExport
+            };
 
-      // 3. Generamos el archivo JSON
-      const dataStr = JSON.stringify(backupData, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
+            const dataStr = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
 
-      // 4. Creamos un link invisible y disparamos la descarga
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `backup_proyectos_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `backup_proyectos_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
-      // 5. Mostramos el aviso de éxito (el estado ya existe en tu código)
-      setBackupToast(true);
-      setTimeout(() => setBackupToast(false), 3000);
-    } catch (err) {
-      console.error("Error al generar el backup:", err);
-      alert("No se pudo generar el archivo de copia de seguridad.");
-    }
-  };
+            setBackupToast(true);
+            setTimeout(() => setBackupToast(false), 3000);
+        } catch (err) {
+            console.error("Error al generar el backup:", err);
+            alert("No se pudo generar el archivo de copia de seguridad.");
+        }
+    };
+
+    // --- LÓGICA DE IMPORTACIÓN ---
     const openImportPicker = () => { if (importFileInputRef.current) importFileInputRef.current.click(); };
-    const normalizeImportPayload = (data) => { /* ... */ return null; };
-    const handleImportFileSelected = (e) => { /* ... */ };
-    const confirmImport = async () => { /* ... */ };
+
+    const normalizeImportPayload = (data) => {
+        if (!data || typeof data !== 'object') return null;
+        if (!Array.isArray(data.projects)) return null;
+        return {
+            projects: data.projects,
+            clientLogoMap: data.clientLogoMap || {},
+            meta: data.meta || {}
+        };
+    };
+
+    const handleImportFileSelected = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const json = JSON.parse(event.target.result);
+                const validated = normalizeImportPayload(json);
+                if (validated) {
+                    setImportCandidate(validated);
+                    setImportConfirmOpen(true);
+                } else {
+                    alert("El archivo no parece ser un backup válido.");
+                }
+            } catch (err) {
+                alert("Error al leer el archivo JSON.");
+            }
+            e.target.value = '';
+        };
+        reader.readAsText(file);
+    };
+
+    const confirmImport = async () => {
+        if (!importCandidate) return;
+        try {
+            if (importCandidate.clientLogoMap) {
+                localStorage.setItem('clientLogoMap', JSON.stringify(importCandidate.clientLogoMap));
+            }
+            await saveProjectsLocal(importCandidate.projects);
+            setImportConfirmOpen(false);
+            setImportCandidate(null);
+            setImportToast(true);
+            setTimeout(() => setImportToast(false), 3000);
+        } catch (err) {
+            alert("Error al importar los datos.");
+        }
+    };
 
     const createProject = async () => {
         const draftProject = makeDraftProject();
