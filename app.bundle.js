@@ -161,6 +161,18 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
                 p.meta.pep && (React.createElement("span", { className: "apple-chip apple-chip--muted" },
                     React.createElement("i", { className: "fas fa-hashtag text-[10px]" }),
                     p.meta.pep)))),
+                    // Dentro de ProjectCard, junto a los otros chips
+    p.meta.sharepointUrl && (React.createElement("a", { 
+        href: p.meta.sharepointUrl, 
+        target: "_blank", 
+        rel: "noopener noreferrer",
+        onClick: (e) => e.stopPropagation(), // Para que no abra el editor al hacer clic
+        className: "apple-chip apple-chip--muted hover:bg-blue-50 hover:text-blue-600 transition-colors border-blue-100",
+        title: "Abrir carpeta en SharePoint"
+    },
+        React.createElement("i", { className: "fas fa-share-nodes text-[10px]" }),
+        "SharePoint"
+    )),
             React.createElement("div", { className: "mt-4 space-y-2" },
                 React.createElement("div", { className: "flex items-center justify-between text-xs text-gray-500" },
                     React.createElement("span", { className: "font-semibold text-[color:var(--brand-dark)]" },
@@ -1259,11 +1271,24 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                             React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.cliente || '', onChange: (e) => handleClienteChange(e.target.value), placeholder: "Ej: RTVE / EITB / Mediaset..." })),
                         React.createElement("div", null,
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Proyecto"),
-                            React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "Ej: Daniel Avil\u00E9s" })),
+                            React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "" })),
                         React.createElement("div", null,
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "PEP"),
                             React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.pep || '', onChange: (e) => updateMeta('pep', e.target.value), placeholder: "Ej: PEP-2026-001" })),
                         React.createElement("div", null,
+    React.createElement("div", null,
+        React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Carpeta SharePoint"),
+        React.createElement("div", { className: "relative" },
+            React.createElement("i", { className: "fas fa-folder-open absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" }),
+            React.createElement("input", { 
+                type: "url", 
+                className: "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow", 
+                value: data.meta.sharepointUrl || '', 
+                onChange: (e) => updateMeta('sharepointUrl', e.target.value), 
+                placeholder: "https://unitecnic.sharepoint.com/..." 
+            })
+        )
+    ),
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Logo del cliente"),
                             React.createElement("div", { className: "flex items-center gap-3" },
                                 React.createElement("div", { className: "h-12 w-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden" }, data.meta.clientLogoData ? (React.createElement("img", { src: data.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: "fas fa-image text-slate-400" }))),
@@ -1458,10 +1483,20 @@ const MainApp = () => {
     // --- RUTAS Y NAVEGACIÓN ---
     const setRoute = (hash) => { try { if (window.location.hash !== hash) window.location.hash = hash; } catch (e) { } };
     
-    const makeDraftProject = () => ({
+const makeDraftProject = () => ({
         id: 'draft_' + Date.now(),
         __isDraft: true,
-        meta: { titulo: "Nuevo Proyecto", subtitulo: "Informe de Inicio", cliente: "Sin cliente", clientLogoData: "", empresa: "UNITECNIC", estado: "En Ejecución", responsableProyecto: "", pep: "" },
+        meta: { 
+            titulo: "Nuevo Proyecto", 
+            subtitulo: "Informe de Inicio", 
+            cliente: "Sin cliente", 
+            clientLogoData: "", 
+            empresa: "UNITECNIC", 
+            estado: "En Ejecución", 
+            responsableProyecto: "", 
+            pep: "",
+            sharepointUrl: "" // <--- Nuevo campo
+        },
         tasks: []
     });
 
