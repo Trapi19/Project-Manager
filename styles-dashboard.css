@@ -497,3 +497,17 @@
 .project-card .mt-3{
   margin-top: 12px !important;
 }
+/* Mejora de legibilidad en tarjetas de Resumen Ejecutivo */
+.exec-card.md\:col-span-2 .flex.justify-between {
+    margin-bottom: 8px !important; /* Más espacio sobre la barra */
+}
+
+.exec-card.md\:col-span-2 .space-y-2 > div {
+    padding: 10px 14px !important; /* Más espacio interno en vencimientos */
+    margin-bottom: 4px;
+}
+
+/* Hacer los textos un poco más nítidos en modo oscuro */
+.theme-dark .exec-card .text-gray-500 {
+    color: rgba(255, 255, 255, 0.6) !important;
+}

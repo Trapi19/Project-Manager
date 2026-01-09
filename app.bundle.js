@@ -634,35 +634,35 @@ React.createElement("div", { className: "exec-grid" },
                             React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}` }),
                             React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-tight" }, executiveSummary.blockedProjects, " Proyectos afectados"))),
 
-                    // 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
-                    React.createElement("div", { className: "exec-card md:col-span-2" },
-                        React.createElement("div", { className: "exec-card-top mb-4" },
-                            React.createElement("div", { className: "exec-label" }, "Carga por Responsable"),
-                            React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))),
-                        React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-4" },
-                            executiveSummary.workloadData.map((item, i) => (
-                                React.createElement("div", { key: i },
-                                    React.createElement("div", { className: "flex justify-between text-[11px] mb-1" },
-                                        React.createElement("span", { className: "font-bold truncate" }, item.name),
-                                        React.createElement("span", { className: "text-gray-500" }, item.count)),
-                                    React.createElement("div", { className: "w-full h-1 bg-gray-200 rounded-full overflow-hidden" },
-                                        React.createElement("div", { className: "h-full bg-indigo-500", style: { width: `${Math.min(100, (item.count / 10) * 100)}%` } }))
-                                )
-                            )))),
+// 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
+React.createElement("div", { className: "exec-card md:col-span-2" },
+    React.createElement("div", { className: "exec-card-top mb-5" }, // Aumentado margen inferior
+        React.createElement("div", { className: "exec-label" }, "Carga por Responsable"),
+        React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))),
+    React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" }, // Más espacio entre columnas
+        executiveSummary.workloadData.map((item, i) => (
+            React.createElement("div", { key: i },
+                React.createElement("div", { className: "flex justify-between text-sm mb-2" }, // Aumentado de 11px a sm (14px)
+                    React.createElement("span", { className: "font-bold truncate" }, item.name),
+                    React.createElement("span", { className: "text-gray-500 font-medium" }, item.count)),
+                React.createElement("div", { className: "w-full h-2 bg-gray-200 rounded-full overflow-hidden" }, // Aumentado grosor de h-1 a h-2
+                    React.createElement("div", { className: "h-full bg-indigo-500", style: { width: `${Math.min(100, (item.count / 10) * 100)}%` } }))
+            )
+        )))),
 
-                    // 6. PRÓXIMOS VENCIMIENTOS (DOBLE - CIAN)
-                    React.createElement("div", { className: "exec-card md:col-span-2" },
-                        React.createElement("div", { className: "exec-card-top mb-4" },
-                            React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"),
-                            React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))),
-                        React.createElement("div", { className: "space-y-2" },
-                            executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (
-                                React.createElement("div", { key: i, className: "flex items-center justify-between p-2 rounded-lg bg-black/5" },
-                                    React.createElement("div", { className: "min-w-0 flex-1" },
-                                        React.createElement("div", { className: "text-[11px] font-bold truncate" }, item.tarea),
-                                        React.createElement("div", { className: "text-[9px] text-gray-500 truncate" }, item.proyecto)),
-                                    React.createElement("div", { className: "ml-4 text-[10px] font-bold text-cyan-600" }, window.formatFechaES(item.fecha)))
-                            )) : React.createElement("p", { className: "text-[10px] italic text-gray-400" }, "Sin vencimientos cercanos")))
+// 6. PRÓXIMOS VENCIMIENTOS (DOBLE - CIAN)
+React.createElement("div", { className: "exec-card md:col-span-2" },
+    React.createElement("div", { className: "exec-card-top mb-5" },
+        React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"),
+        React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))),
+    React.createElement("div", { className: "space-y-3" }, // Aumentado espacio entre filas
+        executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (
+            React.createElement("div", { key: i, className: "flex items-center justify-between p-3 rounded-xl bg-black/5" }, // Más padding y redondeado
+                React.createElement("div", { className: "min-w-0 flex-1" },
+                    React.createElement("div", { className: "text-sm font-bold truncate" }, item.tarea), // Aumentado de 11px a sm
+                    React.createElement("div", { className: "text-[11px] text-gray-500 truncate mt-0.5" }, item.proyecto)), // Aumentado de 9px a 11px
+                React.createElement("div", { className: "ml-4 text-[12px] font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-md" }, window.formatFechaES(item.fecha))) // Fecha más grande y con fondo
+        )) : React.createElement("p", { className: "text-sm italic text-gray-400 p-2" }, "Sin vencimientos cercanos")))
                 )
             ), // <--- ESTE ES EL QUE FALTABA (Cierra la sección entera del Resumen Ejecutivo)
 
