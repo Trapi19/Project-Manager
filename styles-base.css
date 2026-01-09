@@ -87,6 +87,22 @@ body {
 .theme-dark .text-slate-800 { 
     color: #ef4444 !important; 
 }
+/* --- Mejora de brillo para títulos en modo oscuro --- */
+
+/* Título de En Ejecución (Azul brillante) */
+.theme-dark .text-blue-900 { 
+    color: #3b82f6 !important; 
+}
+
+/* Título de En Revisión (Violeta brillante) */
+.theme-dark .text-violet-900 { 
+    color: #a78bfa !important; 
+}
+
+/* Título de Completado (Verde brillante) */
+.theme-dark .section--completado h2 {
+    color: #10b981 !important;
+}
 
 .theme-dark .text-gray-600,
 .theme-dark .text-gray-500,
