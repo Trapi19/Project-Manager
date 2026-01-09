@@ -83,8 +83,8 @@ body {
 .theme-dark .text-gray-800,
 .theme-dark .text-gray-700 { color: var(--text) !important; }
 
-/* Nuevo: Forzar el título de Pausa a rojo en modo oscuro */
-.theme-dark .text-slate-800 { 
+/* Título de En Pausa (Rojo para modo claro y oscuro) */
+.section--pausa h2 { 
     color: #ef4444 !important; 
 }
 /* --- Mejora de brillo para títulos en modo oscuro --- */
