@@ -211,237 +211,520 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
                 "Abrir ",
                 React.createElement("i", { className: "fas fa-arrow-right" })))));
 };
-// --- COMPONENTE: DASHBOARD (CORREGIDO) ---
+// --- COMPONENTE: DASHBOARD ---
 const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, onBackup, onImport, theme, onToggleTheme }) => {
     const normClient = (p) => ((p.meta && p.meta.cliente) ? p.meta.cliente : 'Sin cliente').trim() || 'Sin cliente';
     const clients = Array.from(new Set(projects.map(normClient))).sort((a, b) => a.localeCompare(b, 'es'));
-    
-    // Estados para los filtros
     const [clientFilter, setClientFilter] = useState('Todos');
-    const [statusFilter, setStatusFilter] = useState('Todos'); // Nuevo: para filtrar por Ejecución/Pausa/etc
     const [searchTerm, setSearchTerm] = useState('');
-    
-    // --- DRAG & DROP ---
+    // --- DRAG & DROP (sin librerías externas; compatible con abrir index.html en local) ---
     const [draggingProjectId, setDraggingProjectId] = useState(null);
     const [dragOverProjectId, setDragOverProjectId] = useState(null);
     const blockClickRef = React.useRef(false);
-    
-    // --- MENÚ DE ACCIONES ---
+    // --- MENÚ DE ACCIONES (Backup / Importar) ---
     const [actionsOpen, setActionsOpen] = useState(false);
     const actionsRef = React.useRef(null);
-
+    useEffect(() => {
+        if (!actionsOpen)
+            return;
+        const onDocMouseDown = (e) => {
+            if (actionsRef.current && !actionsRef.current.contains(e.target))
+                setActionsOpen(false);
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape')
+                setActionsOpen(false);
+        };
+        document.addEventListener('mousedown', onDocMouseDown);
+        document.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('mousedown', onDocMouseDown);
+            document.removeEventListener('keydown', onKey);
+        };
+    }, [actionsOpen]);
     const cleanupProjectDnd = () => {
         setDraggingProjectId(null);
         setDragOverProjectId(null);
+        // Permite volver a hacer click inmediatamente después de soltar
         setTimeout(() => { blockClickRef.current = false; }, 0);
     };
-
+    const readDraggedProjectId = (e) => {
+        try {
+            return e.dataTransfer.getData('application/x-unitecnic-project') || e.dataTransfer.getData('text/plain');
+        }
+        catch (err) {
+            return '';
+        }
+    };
     const handleProjectDragStart = (e, project) => {
         try {
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('application/x-unitecnic-project', String(project.id));
             e.dataTransfer.setData('text/plain', String(project.id));
-        } catch (err) { }
+        }
+        catch (err) { }
         blockClickRef.current = true;
         setDraggingProjectId(project.id);
     };
-
     const handleProjectDragEnd = () => {
         cleanupProjectDnd();
+        // Evita que un drag dispare un click "Abrir" al soltar
         setTimeout(() => { blockClickRef.current = false; }, 200);
     };
-
     const handleProjectCardDragOver = (e, targetProject) => {
         e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
         setDragOverProjectId(targetProject.id);
     };
-
     const handleProjectCardDrop = (e, targetProject) => {
+        var _a;
         e.preventDefault();
-        const draggedId = e.dataTransfer.getData('text/plain');
-        if (!draggedId || !onMoveProject) return;
-        const targetEstado = normalizeProjectEstado(targetProject.meta?.estado);
+        const draggedId = readDraggedProjectId(e);
+        if (!draggedId || !onMoveProject)
+            return;
+        const targetEstado = normalizeProjectEstado((_a = targetProject === null || targetProject === void 0 ? void 0 : targetProject.meta) === null || _a === void 0 ? void 0 : _a.estado);
         onMoveProject(draggedId, targetEstado, targetProject.id);
+        setDragOverProjectId(null);
         cleanupProjectDnd();
     };
-
     const handleSectionDragOver = (e) => {
         e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
     };
-
     const handleSectionDrop = (e, targetEstado) => {
         e.preventDefault();
-        const draggedId = e.dataTransfer.getData('text/plain');
-        if (!draggedId || !onMoveProject) return;
+        const draggedId = readDraggedProjectId(e);
+        if (!draggedId || !onMoveProject)
+            return;
         onMoveProject(draggedId, targetEstado, null);
+        setDragOverProjectId(null);
         cleanupProjectDnd();
     };
-
-    // Lógica de filtrado combinada
     const filteredProjects = projects.filter(p => {
         const matchesClient = clientFilter === 'Todos' || normClient(p) === clientFilter;
-        const pEstado = normalizeProjectEstado(p.meta?.estado);
-        const matchesStatus = statusFilter === 'Todos' || pEstado === statusFilter;
-        
         const q = (searchTerm || '').toString().trim().toLowerCase();
-        if (!q) return matchesClient && matchesStatus;
-        
+        if (!q) return matchesClient;
         const m = (p && p.meta) ? p.meta : {};
-        const hay = ((m.titulo || '') + ' ' + (m.subtitulo || '') + ' ' + (m.cliente || '') + ' ' + (m.pep || '') + ' ' + (m.responsableProyecto || '')).toLowerCase();
-        return matchesClient && matchesStatus && hay.includes(q);
+        const hay = ((m.titulo || '') + ' ' + (m.subtitulo || '') + ' ' + (m.cliente || '') + ' ' + (m.pep || '')).toLowerCase();
+        return matchesClient && hay.includes(q);
     });
+    const activeProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Ejecución'; });
+    const pausedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Pausa'; });
+    const reviewProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Revisión'; });
+    const completedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'Completado'; });
+    // --- RESUMEN EJECUTIVO (CENTRO DE CONTROL) ---
+    const nonCompletedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) !== 'Completado'; });
+const executiveSummary = (() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
 
-    const activeProjects = filteredProjects.filter(p => normalizeProjectEstado(p.meta?.estado) === 'En Ejecución');
-    const pausedProjects = filteredProjects.filter(p => normalizeProjectEstado(p.meta?.estado) === 'En Pausa');
-    const reviewProjects = filteredProjects.filter(p => normalizeProjectEstado(p.meta?.estado) === 'En Revisión');
-    const completedProjects = filteredProjects.filter(p => normalizeProjectEstado(p.meta?.estado) === 'Completado');
+        const parseISO = (iso) => {
+            if (!iso) return null;
+            const t = String(iso).trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
+            const [y, m, d] = t.split('-').map(n => parseInt(n, 10));
+            return new Date(y, (m || 1) - 1, d || 1);
+        };
 
-    // RESUMEN EJECUTIVO (CÁLCULOS)
-    const nonCompletedProjects = filteredProjects; // Usamos los ya filtrados para el dashboard
-    const executiveSummary = (() => {
-        const today = new Date(); today.setHours(0,0,0,0);
-        const nextWeek = new Date(today); nextWeek.setDate(today.getDate() + 7);
-        const parseISO = (iso) => { if(!iso) return null; const [y,m,d] = iso.split('-').map(n => parseInt(n,10)); return new Date(y, m-1, d); };
+        const hasOverdueOpenTask = (p) => {
+            const tasks = (p?.tasks) || [];
+            if (!tasks.length) return false;
+            const idx = buildTaskIndex(tasks);
+            return tasks.some(t => {
+                const lim = parseISO(t?.fechaLimite);
+                if (!lim) return false;
+                const e = effectiveEstado(t, idx);
+                return e !== 'Completado' && lim < today;
+            });
+        };
 
-        let tasksTotal = 0, tasksOpen = 0, tasksCompleted = 0, blockedTasks = 0, blockedProjects = 0;
-        const workloadMap = {}, upcomingDeadlines = [], blockedProjectDetails = [], redProjectDetails = [];
+        const hasTooManyPending = (stats) => {
+            if (!stats || (stats.total || 0) < 5) return false;
+            const fracPending = (stats.pending || 0) / Math.max(1, stats.total || 0);
+            return fracPending >= 0.60 && (stats.progress || 0) < 50;
+        };
+
+        let tasksTotal = 0;
+        let tasksOpen = 0;
+        let tasksCompleted = 0;
+        let redProjects = 0;
+        let blockedProjects = 0;
+        let blockedTasks = 0;
+        const redProjectDetails = [];
+        const blockedProjectDetails = [];
+        const workloadMap = {};
+        const upcomingDeadlines = [];
 
         nonCompletedProjects.forEach(p => {
             const tasks = p.tasks || [];
             const stats = computeProjectStats(tasks);
-            const resp = p.meta?.responsableProyecto || 'Sin asignar';
-            
-            tasksTotal += stats.total;
-            tasksOpen += (stats.pending + stats.inProgress);
-            tasksCompleted += stats.completed;
-            workloadMap[resp] = (workloadMap[resp] || 0) + (stats.pending + stats.inProgress);
+            const pid = String(p.id || '');
+            const title = (p.meta?.titulo) || 'Proyecto';
+            const resp = (p.meta && p.meta.responsableProyecto) ? String(p.meta.responsableProyecto) : 'Sin asignar';
+
+            tasksTotal += stats.total || 0;
+            tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
+            tasksCompleted += stats.completed || 0;
+
+            // Carga de trabajo
+            workloadMap[resp] = (workloadMap[resp] || 0) + ((stats.pending || 0) + (stats.inProgress || 0));
 
             const idx = buildTaskIndex(tasks);
             tasks.forEach(t => {
                 const est = effectiveEstado(t, idx);
                 const lim = parseISO(t.fechaLimite);
+                // Vencimientos a 7 días
                 if (est !== 'Completado' && lim && lim >= today && lim <= nextWeek) {
-                    upcomingDeadlines.push({ tarea: t.tarea, proyecto: p.meta.titulo, fecha: t.fechaLimite });
+                    upcomingDeadlines.push({ tarea: t.tarea, proyecto: title, fecha: t.fechaLimite, responsable: resp });
                 }
             });
 
-            const bCount = tasks.filter(t => normalizeEstado(t.estado) !== 'Completado' && isTaskBlocked(t, idx)).length;
-            if (bCount > 0) { blockedProjects++; blockedTasks += bCount; blockedProjectDetails.push({ title: p.meta.titulo, blockedCount: bCount }); }
+            // Bloqueos
+            if (tasks.length) {
+                const blockedCount = tasks.filter(t => normalizeEstado(t.estado) !== 'Completado' && isTaskBlocked(t, idx)).length;
+                if (blockedCount > 0) {
+                    blockedProjects += 1;
+                    blockedTasks += blockedCount;
+                    blockedProjectDetails.push({ id: pid, title, blockedCount });
+                }
+            }
+
+            // Alertas Rojas
+            const overdue = hasOverdueOpenTask(p);
+            const tooMany = hasTooManyPending(stats);
+            if (overdue || tooMany) {
+                redProjects += 1;
+                const reasons = [];
+                if (overdue) reasons.push('tareas vencidas');
+                if (tooMany) reasons.push('demasiadas pendientes');
+                redProjectDetails.push({ id: pid, title, reasons });
+            }
         });
 
         return {
             projectsActive: nonCompletedProjects.length,
             progressAvg: tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0,
-            tasksTotal, tasksOpen, blockedTasks, blockedProjects, blockedProjectDetails,
-            workloadData: Object.entries(workloadMap).map(([name, count]) => ({ name, count })).sort((a,b) => b.count - a.count).slice(0,4),
-            sortedDeadlines: upcomingDeadlines.sort((a,b) => new Date(a.fecha) - new Date(b.fecha)).slice(0,3)
+            tasksTotal,
+            tasksOpen,
+            redProjects,
+            redProjectDetails,
+            blockedProjects,
+            blockedTasks,
+            blockedProjectDetails,
+            workloadData: Object.entries(workloadMap).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 4),
+            sortedDeadlines: upcomingDeadlines.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).slice(0, 3)
         };
     })();
 
-    const showBlockDetails = () => {
-        // (La función gpShowModal ya la tienes definida en tu archivo, la llamamos aquí)
-        let html = `<div style="font-weight:bold; margin-bottom:10px;">Proyectos con Bloqueos:</div><ul>`;
-        executiveSummary.blockedProjectDetails.forEach(d => {
-            html += `<li><b>${d.title}</b>: ${d.blockedCount} tareas bloqueadas</li>`;
-        });
-        html += `</ul>`;
-        __gpShowModal('Detalle de Bloqueos', html);
+    const __gpEscapeHtml = (v) => {
+        const s = String(v == null ? '' : v);
+        return s
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    };
+    const __gpShowModal = (title, bodyHtml) => {
+        try {
+            const existing = document.getElementById('gp-modal-overlay');
+            if (existing) existing.remove();
+            const overlay = document.createElement('div');
+            overlay.id = 'gp-modal-overlay';
+            overlay.style.cssText = [
+                'position:fixed',
+                'inset:0',
+                'background:rgba(0,0,0,0.45)',
+                'display:flex',
+                'align-items:center',
+                'justify-content:center',
+                'z-index:9999',
+                'padding:16px'
+            ].join(';');
+
+            const panel = document.createElement('div');
+            panel.style.cssText = [
+                'background:#ffffff',
+                'border-radius:16px',
+                'max-width:760px',
+                'width:100%',
+                'box-shadow:0 20px 60px rgba(0,0,0,0.25)',
+                'border:1px solid rgba(0,0,0,0.10)',
+                'overflow:hidden'
+            ].join(';');
+
+            panel.innerHTML = `
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(0,0,0,0.08);">
+                    <div style="font-weight:800;font-size:16px;color:#111827;">${__gpEscapeHtml(title)}</div>
+                    <button id="gp-modal-close" type="button"
+                        style="border:1px solid rgba(0,0,0,0.12);background:#ffffff;border-radius:10px;padding:8px 12px;font-weight:700;color:#111827;cursor:pointer;">
+                        Cerrar
+                    </button>
+                </div>
+                <div style="padding:16px 18px;color:#111827;font-size:14px;line-height:1.5;max-height:70vh;overflow:auto;">
+                    ${bodyHtml}
+                </div>
+            `;
+            overlay.appendChild(panel);
+            document.body.appendChild(overlay);
+
+            const cleanup = () => {
+                try { overlay.remove(); } catch {}
+                document.removeEventListener('keydown', onKeyDown);
+            };
+            const onKeyDown = (ev) => { if (ev.key === 'Escape') cleanup(); };
+
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(); });
+            const btn = overlay.querySelector('#gp-modal-close');
+            if (btn) btn.addEventListener('click', cleanup);
+            document.addEventListener('keydown', onKeyDown);
+        } catch (e) {
+            console.error(e);
+            alert('No se pudo mostrar el detalle.');
+        }
     };
 
-    return (
-        React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10" },
-            // CABECERA
-            React.createElement("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4" },
-                React.createElement("div", { className: "flex items-start gap-4" },
-                    React.createElement("div", { className: "w-14 h-14 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden" },
-                        React.createElement("img", { src: UNITECNIC_LOGO_BASE64, className: "w-full h-full object-contain p-2" })),
-                    React.createElement("div", null,
-                        React.createElement("h1", { className: "text-3xl font-bold text-gray-900" }, "Dashboard Unitecnic"),
-                        React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row gap-3" },
-                            React.createElement("input", { type: "text", placeholder: "Buscar...", className: "apple-search-input", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value) }),
+    const showBlockDetails = () => {
+        try {
+            const blocked = (executiveSummary.blockedProjectDetails || []);
+            const red = (executiveSummary.redProjectDetails || []);
+
+            const parts = [];
+
+            // Bloqueos por dependencias
+            parts.push(`<div style="margin-bottom:14px;">
+                <div style="font-weight:800;margin-bottom:6px;">Bloqueos por dependencias</div>
+                <div style="color:#6B7280;margin-bottom:10px;">Una tarea queda bloqueada si depende de otra que aún no está en “Completado”.</div>
+            </div>`);
+
+            if (blocked.length) {
+                const items = blocked
+                    .slice()
+                    .sort((a, b) => (b.blockedCount || 0) - (a.blockedCount || 0))
+                    .map(x => `<li><span style="font-weight:700;">${__gpEscapeHtml(x.title)}</span>: ${__gpEscapeHtml(x.blockedCount)}</li>`)
+                    .join('');
+                parts.push(`<ul style="margin:0 0 16px 18px; padding:0; list-style:disc;">${items}</ul>`);
+            } else {
+                parts.push(`<div style="margin-bottom:16px;color:#111827;">No hay tareas bloqueadas por dependencias en los proyectos filtrados.</div>`);
+            }
+
+            // Alertas (rojo)
+            parts.push(`<div style="margin-top:6px;margin-bottom:10px;">
+                <div style="font-weight:800;margin-bottom:6px;">Alertas (rojo)</div>
+                <div style="color:#6B7280;">
+                    Vencidas: existe al menos 1 tarea abierta con fecha límite anterior a hoy. <br/>
+                    Muchas pendientes: ≥60% de tareas en “Pendiente” (mín. 5 tareas) y avance &lt; 50%.
+                </div>
+            </div>`);
+
+            if (red.length) {
+                const items = red
+                    .map(x => `<li><span style="font-weight:700;">${__gpEscapeHtml(x.title)}</span>: ${__gpEscapeHtml((x.reasons || []).join(' y '))}</li>`)
+                    .join('');
+                parts.push(`<ul style="margin:0 0 6px 18px; padding:0; list-style:disc;">${items}</ul>`);
+            } else {
+                parts.push(`<div style="color:#111827;">No hay proyectos en rojo con los filtros actuales.</div>`);
+            }
+
+            __gpShowModal('Detalle de bloqueos y alertas', parts.join(''));
+        }
+        catch (e) {
+            console.error(e);
+            alert('No se pudo mostrar el detalle de bloqueos y alertas.');
+        }
+    };
+    return (React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10" },
+        React.createElement("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4" },
+            React.createElement("div", { className: "flex items-start gap-4" },
+                React.createElement("div", { className: "w-14 h-14 rounded-2xl bg-white/70 border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0" },
+                    React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "w-full h-full object-contain p-2" })),
+                React.createElement("div", null,
+                    React.createElement("h1", { className: "text-3xl font-bold text-gray-900" }, "Dashboard Unitecnic"),
+                    React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" },
+                        React.createElement("i", { className: "fas fa-hdd text-orange-500" }),
+                        " Modo Cloud (AWS)"),
+                    React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
+                        React.createElement("div", { className: "relative group" },
+                            React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
+                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input" })),
+                        React.createElement("div", { className: "flex items-center gap-2" },
+                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"),
                             React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
-                                React.createElement("option", { value: "Todos" }, "Todos los Clientes"),
-                                clients.map(c => React.createElement("option", { key: c, value: c }, c))
-                            )))),
-                React.createElement("div", { className: "flex gap-2" },
-                    React.createElement("button", { onClick: onCreate, className: "btn-apple-primary" }, "Nuevo Proyecto"))),
+                                React.createElement("option", { value: "Todos" }, "Todos"),
+                                clients.map(c => React.createElement("option", { key: c, value: c }, c))))))),
+            React.createElement("div", { className: "flex items-center gap-2 no-print" },
+                React.createElement("button", { onClick: onCreate, className: "btn-apple-primary no-print", title: "Crear nuevo proyecto" },
+                    React.createElement("i", { className: "fas fa-plus" }),
+                    "Nuevo"),
+                React.createElement("div", { className: "actions-menu no-print", ref: actionsRef },
+                    React.createElement("button", { type: "button", className: "btn-apple-icon", title: "Acciones", "aria-label": "Acciones", onClick: () => setActionsOpen(o => !o) },
+                        React.createElement("i", { className: "fas fa-ellipsis" })),
+                    actionsOpen && (React.createElement("div", { className: "actions-popover", role: "menu", "aria-label": "Acciones" },
+                        React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onBackup(); } },
+                            React.createElement("i", { className: "fas fa-file-arrow-down" }),
+                            React.createElement("span", null, "Backup (JSON)")),
+                        React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onImport(); } },
+                            React.createElement("i", { className: "fas fa-file-arrow-up" }),
+                            React.createElement("span", null, "Importar\u2026"))))))),
+        projects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" },
+            React.createElement("div", { className: "text-gray-300 text-6xl mb-6" },
+                React.createElement("i", { className: "fas fa-folder-open" })),
+            React.createElement("h3", { className: "text-xl font-semibold text-gray-700" }, "No hay proyectos activos"),
+            React.createElement("p", { className: "text-gray-400 mt-2 mb-6" }, "Gestiona tus instalaciones y mantenimientos desde aqu\u00ED."),
+            React.createElement("button", { onClick: onCreate, className: "text-blue-600 font-medium hover:underline" }, "Crear primer proyecto"))) : (React.createElement("div", { className: "space-y-12" },
+            React.createElement("div", { className: "section-tapiz exec-summary p-6 rounded-2xl border" },
+                React.createElement("div", { className: "exec-header" },
+                    React.createElement("div", { className: "exec-title" },
+                        React.createElement("div", { className: "exec-title-icon", "aria-hidden": "true" },
+                            React.createElement("i", { className: "fas fa-gauge-high" })),
+                        React.createElement("div", null,
+                            React.createElement("div", { className: "exec-title-text" }, "Resumen ejecutivo"),
+                            React.createElement("div", { className: "exec-subtitle" }, "Centro de control (seg\u00FAn el filtro de cliente)"))),
+                    React.createElement("div", { className: "exec-pill", title: "Se recalcula con los filtros activos" },
+                        React.createElement("i", { className: "fas fa-sliders", "aria-hidden": "true" }),
+                        React.createElement("span", null, "Seg\u00FAn filtros"))),
+// --- CUADRO DE MANDO INTERACTIVO ---
+React.createElement("div", { className: "exec-grid" },
+                    // 1. PROYECTOS
+                    React.createElement("div", { className: "exec-card", onClick: () => setClientFilter('Todos'), title: "Ver todos" },
+                        React.createElement("div", { className: "exec-card-top" },
+                            React.createElement("div", null,
+                                React.createElement("div", { className: "exec-label" }, "Proyectos activos"),
+                                React.createElement("div", { className: "exec-value" }, executiveSummary.projectsActive)),
+                            React.createElement("div", { className: "exec-card-icon" },
+                                React.createElement("i", { className: "fas fa-layer-group" }))),
+                        React.createElement("div", { className: "exec-chips" },
+                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.3)] text-blue-700 bg-blue-50/50 text-[10px] font-bold" }, "Eje: ", activeProjects.length),
+                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.3)] text-red-700 bg-red-50/50 text-[10px] font-bold" }, "Pausa: ", pausedProjects.length))),
 
-            // DASHBOARD INTERACTIVO
-            React.createElement("div", { className: "section-tapiz exec-summary p-6 rounded-2xl border mb-12" },
-                React.createElement("div", { className: "exec-grid" },
-                    // Tarjeta 1: Resetear filtros
-                    React.createElement("div", { className: "exec-card cursor-pointer hover:shadow-md transition-all", onClick: () => { setStatusFilter('Todos'); setClientFilter('Todos'); setSearchTerm(''); } },
-                        React.createElement("div", { className: "exec-label" }, "Proyectos en Filtro"),
-                        React.createElement("div", { className: "exec-value" }, executiveSummary.projectsActive),
-                        React.createElement("div", { className: "text-[10px] text-gray-400" }, "Pulsar para ver todos")),
-
-                    // Tarjeta 2: Ver completados
-                    React.createElement("div", { className: "exec-card cursor-pointer hover:shadow-md transition-all", onClick: () => setStatusFilter('Completado') },
-                        React.createElement("div", { className: "exec-label" }, "Avance Medio"),
-                        React.createElement("div", { className: "exec-value" }, executiveSummary.progressAvg, "%"),
-                        React.createElement("div", { className: "exec-progress" }, 
+                    // 2. AVANCE
+                    React.createElement("div", { className: "exec-card" },
+                        React.createElement("div", { className: "exec-card-top" },
+                            React.createElement("div", null,
+                                React.createElement("div", { className: "exec-label" }, "Avance medio"),
+                                React.createElement("div", { className: "exec-value" }, executiveSummary.progressAvg, "%"),
+                                React.createElement("div", { className: "exec-note" }, "Ponderado por tareas")),
+                            React.createElement("div", { className: "exec-card-icon" },
+                                React.createElement("i", { className: "fas fa-chart-line" }))),
+                        React.createElement("div", { className: "exec-progress" },
                             React.createElement("div", { className: "exec-progress-fill", style: { width: `${executiveSummary.progressAvg}%` } }))),
 
-                    // Tarjeta 3: Ver en ejecución
-                    React.createElement("div", { className: "exec-card cursor-pointer hover:shadow-md transition-all", onClick: () => setStatusFilter('En Ejecución') },
-                        React.createElement("div", { className: "exec-label" }, "Tareas Abiertas"),
-                        React.createElement("div", { className: "exec-value" }, executiveSummary.tasksOpen),
-                        React.createElement("div", { className: "text-[10px] text-gray-400" }, "De un total de ", executiveSummary.tasksTotal)),
+                    // 3. TAREAS
+                    React.createElement("div", { className: "exec-card" },
+                        React.createElement("div", { className: "exec-card-top" },
+                            React.createElement("div", null,
+                                React.createElement("div", { className: "exec-label" }, "Carga de trabajo"),
+                                React.createElement("div", { className: "exec-value" }, executiveSummary.tasksTotal),
+                                React.createElement("div", { className: "exec-note" }, "Abiertas: ", executiveSummary.tasksOpen)),
+                            React.createElement("div", { className: "exec-card-icon" },
+                                React.createElement("i", { className: "fas fa-list-check" })))),
 
-                    // Tarjeta 4: Bloqueos (Modal)
-                    React.createElement("div", { className: "exec-card cursor-pointer hover:shadow-md transition-all", onClick: showBlockDetails },
-                        React.createElement("div", { className: "exec-label" }, "Bloqueos"),
-                        React.createElement("div", { className: "exec-value text-red-500" }, executiveSummary.blockedTasks),
-                        React.createElement("div", { className: "text-[10px] text-gray-400" }, executiveSummary.blockedProjects, " proyectos afectados")),
+                    // 4. BLOQUEOS
+                    React.createElement("div", { className: "exec-card", onClick: showBlockDetails, title: "Ver detalles de alertas" },
+                        React.createElement("div", { className: "exec-card-top" },
+                            React.createElement("div", null,
+                                React.createElement("div", { className: "exec-label" }, "Bloqueos y Alertas"),
+                                React.createElement("div", { className: "exec-value", style: { color: executiveSummary.blockedTasks > 0 ? '#ef4444' : 'inherit' } }, executiveSummary.blockedTasks),
+                                React.createElement("div", { className: "exec-note" }, executiveSummary.blockedTasks > 0 ? "Requiere atención" : "Sin incidencias")),
+                            React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" },
+                                React.createElement("i", { className: "fas fa-shield-halved" }))),
+                        React.createElement("div", { className: "mt-4 flex items-center gap-2" },
+                            React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}` }),
+                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-tight" }, executiveSummary.blockedProjects, " Proyectos afectados"))),
 
-                    // Tarjeta 5: Carga Responsable (Grande)
-                    React.createElement("div", { className: "exec-card md:col-span-2" },
-                        React.createElement("div", { className: "exec-label mb-4" }, "Carga por Responsable"),
-                        React.createElement("div", { className: "grid grid-cols-2 gap-4" },
-                            executiveSummary.workloadData.map((item, i) => (
-                                React.createElement("div", { key: i, className: "cursor-pointer hover:bg-black/5 p-1 rounded", onClick: () => setSearchTerm(item.name) },
-                                    React.createElement("div", { className: "flex justify-between text-sm font-bold" }, 
-                                        React.createElement("span", null, item.name), 
-                                        React.createElement("span", null, item.count)),
-                                    React.createElement("div", { className: "w-full h-2 bg-gray-100 rounded-full mt-1" },
-                                        React.createElement("div", { className: "h-full bg-indigo-500 rounded-full", style: { width: `${(item.count/10)*100}%` } }))
-                                )
-                            )))),
-
-                    // Tarjeta 6: Vencimientos (Grande)
-                    React.createElement("div", { className: "exec-card md:col-span-2" },
-                        React.createElement("div", { className: "exec-label mb-4" }, "Próximos Vencimientos (7 días)"),
-                        React.createElement("div", { className: "space-y-3" },
-                            executiveSummary.sortedDeadlines.map((item, i) => (
-                                React.createElement("div", { key: i, className: "flex justify-between items-center p-2 bg-black/5 rounded-lg cursor-pointer", onClick: () => setSearchTerm(item.proyecto) },
-                                    React.createElement("div", null,
-                                        React.createElement("div", { className: "text-sm font-bold" }, item.tarea),
-                                        React.createElement("div", { className: "text-[11px] text-gray-500" }, item.proyecto)),
-                                    React.createElement("div", { className: "text-xs font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded" }, window.formatFechaES(item.fecha))
-                                )
-                            )))
-                    )
-                )
-            ),
-
-            // SECCIONES DE PROYECTOS
-            React.createElement("div", { className: "space-y-10" },
-                activeProjects.length > 0 && React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
-                    React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6" }, "En Ejecución (", activeProjects.length, ")"),
-                    React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" },
-                        activeProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete } )))),
-
-                pausedProjects.length > 0 && React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
-                    React.createElement("h2", { className: "text-lg font-bold text-slate-800 mb-6" }, "En Pausa (", pausedProjects.length, ")"),
-                    React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" },
-                        pausedProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete } )))),
-
-                completedProjects.length > 0 && React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border opacity-75" },
-                    React.createElement("h2", { className: "text-lg font-bold text-gray-600 mb-6" }, "Completados"),
-                    React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" },
-                        completedProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete } ))))
+// 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
+React.createElement("div", { className: "exec-card md:col-span-2" },
+    React.createElement("div", { className: "exec-card-top mb-5" }, // Aumentado margen inferior
+        React.createElement("div", { className: "exec-label" }, "Carga por Responsable"),
+        React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))),
+    React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" }, // Más espacio entre columnas
+        executiveSummary.workloadData.map((item, i) => (
+            React.createElement("div", { key: i },
+                React.createElement("div", { className: "flex justify-between text-sm mb-2" }, // Aumentado de 11px a sm (14px)
+                    React.createElement("span", { className: "font-bold truncate" }, item.name),
+                    React.createElement("span", { className: "text-gray-500 font-medium" }, item.count)),
+                React.createElement("div", { className: "w-full h-2 bg-gray-200 rounded-full overflow-hidden" }, // Aumentado grosor de h-1 a h-2
+                    React.createElement("div", { className: "h-full bg-indigo-500", style: { width: `${Math.min(100, (item.count / 10) * 100)}%` } }))
             )
-        )
-    );
+        )))),
+
+// 6. PRÓXIMOS VENCIMIENTOS (DOBLE - CIAN)
+React.createElement("div", { className: "exec-card md:col-span-2" },
+    React.createElement("div", { className: "exec-card-top mb-5" },
+        React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"),
+        React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))),
+    React.createElement("div", { className: "space-y-3" }, // Aumentado espacio entre filas
+        executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (
+            React.createElement("div", { key: i, className: "flex items-center justify-between p-3 rounded-xl bg-black/5" }, // Más padding y redondeado
+                React.createElement("div", { className: "min-w-0 flex-1" },
+                    React.createElement("div", { className: "text-sm font-bold truncate" }, item.tarea), // Aumentado de 11px a sm
+                    React.createElement("div", { className: "text-[11px] text-gray-500 truncate mt-0.5" }, item.proyecto)), // Aumentado de 9px a 11px
+                React.createElement("div", { className: "ml-4 text-[12px] font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-md" }, window.formatFechaES(item.fecha))) // Fecha más grande y con fondo
+        )) : React.createElement("p", { className: "text-sm italic text-gray-400 p-2" }, "Sin vencimientos cercanos")))
+                )
+            ), // <--- ESTE ES EL QUE FALTABA (Cierra la sección entera del Resumen Ejecutivo)
+
+            // A PARTIR DE AQUÍ LAS SECCIONES DE PROYECTOS QUEDAN FUERA
+            React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
+                React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" },
+                    React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }),
+                    " En Ejecuci\u00F3n",
+                    React.createElement("span", { className: "ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs" }, activeProjects.length)),
+                activeProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, activeProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
+                        onDragStart: handleProjectDragStart,
+                        onDragEnd: handleProjectDragEnd,
+                        onDragOver: handleProjectCardDragOver,
+                        onDrop: handleProjectCardDrop,
+                        isDragging: draggingProjectId === p.id,
+                        isDragOver: dragOverProjectId === p.id,
+                        blockClickRef
+                    } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en curso.")),
+
+            React.createElement("div", { className: "section-tapiz section--pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
+                React.createElement("h2", { className: "text-lg font-bold text-slate-800 mb-6 flex items-center gap-2" },
+                    React.createElement("span", { className: "bg-slate-500 w-2 h-2 rounded-full" }),
+                    " En Pausa",
+                    React.createElement("span", { className: "ml-2 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-xs" }, pausedProjects.length)),
+                pausedProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, pausedProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
+                        onDragStart: handleProjectDragStart,
+                        onDragEnd: handleProjectDragEnd,
+                        onDragOver: handleProjectCardDragOver,
+                        onDrop: handleProjectCardDrop,
+                        isDragging: draggingProjectId === p.id,
+                        isDragOver: dragOverProjectId === p.id,
+                        blockClickRef
+                    } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en pausa.")),
+
+            React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
+                React.createElement("h2", { className: "text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" },
+                    React.createElement("span", { className: "bg-violet-500 w-2 h-2 rounded-full" }),
+                    " En Revisi\u00F3n",
+                    React.createElement("span", { className: "ml-2 bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full text-xs" }, reviewProjects.length)),
+                reviewProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, reviewProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
+                        onDragStart: handleProjectDragStart,
+                        onDragEnd: handleProjectDragEnd,
+                        onDragOver: handleProjectCardDragOver,
+                        onDrop: handleProjectCardDrop,
+                        isDragging: draggingProjectId === p.id,
+                        isDragOver: dragOverProjectId === p.id,
+                        blockClickRef
+                    } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en revisi\u00F3n.")),
+
+            completedProjects.length > 0 && (React.createElement("div", { className: "section-tapiz section--completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
+                React.createElement("h2", { className: "text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 opacity-75" },
+                    React.createElement("span", { className: "bg-green-500 w-2 h-2 rounded-full" }),
+                    " Hist\u00F3rico / Completados"),
+                React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-75 hover:opacity-100 transition-opacity" }, completedProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
+                        onDragStart: handleProjectDragStart,
+                        onDragEnd: handleProjectDragEnd,
+                        onDragOver: handleProjectCardDragOver,
+                        onDrop: handleProjectCardDrop,
+                        isDragging: draggingProjectId === p.id,
+                        isDragOver: dragOverProjectId === p.id,
+                        blockClickRef
+                    } })))))))));
 };
 // --- COMPONENTE: VISTA PREVIA (Read Only) ---
 const ProjectPreview = ({ data }) => {
