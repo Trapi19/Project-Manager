@@ -841,13 +841,14 @@ const ProjectPreview = ({ data }) => {
 };
 
 // --- COMPONENTE: TABLERO KANBAN (VERSIÓN ROBUSTA) ---
-const TaskKanban = ({ tasks, onUpdateStatus, dnd }) => {
+const TaskKanban = ({ tasks = [], onUpdateStatus, dnd = {} }) => {
     const columns = ['Pendiente', 'En Curso', 'Completado'];
-    const { onDragStart, onDragOverCol, onDropCol } = dnd;
+    const safeTasks = Array.isArray(tasks) ? tasks : [];
+    const { onDragStart = () => {}, onDragOverCol, onDropCol = () => {} } = dnd || {};
 
     return React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', paddingBottom: '2.5rem' } },
         columns.map(status => {
-            const colTasks = tasks.filter(t => (t.estado || 'Pendiente') === status);
+            const colTasks = safeTasks.filter(t => (t.estado || 'Pendiente') === status);
             let headerColor = "#4b5563"; // gray
             let headerBg = "#f3f4f6";
             if(status === 'Completado') { headerColor = "#047857"; headerBg = "#ecfdf5"; }
@@ -1380,7 +1381,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("option", { value: "Completado" }, "\u2705 Completado (Hist\u00F3rico)")))),
                     React.createElement("div", { className: "space-y-4" }))),
 // 1. Mostrar Tablero si el interruptor está activado
-        showKanban ? React.createElement(TaskKanban, { tasks: data.tasks, dnd: { onDragStart: handleTaskDragStart, onDragOverCol: (e) => {e.preventDefault(); e.dataTransfer.dropEffect = 'move'}, onDropCol: handleKanbanDrop }, onUpdateStatus: updateTask }) : null,
+        showKanban ? React.createElement(TaskKanban, { tasks: ((data && data.tasks) ? data.tasks : []), dnd: { onDragStart: handleTaskDragStart, onDragOverCol: (e) => {e.preventDefault(); e.dataTransfer.dropEffect = 'move'}, onDropCol: handleKanbanDrop }, onUpdateStatus: updateTask }) : null,
 
         // 2. Tabla (con estilo inline para ocultarse forzosamente)
         React.createElement("div", { 
