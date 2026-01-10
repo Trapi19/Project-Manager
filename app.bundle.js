@@ -840,15 +840,24 @@ const ProjectPreview = ({ data }) => {
                         }))))))));
 };
 
-// --- COMPONENTE: TABLERO KANBAN (VERSIÓN ROBUSTA) ---
-const TaskKanban = ({ tasks = [], onUpdateStatus, dnd = {} }) => {
-    const columns = ['Pendiente', 'En Curso', 'Completado'];
+// --- COMPONENTE: TABLERO KANBAN (VERSIÓN BLINDADA + ESTILOS INLINE) ---
+const TaskKanban = ({ tasks, onUpdateStatus, dnd }) => {
+    // 1. BLINDAJE: Si tasks llega vacío, usamos un array vacío para no romper el .filter
     const safeTasks = Array.isArray(tasks) ? tasks : [];
-    const { onDragStart = () => {}, onDragOverCol, onDropCol = () => {} } = dnd || {};
+    
+    // 2. BLINDAJE: Si dnd no llega, usamos funciones vacías para que no explote al soltar
+    const safeDnd = dnd || {};
+    const onDragStart = safeDnd.onDragStart || (() => {});
+    const onDragOverCol = safeDnd.onDragOverCol || ((e) => e.preventDefault());
+    const onDropCol = safeDnd.onDropCol || (() => {});
+
+    const columns = ['Pendiente', 'En Curso', 'Completado'];
 
     return React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', paddingBottom: '2.5rem' } },
         columns.map(status => {
+            // Ahora usamos safeTasks, así que esto nunca fallará
             const colTasks = safeTasks.filter(t => (t.estado || 'Pendiente') === status);
+            
             let headerColor = "#4b5563"; // gray
             let headerBg = "#f3f4f6";
             if(status === 'Completado') { headerColor = "#047857"; headerBg = "#ecfdf5"; }
