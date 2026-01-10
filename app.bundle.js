@@ -840,44 +840,45 @@ const ProjectPreview = ({ data }) => {
                         }))))))));
 };
 
-// --- COMPONENTE: TABLERO KANBAN (NUEVO) ---
+// --- COMPONENTE: TABLERO KANBAN (VERSIÓN ROBUSTA) ---
 const TaskKanban = ({ tasks, onUpdateStatus, dnd }) => {
     const columns = ['Pendiente', 'En Curso', 'Completado'];
     const { onDragStart, onDragOverCol, onDropCol } = dnd;
 
-    return React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 pb-10" },
+    return React.createElement("div", { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', paddingBottom: '2.5rem' } },
         columns.map(status => {
             const colTasks = tasks.filter(t => (t.estado || 'Pendiente') === status);
-            let colorClass = "text-gray-600";
-            let bgHeader = "bg-gray-100";
-            if(status === 'Completado') { colorClass = "text-emerald-700"; bgHeader = "bg-emerald-50"; }
-            if(status === 'En Curso') { colorClass = "text-amber-700"; bgHeader = "bg-amber-50"; }
-            if(status === 'Pendiente') { colorClass = "text-rose-700"; bgHeader = "bg-rose-50"; }
+            let headerColor = "#4b5563"; // gray
+            let headerBg = "#f3f4f6";
+            if(status === 'Completado') { headerColor = "#047857"; headerBg = "#ecfdf5"; }
+            if(status === 'En Curso') { headerColor = "#b45309"; headerBg = "#fffbeb"; }
+            if(status === 'Pendiente') { headerColor = "#be123c"; headerBg = "#fff1f2"; }
 
             return React.createElement("div", {
                 key: status,
-                className: "flex flex-col bg-slate-50 rounded-2xl border border-gray-200 p-3 h-full min-h-[400px]",
+                style: { backgroundColor: '#f9fafb', borderRadius: '1rem', border: '1px solid #e5e7eb', padding: '0.75rem', minHeight: '400px', display: 'flex', flexDirection: 'column' },
                 onDragOver: (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; },
                 onDrop: (e) => onDropCol(e, status)
             }, [
-                React.createElement("div", { className: `p-3 mb-3 rounded-xl border border-black/5 flex items-center justify-between ${bgHeader}` }, [
-                    React.createElement("h3", { className: `font-bold text-sm ${colorClass}` }, status),
-                    React.createElement("span", { className: "bg-white px-2 py-0.5 rounded-full text-xs font-bold shadow-sm text-gray-500" }, colTasks.length)
+                React.createElement("div", { style: { padding: '0.75rem', marginBottom: '0.75rem', borderRadius: '0.75rem', border: '1px solid rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: headerBg } }, [
+                    React.createElement("h3", { style: { fontWeight: 'bold', fontSize: '0.875rem', color: headerColor, margin: 0 } }, status),
+                    React.createElement("span", { style: { backgroundColor: 'white', padding: '0.125rem 0.5rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 'bold', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', color: '#6b7280' } }, colTasks.length)
                 ]),
-                React.createElement("div", { className: "flex-1 space-y-3" },
+                React.createElement("div", { style: { flex: 1, display: 'flex', flexDirection: 'column', gap: '0.75rem' } },
                     colTasks.map(t => React.createElement("div", {
                         key: t.id,
                         draggable: true,
                         onDragStart: (e) => onDragStart(e, t.id),
-                        className: "bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 hover:shadow-md transition-all group relative"
+                        style: { backgroundColor: 'white', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', cursor: 'grab', position: 'relative' },
+                        className: "hover:shadow-md transition-all"
                     }, [
-                         React.createElement("div", { className: "flex items-center gap-2 mb-2" }, [
-                            React.createElement("div", { className: "p-1 rounded bg-gray-50 text-gray-400" }, Icons[t.iconType] || Icons.monitor),
-                            React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-wider text-gray-400" }, t.area)
+                         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' } }, [
+                            React.createElement("div", { style: { padding: '0.25rem', borderRadius: '0.25rem', backgroundColor: '#f9fafb', color: '#9ca3af' } }, Icons[t.iconType] || Icons.monitor),
+                            React.createElement("span", { style: { fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af' } }, t.area)
                          ]),
-                         React.createElement("div", { className: "text-sm text-gray-800 font-bold leading-snug mb-1" }, t.tarea),
-                         t.detalles && React.createElement("div", { className: "text-xs text-gray-500 line-clamp-2" }, t.detalles),
-                         t.fechaLimite && React.createElement("div", { className: "mt-3 pt-2 border-t border-gray-50 text-[10px] flex items-center gap-1 text-gray-400" }, [
+                         React.createElement("div", { style: { fontSize: '0.875rem', color: '#1f2937', fontWeight: 'bold', lineHeight: '1.25', marginBottom: '0.25rem' } }, t.tarea),
+                         t.detalles && React.createElement("div", { style: { fontSize: '0.75rem', color: '#6b7280', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden' } }, t.detalles),
+                         t.fechaLimite && React.createElement("div", { style: { marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid #f9fafb', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#9ca3af' } }, [
                             React.createElement("i", { className: "fas fa-calendar" }),
                             window.formatFechaES(t.fechaLimite)
                          ])
@@ -1378,10 +1379,14 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("option", { value: "En Revisi\u00F3n" }, "\uD83D\uDD0E En Revisi\u00F3n"),
                                 React.createElement("option", { value: "Completado" }, "\u2705 Completado (Hist\u00F3rico)")))),
                     React.createElement("div", { className: "space-y-4" }))),
-            // 1. Aquí va el Tablero (solo si showKanban es true)
-        showKanban ? React.createElement(TaskKanban, { tasks: data.tasks, dnd: { onDragStart: handleTaskDragStart, onDragOverCol: (e) => {e.preventDefault(); e.dataTransfer.dropEffect = 'move'}, onDropCol: handleKanbanDrop }, onUpdateStatus: updateTask }) : null, 
-        // 2. Aquí empieza la Tabla normal (¡FÍJATE! Tiene la orden 'hidden' si showKanban es true)
-        React.createElement("div", { className: `bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${showKanban ? 'hidden' : ''}` },
+// 1. Mostrar Tablero si el interruptor está activado
+        showKanban ? React.createElement(TaskKanban, { tasks: data.tasks, dnd: { onDragStart: handleTaskDragStart, onDragOverCol: (e) => {e.preventDefault(); e.dataTransfer.dropEffect = 'move'}, onDropCol: handleKanbanDrop }, onUpdateStatus: updateTask }) : null,
+
+        // 2. Tabla (con estilo inline para ocultarse forzosamente)
+        React.createElement("div", { 
+            className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden",
+            style: { display: showKanban ? 'none' : 'block' } 
+        },
             React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center" },
                 React.createElement("h2", { className: "font-semibold text-gray-800" }, "Plan de Trabajo"),
                     React.createElement("button", { onClick: addTask, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm" },
