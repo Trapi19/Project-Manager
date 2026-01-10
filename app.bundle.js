@@ -839,6 +839,55 @@ const ProjectPreview = ({ data }) => {
                                     React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaLimite)))));
                         }))))))));
 };
+
+// --- COMPONENTE: TABLERO KANBAN (NUEVO) ---
+const TaskKanban = ({ tasks, onUpdateStatus, dnd }) => {
+    const columns = ['Pendiente', 'En Curso', 'Completado'];
+    const { onDragStart, onDragOverCol, onDropCol } = dnd;
+
+    return React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-4 pb-10" },
+        columns.map(status => {
+            const colTasks = tasks.filter(t => (t.estado || 'Pendiente') === status);
+            let colorClass = "text-gray-600";
+            let bgHeader = "bg-gray-100";
+            if(status === 'Completado') { colorClass = "text-emerald-700"; bgHeader = "bg-emerald-50"; }
+            if(status === 'En Curso') { colorClass = "text-amber-700"; bgHeader = "bg-amber-50"; }
+            if(status === 'Pendiente') { colorClass = "text-rose-700"; bgHeader = "bg-rose-50"; }
+
+            return React.createElement("div", {
+                key: status,
+                className: "flex flex-col bg-slate-50 rounded-2xl border border-gray-200 p-3 h-full min-h-[400px]",
+                onDragOver: (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; },
+                onDrop: (e) => onDropCol(e, status)
+            }, [
+                React.createElement("div", { className: `p-3 mb-3 rounded-xl border border-black/5 flex items-center justify-between ${bgHeader}` }, [
+                    React.createElement("h3", { className: `font-bold text-sm ${colorClass}` }, status),
+                    React.createElement("span", { className: "bg-white px-2 py-0.5 rounded-full text-xs font-bold shadow-sm text-gray-500" }, colTasks.length)
+                ]),
+                React.createElement("div", { className: "flex-1 space-y-3" },
+                    colTasks.map(t => React.createElement("div", {
+                        key: t.id,
+                        draggable: true,
+                        onDragStart: (e) => onDragStart(e, t.id),
+                        className: "bg-white p-4 rounded-xl border border-gray-200 shadow-sm cursor-grab active:cursor-grabbing hover:border-blue-400 hover:shadow-md transition-all group relative"
+                    }, [
+                         React.createElement("div", { className: "flex items-center gap-2 mb-2" }, [
+                            React.createElement("div", { className: "p-1 rounded bg-gray-50 text-gray-400" }, Icons[t.iconType] || Icons.monitor),
+                            React.createElement("span", { className: "text-[10px] font-bold uppercase tracking-wider text-gray-400" }, t.area)
+                         ]),
+                         React.createElement("div", { className: "text-sm text-gray-800 font-bold leading-snug mb-1" }, t.tarea),
+                         t.detalles && React.createElement("div", { className: "text-xs text-gray-500 line-clamp-2" }, t.detalles),
+                         t.fechaLimite && React.createElement("div", { className: "mt-3 pt-2 border-t border-gray-50 text-[10px] flex items-center gap-1 text-gray-400" }, [
+                            React.createElement("i", { className: "fas fa-calendar" }),
+                            window.formatFechaES(t.fechaLimite)
+                         ])
+                    ]))
+                )
+            ]);
+        })
+    );
+};
+
 // --- COMPONENTE: EDITOR DE PROYECTO ---
 const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme }) => {
     var _a;
@@ -923,6 +972,13 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         e.dataTransfer.dropEffect = 'move';
     };
     const [showGantt, setShowGantt] = useState(false);
+    const [showKanban, setShowKanban] = useState(false);
+    const handleKanbanDrop = (e, targetStatus) => {
+        e.preventDefault();
+        const draggedId = readDraggedTaskId(e);
+        if (!draggedId) return;
+        updateTask(Number(draggedId), 'estado', targetStatus);
+    };
     const [ganttWarnings, setGanttWarnings] = useState([]);
     const ganttRef = React.useRef(null);
     const parseISODate = (s) => {
@@ -1226,7 +1282,15 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 React.createElement("button", { onClick: handleSave, disabled: isSaving, className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}` },
                     isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }),
                     React.createElement("span", { className: "hidden sm:inline" }, isSaving ? 'Guardando...' : 'Guardar Progreso')),
-                React.createElement("button", { onClick: () => setShowGantt(true), className: "px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm", title: "Ver Gantt del proyecto" },
+                React.createElement("button", { 
+                    onClick: () => setShowKanban(!showKanban), 
+                    className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm mr-2 transition-all ${showKanban ? 'bg-blue-600 text-white ring-2 ring-blue-300' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`,
+                    title: "Alternar vista Tablero / Lista" 
+                },
+                    React.createElement("i", { className: "fas fa-columns" }),
+                    React.createElement("span", { className: "hidden sm:inline" }, showKanban ? "Ver Lista" : "Ver Tablero")
+                ),
+                    React.createElement("button", { onClick: () => setShowGantt(true), className: "px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm", title: "Ver Gantt del proyecto" },
                     React.createElement("i", { className: "fas fa-diagram-project" }),
                     React.createElement("span", { className: "hidden sm:inline" }, "Gantt")),
                 React.createElement("div", { className: "relative" },
@@ -1314,7 +1378,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("option", { value: "En Revisi\u00F3n" }, "\uD83D\uDD0E En Revisi\u00F3n"),
                                 React.createElement("option", { value: "Completado" }, "\u2705 Completado (Hist\u00F3rico)")))),
                     React.createElement("div", { className: "space-y-4" }))),
-            React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
+            showKanban ? React.createElement(TaskKanban, { tasks: data.tasks, dnd: { onDragStart: handleTaskDragStart, onDragOverCol: (e) => {e.preventDefault(); e.dataTransfer.dropEffect = 'move'}, onDropCol: handleKanbanDrop }, onUpdateStatus: updateTask }) : null,
+        React.createElement("div", { className: `bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden ${showKanban ? 'hidden' : ''}` },
                 React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center" },
                     React.createElement("h2", { className: "font-semibold text-gray-800" }, "Plan de Trabajo"),
                     React.createElement("button", { onClick: addTask, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm" },
