@@ -1415,31 +1415,6 @@ const MainApp = () => {
         return {};
     };
 
-    // --- AUDITORÍA (comentarios + actividad) ---
-const getUserLabel = () => {
-    try {
-        const s = JSON.parse(localStorage.getItem('unitecnic_auth_session') || 'null');
-        const c = (s && s.claims) ? s.claims : {};
-        return (c.email || c['cognito:username'] || c.preferred_username || c.username || c.sub || 'Usuario');
-    } catch (e) {
-        return 'Usuario';
-    }
-};
-
-const ensureAudit = (p) => {
-    const audit = (p && p.audit) ? p.audit : {};
-    const comments = Array.isArray(audit.comments) ? audit.comments : [];
-    const activity = Array.isArray(audit.activity) ? audit.activity : [];
-    return { audit, comments, activity };
-};
-
-const pushActivity = (project, entry) => {
-    const { audit, comments, activity } = ensureAudit(project);
-    const nextActivity = [...activity, entry].slice(-200); // límite para no crecer infinito
-    return { ...project, audit: { ...audit, comments, activity: nextActivity } };
-};
-
-
     const flushPendingToAWS = async () => {
         try {
             const pendingStr = localStorage.getItem(PENDING_KEY);
@@ -1527,10 +1502,8 @@ const makeDraftProject = () => ({
             pep: "",
             sharepointUrl: "" // <--- Nuevo campo
         },
-        tasks: [],
-        audit: { comments: [], activity: [] } // NUEVO: comentarios + registro
+        tasks: []
     });
-
 
     const applyRouteFromHash = (list) => {
         try {
@@ -1696,10 +1669,6 @@ const makeDraftProject = () => ({
         setIsSaving(true);
         try {
             const clean = { ...updatedData };
-// Normaliza auditoría (para proyectos antiguos sin audit)
-const _a = ensureAudit(clean);
-clean.audit = { ..._a.audit, comments: _a.comments, activity: _a.activity };
-
             if (clean.__isDraft)
                 delete clean.__isDraft;
             const isNew = String((updatedData === null || updatedData === void 0 ? void 0 : updatedData.id) || '').startsWith('draft_') || !projects.some(p => p.id === updatedData.id);
@@ -1740,49 +1709,18 @@ clean.audit = { ..._a.audit, comments: _a.comments, activity: _a.activity };
         const updatedList = projects.filter(p => p.id !== id);
         await saveProjectsLocal(updatedList);
     };
-const moveProject = async (projectId, targetEstado, beforeProjectId) => {
-    const target = normalizeProjectEstado(targetEstado);
-    const draggedId = String(projectId);
-    const beforeId = beforeProjectId ? String(beforeProjectId) : null;
-    const currentList = [...projects];
-    const fromIdx = currentList.findIndex(p => String(p.id) === draggedId);
-    if (fromIdx < 0) return;
-
-    const prevEstado = normalizeProjectEstado((currentList[fromIdx].meta || {}).estado);
-    let moving = {
-        ...currentList[fromIdx],
-        meta: { ...(currentList[fromIdx].meta || {}), estado: target }
-    };
-
-    // Si cambió de estado, registramos evento
-    if (prevEstado !== target) {
-        moving = pushActivity(moving, {
-            id: 'e_' + Date.now(),
-            ts: Date.now(),
-            user: getUserLabel(),
-            type: 'project',
-            message: `Estado del proyecto: ${prevEstado || '-'} → ${target || '-'}`
-        });
-    }
-
-    currentList.splice(fromIdx, 1);
-
-    let insertIdx = currentList.length;
-    if (beforeId) {
-        const bi = currentList.findIndex(p => String(p.id) === beforeId);
-        if (bi >= 0) insertIdx = bi;
-    } else {
-        const sameStateIdx = currentList
-            .map((p, i) => { var _a; return ({ i, estado: normalizeProjectEstado((_a = p.meta) === null || _a === void 0 ? void 0 : _a.estado) }); })
-            .filter(x => x.estado === target)
-            .map(x => x.i);
-        if (sameStateIdx.length) insertIdx = Math.max(...sameStateIdx) + 1;
-    }
-
-    currentList.splice(insertIdx, 0, moving);
-    await saveProjectsLocal(currentList);
-};
-
+    const moveProject = async (projectId, targetEstado, beforeProjectId) => {
+        const target = normalizeProjectEstado(targetEstado);
+        const draggedId = String(projectId);
+        const beforeId = beforeProjectId ? String(beforeProjectId) : null;
+        const currentList = [...projects];
+        const fromIdx = currentList.findIndex(p => String(p.id) === draggedId);
+        if (fromIdx < 0)
+            return;
+        const moving = {
+            ...currentList[fromIdx],
+            meta: { ...(currentList[fromIdx].meta || {}), estado: target }
+        };
         currentList.splice(fromIdx, 1);
         let insertIdx = currentList.length;
         if (beforeId) {
