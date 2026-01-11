@@ -845,6 +845,10 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     const [data, setData] = useState(project);
     const [hasChanges, setHasChanges] = useState(false);
     const taskIndex = React.useMemo(() => buildTaskIndex(data.tasks || []), [data.tasks]);
+    const activityList = React.useMemo(() => {
+        const a = (data && data.audit && Array.isArray(data.audit.activity)) ? data.audit.activity : [];
+        return [...a].sort((x, y) => (Number(y.ts) || 0) - (Number(x.ts) || 0));
+    }, [data]);
     const [viewMode, setViewMode] = useState(project && project.__isDraft ? 'edit' : 'preview');
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showToast, setShowToast] = useState(false);
@@ -923,6 +927,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         e.dataTransfer.dropEffect = 'move';
     };
     const [showGantt, setShowGantt] = useState(false);
+    const [showAudit, setShowAudit] = useState(false);
     const [ganttWarnings, setGanttWarnings] = useState([]);
     const ganttRef = React.useRef(null);
     const parseISODate = (s) => {
@@ -1040,14 +1045,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         return () => document.removeEventListener('click', onDocClick);
     }, [openIconPickerId]);
     const isNewDraft = Boolean(project && project.__isDraft);
-    const activitySorted = React.useMemo(() => {
-        const a = (data && data.audit && Array.isArray(data.audit.activity)) ? data.audit.activity : [];
-        return [...a].sort((x, y) => (Number(y && y.ts) || 0) - (Number(x && x.ts) || 0));
-    }, [data]);
-    const formatAuditTs = (ts) => {
-        try { return ts ? new Date(ts).toLocaleString('es-ES') : ''; } catch (e) { return ''; }
-    };
-
     const handleCancelNew = () => {
         var _a, _b, _c, _d, _e, _f;
         // Confirmación para evitar perder cambios
@@ -1211,6 +1208,38 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                         " / ",
                         React.createElement("b", null, "fechaLimite"),
                         " y dependencias)."))))),
+        showAudit && (React.createElement("div", { className: "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9998] no-print", onClick: () => setShowAudit(false) },
+            React.createElement("div", { className: "bg-white w-[min(760px,calc(100vw-24px))] max-h-[80vh] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden", onClick: (e) => e.stopPropagation() },
+                React.createElement("div", { className: "px-5 py-4 border-b flex items-center justify-between" },
+                    React.createElement("div", { className: "min-w-0" },
+                        React.createElement("div", { className: "text-sm text-gray-500" }, "Historial de cambios"),
+                        React.createElement("div", { className: "text-lg font-semibold text-gray-900" }, "Actividad")
+                    ),
+                    React.createElement("button", { type: "button", onClick: () => setShowAudit(false), className: "h-9 w-9 rounded-full hover:bg-gray-100 flex items-center justify-center", "aria-label": "Cerrar" },
+                        React.createElement("i", { className: "fas fa-times" })
+                    )
+                ),
+                React.createElement("div", { className: "p-5 overflow-auto max-h-[calc(80vh-72px)]" },
+                    activityList.length === 0
+                        ? React.createElement("div", { className: "text-sm text-gray-500" }, "Sin actividad todavía.")
+                        : React.createElement("ul", { className: "space-y-3" },
+                            activityList.map((log) => React.createElement("li", { key: log.id || String(log.ts || Math.random()), className: "text-sm" },
+                                React.createElement("div", { className: "flex items-start justify-between gap-3" },
+                                    React.createElement("div", { className: "min-w-0" },
+                                        React.createElement("div", { className: "text-gray-900 break-words" },
+                                            React.createElement("span", { className: "font-semibold" }, log.user || 'Usuario'),
+                                            ": ",
+                                            log.message || ''
+                                        ),
+                                        React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, new Date(log.ts || Date.now()).toLocaleString('es-ES'))
+                                    )
+                                )
+                            )),
+                        )
+                )
+            )
+        )),
+
         showToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-50 z-[9999] pointer-events-none" },
             React.createElement("div", { className: "bg-green-500 rounded-full p-1" },
                 React.createElement("i", { className: "fas fa-check text-white text-xs" })),
@@ -1238,6 +1267,10 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                     React.createElement("i", { className: "fas fa-diagram-project" }),
                     React.createElement("span", { className: "hidden sm:inline" }, "Gantt")),
                 React.createElement("div", { className: "relative" },
+                    React.createElement("button", { onClick: () => setShowAudit(true), className: "px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" },
+                        React.createElement("i", { className: "fas fa-history" }),
+                        " ",
+                        React.createElement("span", { className: "hidden sm:inline" }, "Historial")),
                     React.createElement("button", { onClick: () => setShowExportMenu(!showExportMenu), className: "px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" },
                         React.createElement("i", { className: "fas fa-share-square" }),
                         " ",
@@ -1302,20 +1335,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             })
         )
     ),
-                            React.createElement("div", { className: "mt-6 bg-white rounded-2xl border border-gray-200 p-4" },
-                                React.createElement("div", { className: "flex items-start justify-between gap-3" },
-                                    React.createElement("div", null,
-                                        React.createElement("div", { className: "text-sm font-semibold text-gray-900" }, "Actividad"),
-                                        React.createElement("div", { className: "text-xs text-gray-500" }, "Registro automático de cambios (solo lectura).")),
-                                    React.createElement("div", { className: "text-[11px] text-gray-400 whitespace-nowrap" }, activitySorted.length ? (activitySorted.length + " eventos") : "")),
-                                React.createElement("div", { className: "mt-3 space-y-2 max-h-[220px] overflow-auto pr-1" },
-                                    activitySorted.length ? activitySorted.map((ev) => React.createElement("div", { key: ev.id || (ev.ts + '_' + ev.message), className: "p-3 rounded-xl bg-gray-50 border border-gray-100" },
-                                        React.createElement("div", { className: "flex items-center justify-between gap-3" },
-                                            React.createElement("div", { className: "text-xs font-medium text-gray-800 truncate" }, ev.message || "Evento"),
-                                            React.createElement("div", { className: "text-[11px] text-gray-500 whitespace-nowrap" }, formatAuditTs(ev.ts))),
-                                        React.createElement("div", { className: "mt-1 text-[11px] text-gray-500" }, ev.user ? ("Por: " + ev.user) : ""))) : React.createElement("div", { className: "text-xs text-gray-500" }, "Sin actividad todavía."))
-                            ),
-
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Logo del cliente"),
                             React.createElement("div", { className: "flex items-center gap-3" },
                                 React.createElement("div", { className: "h-12 w-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden" }, data.meta.clientLogoData ? (React.createElement("img", { src: data.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: "fas fa-image text-slate-400" }))),
@@ -1437,37 +1456,6 @@ const MainApp = () => {
         return {};
     };
 
-
-    // --- AUDITORÍA (comentarios + actividad) ---
-    const getUserLabel = () => {
-        try {
-            const s = JSON.parse(localStorage.getItem('unitecnic_auth_session') || 'null');
-            const c = (s && s.claims) ? s.claims : {};
-            return (c.email || c['cognito:username'] || c.preferred_username || c.username || c.sub || 'Usuario');
-        } catch (e) {
-            return 'Usuario';
-        }
-    };
-
-    const ensureAudit = (p) => {
-        const audit = (p && p.audit) ? p.audit : {};
-        const comments = Array.isArray(audit.comments) ? audit.comments : [];
-        const activity = Array.isArray(audit.activity) ? audit.activity : [];
-        return { audit, comments, activity };
-    };
-
-    const pushActivity = (project, entry) => {
-        const { audit, comments, activity } = ensureAudit(project);
-        const nextActivity = [...activity, entry].slice(-200); // límite para no crecer infinito
-        return { ...project, audit: { ...audit, comments, activity: nextActivity } };
-    };
-
-    const pushComment = (project, comment) => {
-        const { audit, comments, activity } = ensureAudit(project);
-        const nextComments = [...comments, comment].slice(-200);
-        return { ...project, audit: { ...audit, comments: nextComments, activity } };
-    };
-
     const flushPendingToAWS = async () => {
         try {
             const pendingStr = localStorage.getItem(PENDING_KEY);
@@ -1555,8 +1543,7 @@ const makeDraftProject = () => ({
             pep: "",
             sharepointUrl: "" // <--- Nuevo campo
         },
-        tasks: [],
-        audit: { comments: [], activity: [] }
+        tasks: []
     });
 
     const applyRouteFromHash = (list) => {
@@ -1723,9 +1710,6 @@ const makeDraftProject = () => ({
         setIsSaving(true);
         try {
             const clean = { ...updatedData };
-            // Normaliza auditoría (para proyectos antiguos sin audit)
-            const _a = ensureAudit(clean);
-            clean.audit = { ..._a.audit, comments: _a.comments, activity: _a.activity };
             if (clean.__isDraft)
                 delete clean.__isDraft;
             const isNew = String((updatedData === null || updatedData === void 0 ? void 0 : updatedData.id) || '').startsWith('draft_') || !projects.some(p => p.id === updatedData.id);
@@ -1766,7 +1750,7 @@ const makeDraftProject = () => ({
         const updatedList = projects.filter(p => p.id !== id);
         await saveProjectsLocal(updatedList);
     };
-    const moveProject = (projectId, targetEstado, beforeProjectId) => {
+    const moveProject = async (projectId, targetEstado, beforeProjectId) => {
         const target = normalizeProjectEstado(targetEstado);
         const draggedId = String(projectId);
         const beforeId = beforeProjectId ? String(beforeProjectId) : null;
@@ -1774,24 +1758,10 @@ const makeDraftProject = () => ({
         const fromIdx = currentList.findIndex(p => String(p.id) === draggedId);
         if (fromIdx < 0)
             return;
-
-        const prevEstado = normalizeProjectEstado((currentList[fromIdx].meta || {}).estado);
-
-        let moving = {
+        const moving = {
             ...currentList[fromIdx],
             meta: { ...(currentList[fromIdx].meta || {}), estado: target }
         };
-
-        // Si cambió de estado, registramos evento
-        if (prevEstado !== target) {
-            moving = pushActivity(moving, {
-                id: 'e_' + Date.now(),
-                ts: Date.now(),
-                user: getUserLabel(),
-                type: 'project',
-                message: `Estado del proyecto: ${prevEstado || '-'} → ${target || '-'}`
-            });
-        }
         currentList.splice(fromIdx, 1);
         let insertIdx = currentList.length;
         if (beforeId) {
@@ -1809,7 +1779,7 @@ const makeDraftProject = () => ({
                 insertIdx = Math.max(...sameStateIdx) + 1;
         }
         currentList.splice(insertIdx, 0, moving);
-        saveProjectsLocal(currentList);
+        await saveProjectsLocal(currentList);
     };
     if (view === 'loading')
         return React.createElement("div", { className: "h-screen flex items-center justify-center bg-gray-50" },
