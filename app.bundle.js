@@ -1081,7 +1081,33 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
     };
-    const updateMeta = (field, value) => { setData(prev => ({ ...prev, meta: { ...prev.meta, [field]: value } })); setHasChanges(true); };
+    const updateMeta = (field, value) => {
+        const META_LABELS = {
+            titulo: 'Título',
+            subtitulo: 'Subtítulo',
+            cliente: 'Cliente',
+            empresa: 'Empresa',
+            estado: 'Estado',
+            responsableProyecto: 'Responsable',
+            pep: 'PEP',
+            sharepointUrl: 'Carpeta SharePoint'
+        };
+        setData(prev => {
+            const prevMeta = prev.meta || {};
+            const fromVal = prevMeta[field];
+            if (fromVal === value) return prev;
+
+            const nextProject = { ...prev, meta: { ...prevMeta, [field]: value } };
+            const label = META_LABELS[field] || field;
+
+            return addActivityToProject(
+                nextProject,
+                `${label}: "${(fromVal ?? '')}" → "${(value ?? '')}"`,
+                'meta'
+            );
+        });
+        setHasChanges(true);
+    };
     // --- Logos de cliente (persistentes en localStorage) ---
     const getClientLogoMap = () => {
         try {
@@ -1134,28 +1160,83 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         // Nota: no borramos el mapa global para no perder logos reutilizables.
     };
     const updateTask = (id, field, value) => {
+        const TASK_LABELS = {
+            area: 'Área',
+            tarea: 'Tarea',
+            estado: 'Estado',
+            detalles: 'Detalles',
+            fechaInicio: 'Fecha inicio',
+            fechaFin: 'Fecha fin',
+            fechaLimite: 'Fecha límite',
+            dependsOn: 'Dependencia'
+        };
         setData(prev => {
-            const nextTasks = prev.tasks.map(t => {
-                if (t.id !== id)
-                    return t;
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const targetTask = prevTasks.find(t => t.id === id);
+            const fromVal = targetTask ? targetTask[field] : undefined;
+
+            const nextTasks = prevTasks.map(t => {
+                if (t.id !== id) return t;
+
                 const updated = { ...t, [field]: value };
                 if (field === 'dependsOn') {
-                    const idx = buildTaskIndex(prev.tasks);
+                    const idx = buildTaskIndex(prevTasks);
                     const blocked = isTaskBlocked(updated, idx);
                     if (blocked && normalizeEstado(updated.estado) !== 'Completado')
                         updated.estado = 'Pendiente';
                 }
                 return updated;
             });
-            return { ...prev, tasks: nextTasks };
+
+            let nextProject = { ...prev, tasks: nextTasks };
+
+            if (fromVal !== value) {
+                const label = TASK_LABELS[field] || field;
+                const taskName = (targetTask && (targetTask.tarea || targetTask.detalles || targetTask.id)) ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
+                nextProject = addActivityToProject(
+                    nextProject,
+                    `Tarea "${taskName}": ${label}: "${(fromVal ?? '')}" → "${(value ?? '')}"`,
+                    'task'
+                );
+            }
+            return nextProject;
         });
         setHasChanges(true);
     };
-    const addTask = () => { setData(prev => ({ ...prev, tasks: [...prev.tasks, { id: Date.now(), area: "Nueva Área", tarea: "Nueva Tarea", estado: "Pendiente", detalles: "Descripción...", fechaInicio: "", fechaLimite: "", iconType: "monitor", dependsOn: null }] })); setHasChanges(true); };
-    const deleteTask = (id) => { if (confirm('¿Borrar tarea?')) {
-        setData(prev => ({ ...prev, tasks: prev.tasks.filter(t => t.id !== id) }));
+    const addTask = () => {
+        setData(prev => {
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const newTask = {
+                id: 't_' + Date.now(),
+                area: 'General',
+                tarea: 'Nueva tarea',
+                estado: 'Pendiente',
+                detalles: 'Descripción...',
+                fechaInicio: '',
+                fechaFin: '',
+                fechaLimite: '',
+                iconType: 'monitor',
+                dependsOn: null
+            };
+            let nextProject = { ...prev, tasks: [...prevTasks, newTask] };
+            nextProject = addActivityToProject(nextProject, `Nueva tarea añadida: "${newTask.tarea}"`, 'task');
+            return nextProject;
+        });
         setHasChanges(true);
-    } };
+    };
+    const deleteTask = (id) => {
+        if (!confirm('¿Borrar tarea?')) return;
+        setData(prev => {
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const targetTask = prevTasks.find(t => t.id === id);
+            const taskName = targetTask ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
+            const nextTasks = prevTasks.filter(t => t.id !== id);
+            let nextProject = { ...prev, tasks: nextTasks };
+            nextProject = addActivityToProject(nextProject, `Tarea eliminada: "${taskName}"`, 'task');
+            return nextProject;
+        });
+        setHasChanges(true);
+    };
     // EXPORTACIONES
     const exportHTML = () => {
         const finalHTML = getClientTemplate(data);
@@ -1455,6 +1536,36 @@ const MainApp = () => {
             if (s && s.access_token) return { 'Authorization': 'Bearer ' + s.access_token };
         } catch(e) { }
         return {};
+
+    // --- AUDITORÍA (actividad embebida en cada proyecto; sin coste adicional en AWS) ---
+    const getUserLabel = () => {
+        try {
+            const s = JSON.parse(localStorage.getItem('unitecnic_auth_session') || 'null');
+            const c = (s && s.claims) ? s.claims : {};
+            return (c.email || c['cognito:username'] || c.preferred_username || c.username || c.sub || 'Usuario');
+        } catch (e) {
+            return 'Usuario';
+        }
+    };
+    const ensureAudit = (p) => {
+        const audit = (p && p.audit && typeof p.audit === 'object') ? p.audit : {};
+        const comments = Array.isArray(audit.comments) ? audit.comments : [];
+        const activity = Array.isArray(audit.activity) ? audit.activity : [];
+        return { audit, comments, activity };
+    };
+    const addActivityToProject = (project, message, type = 'project') => {
+        const { audit, comments, activity } = ensureAudit(project);
+        const entry = {
+            id: 'e_' + Date.now() + '_' + Math.random().toString(16).slice(2),
+            ts: Date.now(),
+            user: getUserLabel(),
+            type,
+            message
+        };
+        const nextActivity = [...activity, entry].slice(-200);
+        return { ...project, audit: { ...audit, comments, activity: nextActivity } };
+    };
+
     };
 
     const flushPendingToAWS = async () => {
@@ -1755,30 +1866,40 @@ const makeDraftProject = () => ({
         const target = normalizeProjectEstado(targetEstado);
         const draggedId = String(projectId);
         const beforeId = beforeProjectId ? String(beforeProjectId) : null;
+
         const currentList = [...projects];
         const fromIdx = currentList.findIndex(p => String(p.id) === draggedId);
-        if (fromIdx < 0)
-            return;
-        const moving = {
+        if (fromIdx < 0) return;
+
+        const prevEstado = normalizeProjectEstado((currentList[fromIdx].meta || {}).estado);
+
+        let moving = {
             ...currentList[fromIdx],
             meta: { ...(currentList[fromIdx].meta || {}), estado: target }
         };
+
+        if (prevEstado !== target) {
+            moving = addActivityToProject(
+                moving,
+                `Estado del proyecto: ${prevEstado || '-'} → ${target || '-'}`,
+                'project'
+            );
+        }
+
         currentList.splice(fromIdx, 1);
+
         let insertIdx = currentList.length;
         if (beforeId) {
             const bi = currentList.findIndex(p => String(p.id) === beforeId);
-            if (bi >= 0)
-                insertIdx = bi;
-        }
-        else {
-            // Inserta al final del bloque del mismo estado (mantiene orden por estados)
+            if (bi >= 0) insertIdx = bi;
+        } else {
             const sameStateIdx = currentList
-                .map((p, i) => { var _a; return ({ i, estado: normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) }); })
+                .map((p, i) => ({ i, estado: normalizeProjectEstado((p.meta || {}).estado) }))
                 .filter(x => x.estado === target)
                 .map(x => x.i);
-            if (sameStateIdx.length)
-                insertIdx = Math.max(...sameStateIdx) + 1;
+            if (sameStateIdx.length) insertIdx = Math.max(...sameStateIdx) + 1;
         }
+
         currentList.splice(insertIdx, 0, moving);
         await saveProjectsLocal(currentList);
     };
