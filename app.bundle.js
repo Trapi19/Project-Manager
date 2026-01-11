@@ -131,6 +131,38 @@ const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement
                 : "border-slate-100 hover:border-[color:rgba(8,136,200,0.25)] hover:bg-[color:rgba(8,136,200,0.06)] text-slate-700"}`, title: opt.label }, Icons[opt.id] || Icons.monitor)))),
         React.createElement("div", { className: "mt-2 text-[11px] text-slate-500 px-1" }, "Selecciona un icono")))));
 // --- COMPONENTE: TARJETA DE PROYECTO ---
+// --- AUDITORÍA (actividad embebida en cada proyecto; sin coste AWS) ---
+const getUserLabel = () => {
+    try {
+        const s = JSON.parse(localStorage.getItem('unitecnic_auth_session') || 'null');
+        const c = (s && s.claims) ? s.claims : {};
+        return (c.email || c['cognito:username'] || c.preferred_username || c.username || c.sub || 'Usuario');
+    } catch (e) {
+        return 'Usuario';
+    }
+};
+
+const ensureAudit = (p) => {
+    const audit = (p && p.audit && typeof p.audit === 'object') ? p.audit : {};
+    const comments = Array.isArray(audit.comments) ? audit.comments : [];
+    const activity = Array.isArray(audit.activity) ? audit.activity : [];
+    return { audit, comments, activity };
+};
+
+const addActivityToProject = (project, message, type = 'project') => {
+    const { audit, comments, activity } = ensureAudit(project);
+    const entry = {
+        id: 'e_' + Date.now() + '_' + Math.random().toString(16).slice(2),
+        ts: Date.now(),
+        user: getUserLabel(),
+        type,
+        message
+    };
+    // Limitamos a 200 entradas para no crecer infinito
+    const nextActivity = [...activity, entry].slice(-200);
+    return { ...project, audit: { ...audit, comments, activity: nextActivity } };
+};
+
 const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
     var _a;
     const { onDragStart, onDragEnd, onDragOver, onDrop, isDragging, isDragOver, blockClickRef } = dnd || {};
@@ -845,12 +877,14 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     const [data, setData] = useState(project);
     const [hasChanges, setHasChanges] = useState(false);
     const taskIndex = React.useMemo(() => buildTaskIndex(data.tasks || []), [data.tasks]);
+    const activityList = React.useMemo(() => {
+        const a = (data && data.audit && Array.isArray(data.audit.activity)) ? data.audit.activity : [];
+        return [...a].sort((x, y) => (Number(y.ts) || 0) - (Number(x.ts) || 0));
+    }, [data]);
     const [viewMode, setViewMode] = useState(project && project.__isDraft ? 'edit' : 'preview');
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [openIconPickerId, setOpenIconPickerId] = useState(null);
-    const [collapsedMap, setCollapsedMap] = useState({});
-
     // --- DRAG & DROP de tareas (reordenación) ---
     const [draggingTaskId, setDraggingTaskId] = useState(null);
     const [dragOverTaskId, setDragOverTaskId] = useState(null);
@@ -925,6 +959,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         e.dataTransfer.dropEffect = 'move';
     };
     const [showGantt, setShowGantt] = useState(false);
+    const [showAudit, setShowAudit] = useState(false);
     const [ganttWarnings, setGanttWarnings] = useState([]);
     const ganttRef = React.useRef(null);
     const parseISODate = (s) => {
@@ -1078,7 +1113,33 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
     };
-    const updateMeta = (field, value) => { setData(prev => ({ ...prev, meta: { ...prev.meta, [field]: value } })); setHasChanges(true); };
+    const updateMeta = (field, value) => {
+        const META_LABELS = {
+            titulo: 'Título',
+            subtitulo: 'Subtítulo',
+            cliente: 'Cliente',
+            empresa: 'Empresa',
+            estado: 'Estado',
+            responsableProyecto: 'Responsable',
+            pep: 'PEP',
+            sharepointUrl: 'Carpeta SharePoint'
+        };
+        setData(prev => {
+            const prevMeta = prev.meta || {};
+            const fromVal = prevMeta[field];
+            if (fromVal === value) return prev;
+
+            const nextProject = { ...prev, meta: { ...prevMeta, [field]: value } };
+            const label = META_LABELS[field] || field;
+
+            return addActivityToProject(
+                nextProject,
+                `${label}: "${(fromVal ?? '')}" → "${(value ?? '')}"`,
+                'meta'
+            );
+        });
+        setHasChanges(true);
+    };
     // --- Logos de cliente (persistentes en localStorage) ---
     const getClientLogoMap = () => {
         try {
@@ -1131,147 +1192,83 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         // Nota: no borramos el mapa global para no perder logos reutilizables.
     };
     const updateTask = (id, field, value) => {
+        const TASK_LABELS = {
+            area: 'Área',
+            tarea: 'Tarea',
+            estado: 'Estado',
+            detalles: 'Detalles',
+            fechaInicio: 'Fecha inicio',
+            fechaFin: 'Fecha fin',
+            fechaLimite: 'Fecha límite',
+            dependsOn: 'Dependencia'
+        };
         setData(prev => {
-            const nextTasks = prev.tasks.map(t => {
-                if (t.id !== id)
-                    return t;
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const targetTask = prevTasks.find(t => t.id === id);
+            const fromVal = targetTask ? targetTask[field] : undefined;
+
+            const nextTasks = prevTasks.map(t => {
+                if (t.id !== id) return t;
+
                 const updated = { ...t, [field]: value };
                 if (field === 'dependsOn') {
-                    const idx = buildTaskIndex(prev.tasks);
+                    const idx = buildTaskIndex(prevTasks);
                     const blocked = isTaskBlocked(updated, idx);
                     if (blocked && normalizeEstado(updated.estado) !== 'Completado')
                         updated.estado = 'Pendiente';
                 }
                 return updated;
             });
-            return { ...prev, tasks: nextTasks };
+
+            let nextProject = { ...prev, tasks: nextTasks };
+
+            if (fromVal !== value) {
+                const label = TASK_LABELS[field] || field;
+                const taskName = (targetTask && (targetTask.tarea || targetTask.detalles || targetTask.id)) ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
+                nextProject = addActivityToProject(
+                    nextProject,
+                    `Tarea "${taskName}": ${label}: "${(fromVal ?? '')}" → "${(value ?? '')}"`,
+                    'task'
+                );
+            }
+            return nextProject;
         });
         setHasChanges(true);
     };
-    
-const addTask = () => {
-    setData(prev => {
-        const tasks = Array.isArray(prev.tasks) ? prev.tasks : [];
-        const newTask = {
-            id: 't_' + Date.now(),
-            parentId: null,
-            area: "General",
-            tarea: "",
-            estado: "Pendiente",
-            detalles: "Descripción...",
-            fechaInicio: "",
-            fechaLimite: "",
-            iconType: "monitor",
-            dependsOn: null
-        };
-        return { ...prev, tasks: [...tasks, newTask] };
-    });
-    setHasChanges(true);
-};
-
-const isDescendantOf = (task, ancestorId, byId) => {
-    try {
-        let cur = task;
-        let guard = 0;
-        while (cur && cur.parentId && guard < 50) {
-            if (String(cur.parentId) === String(ancestorId)) return true;
-            cur = byId.get(String(cur.parentId));
-            guard++;
-        }
-    } catch (e) { }
-    return false;
-};
-
-const addSubtask = (parentId) => {
-    setData(prev => {
-        const tasks = Array.isArray(prev.tasks) ? prev.tasks : [];
-        const byId = new Map(tasks.map(t => [String(t.id), t]));
-        const parentIdx = tasks.findIndex(t => String(t.id) === String(parentId));
-        if (parentIdx < 0) return prev;
-
-        // Insertar al final del bloque de descendientes del padre (mantiene agrupación visual)
-        let insertIdx = parentIdx + 1;
-        for (let i = parentIdx + 1; i < tasks.length; i++) {
-            const t = tasks[i];
-            if (t && (String(t.parentId) === String(parentId) || isDescendantOf(t, parentId, byId))) {
-                insertIdx = i + 1;
-            } else {
-                break;
-            }
-        }
-
-        const newTask = {
-            id: 't_' + Date.now(),
-            parentId: String(parentId),
-            area: (tasks[parentIdx] && tasks[parentIdx].area) ? tasks[parentIdx].area : "General",
-            tarea: "",
-            estado: "Pendiente",
-            detalles: "Descripción...",
-            fechaInicio: "",
-            fechaLimite: "",
-            iconType: "monitor",
-            dependsOn: null
-        };
-
-        return { ...prev, tasks: [...tasks.slice(0, insertIdx), newTask, ...tasks.slice(insertIdx)] };
-    });
-    setHasChanges(true);
-};
-
-const deleteTask = (id) => {
-    if (!confirm('¿Borrar tarea? (También borrará sus subtareas)')) return;
-    setData(prev => {
-        const tasks = Array.isArray(prev.tasks) ? prev.tasks : [];
-        const byId = new Map(tasks.map(t => [String(t.id), t]));
-        const filtered = tasks.filter(t => {
-            if (!t) return false;
-            if (String(t.id) === String(id)) return false;
-            if (isDescendantOf(t, id, byId)) return false;
-            return true;
+    const addTask = () => {
+        setData(prev => {
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const newTask = {
+                id: 't_' + Date.now(),
+                area: 'General',
+                tarea: 'Nueva tarea',
+                estado: 'Pendiente',
+                detalles: 'Descripción...',
+                fechaInicio: '',
+                fechaFin: '',
+                fechaLimite: '',
+                iconType: 'monitor',
+                dependsOn: null
+            };
+            let nextProject = { ...prev, tasks: [...prevTasks, newTask] };
+            nextProject = addActivityToProject(nextProject, `Nueva tarea añadida: "${newTask.tarea}"`, 'task');
+            return nextProject;
         });
-        return { ...prev, tasks: filtered };
-    });
-    setHasChanges(true);
-};
-
-const toggleCollapse = (id) => {
-    setCollapsedMap(prev => ({ ...prev, [String(id)]: !prev[String(id)] }));
-};
-
-const visibleTasks = React.useMemo(() => {
-    const tasks = Array.isArray(data.tasks) ? data.tasks : [];
-    const byId = new Map(tasks.map(t => [String(t.id), t]));
-    const childrenMap = {};
-    const idxMap = new Map(tasks.map((t, i) => [String(t.id), i]));
-
-    tasks.forEach(t => {
-        if (t && t.parentId) {
-            const pid = String(t.parentId);
-            if (!childrenMap[pid]) childrenMap[pid] = [];
-            childrenMap[pid].push(t);
-        }
-    });
-
-    const roots = tasks.filter(t => !(t && t.parentId));
-    const sortByOriginalOrder = (a, b) => (idxMap.get(String(a.id)) ?? 0) - (idxMap.get(String(b.id)) ?? 0);
-
-    roots.sort(sortByOriginalOrder);
-    Object.keys(childrenMap).forEach(k => childrenMap[k].sort(sortByOriginalOrder));
-
-    const out = [];
-    const walk = (t, level) => {
-        if (!t) return;
-        const kids = childrenMap[String(t.id)] || [];
-        const hasChildren = kids.length > 0;
-        out.push({ task: t, level, hasChildren });
-        if (hasChildren && collapsedMap[String(t.id)]) return;
-        kids.forEach(ch => walk(ch, level + 1));
+        setHasChanges(true);
     };
-
-    roots.forEach(r => walk(r, 0));
-    return out;
-}, [data.tasks, collapsedMap]);
-
+    const deleteTask = (id) => {
+        if (!confirm('¿Borrar tarea?')) return;
+        setData(prev => {
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const targetTask = prevTasks.find(t => t.id === id);
+            const taskName = targetTask ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
+            const nextTasks = prevTasks.filter(t => t.id !== id);
+            let nextProject = { ...prev, tasks: nextTasks };
+            nextProject = addActivityToProject(nextProject, `Tarea eliminada: "${taskName}"`, 'task');
+            return nextProject;
+        });
+        setHasChanges(true);
+    };
     // EXPORTACIONES
     const exportHTML = () => {
         const finalHTML = getClientTemplate(data);
@@ -1324,6 +1321,38 @@ const visibleTasks = React.useMemo(() => {
                         " / ",
                         React.createElement("b", null, "fechaLimite"),
                         " y dependencias)."))))),
+        showAudit && (React.createElement("div", { className: "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9998] no-print", onClick: () => setShowAudit(false) },
+            React.createElement("div", { className: "bg-white w-[min(760px,calc(100vw-24px))] max-h-[80vh] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden", onClick: (e) => e.stopPropagation() },
+                React.createElement("div", { className: "px-5 py-4 border-b flex items-center justify-between" },
+                    React.createElement("div", { className: "min-w-0" },
+                        React.createElement("div", { className: "text-sm text-gray-500" }, "Historial de cambios"),
+                        React.createElement("div", { className: "text-lg font-semibold text-gray-900" }, "Actividad")
+                    ),
+                    React.createElement("button", { type: "button", onClick: () => setShowAudit(false), className: "h-9 w-9 rounded-full hover:bg-gray-100 flex items-center justify-center", "aria-label": "Cerrar" },
+                        React.createElement("i", { className: "fas fa-times" })
+                    )
+                ),
+                React.createElement("div", { className: "p-5 overflow-auto max-h-[calc(80vh-72px)]" },
+                    activityList.length === 0
+                        ? React.createElement("div", { className: "text-sm text-gray-500" }, "Sin actividad todavía.")
+                        : React.createElement("ul", { className: "space-y-3" },
+                            activityList.map((log) => React.createElement("li", { key: log.id || String(log.ts || Math.random()), className: "text-sm" },
+                                React.createElement("div", { className: "flex items-start justify-between gap-3" },
+                                    React.createElement("div", { className: "min-w-0" },
+                                        React.createElement("div", { className: "text-gray-900 break-words" },
+                                            React.createElement("span", { className: "font-semibold" }, log.user || 'Usuario'),
+                                            ": ",
+                                            log.message || ''
+                                        ),
+                                        React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, new Date(log.ts || Date.now()).toLocaleString('es-ES'))
+                                    )
+                                )
+                            )),
+                        )
+                )
+            )
+        )),
+
         showToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-50 z-[9999] pointer-events-none" },
             React.createElement("div", { className: "bg-green-500 rounded-full p-1" },
                 React.createElement("i", { className: "fas fa-check text-white text-xs" })),
@@ -1350,6 +1379,10 @@ const visibleTasks = React.useMemo(() => {
                 React.createElement("button", { onClick: () => setShowGantt(true), className: "px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm", title: "Ver Gantt del proyecto" },
                     React.createElement("i", { className: "fas fa-diagram-project" }),
                     React.createElement("span", { className: "hidden sm:inline" }, "Gantt")),
+                React.createElement("button", { onClick: () => setShowAudit(true), className: "px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" },
+                        React.createElement("i", { className: "fas fa-history" }),
+                        " ",
+                        React.createElement("span", { className: "hidden sm:inline" }, "Historial")),
                 React.createElement("div", { className: "relative" },
                     React.createElement("button", { onClick: () => setShowExportMenu(!showExportMenu), className: "px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" },
                         React.createElement("i", { className: "fas fa-share-square" }),
@@ -1375,7 +1408,8 @@ const visibleTasks = React.useMemo(() => {
                                 React.createElement("i", { className: "fas fa-file-pdf" })),
                             React.createElement("div", null,
                                 React.createElement("p", { className: "font-medium" }, "PDF Oficial"),
-                                React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))))),
+                                React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))
+                ))),
         viewMode === 'preview' ? (React.createElement("div", { className: "py-8" },
             React.createElement(ProjectPreview, { data: data }))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" },
             React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
@@ -1452,7 +1486,7 @@ const visibleTasks = React.useMemo(() => {
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"),
                                 React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))),
-                        React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, visibleTasks.map(({ task, level, hasChildren }, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` },
+                        React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, data.tasks.map((task, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` },
                             React.createElement("td", { className: "px-6 py-4 min-w-[320px]" },
                                 React.createElement("div", { className: "flex flex-col gap-2" },
                                     React.createElement("div", { className: "flex items-center gap-2" },
@@ -1470,7 +1504,7 @@ const visibleTasks = React.useMemo(() => {
                                             isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" },
                                                 React.createElement("i", { className: "fas fa-lock" }),
                                                 " Bloqueada")))))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]", style: { paddingLeft: (level * 16) + 24 } },
+                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) })),
                             React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
                                 React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -1495,13 +1529,8 @@ const visibleTasks = React.useMemo(() => {
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
                                 React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })),
                             React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
-                                React.createElement("div", { className: "flex items-center justify-center gap-1" },
-                                    hasChildren && React.createElement("button", { onClick: () => toggleCollapse(task.id), className: "text-gray-400 hover:text-gray-700 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: collapsedMap[String(task.id)] ? "Desplegar subtareas" : "Plegar subtareas" },
-                                        React.createElement("i", { className: collapsedMap[String(task.id)] ? "fas fa-chevron-right" : "fas fa-chevron-down" })),
-                                    React.createElement("button", { onClick: () => addSubtask(task.id), className: "text-gray-400 hover:text-blue-600 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Añadir subtarea" },
-                                        React.createElement("i", { className: "fas fa-level-down-alt" })),
-                                    React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" },
-                                        React.createElement("i", { className: "fas fa-times" })) ))))))))))));
+                                React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" },
+                                    React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
 // --- APP PRINCIPAL ---
 // --- APP PRINCIPAL ---
@@ -1839,30 +1868,40 @@ const makeDraftProject = () => ({
         const target = normalizeProjectEstado(targetEstado);
         const draggedId = String(projectId);
         const beforeId = beforeProjectId ? String(beforeProjectId) : null;
+
         const currentList = [...projects];
         const fromIdx = currentList.findIndex(p => String(p.id) === draggedId);
-        if (fromIdx < 0)
-            return;
-        const moving = {
+        if (fromIdx < 0) return;
+
+        const prevEstado = normalizeProjectEstado((currentList[fromIdx].meta || {}).estado);
+
+        let moving = {
             ...currentList[fromIdx],
             meta: { ...(currentList[fromIdx].meta || {}), estado: target }
         };
+
+        if (prevEstado !== target) {
+            moving = addActivityToProject(
+                moving,
+                `Estado del proyecto: ${prevEstado || '-'} → ${target || '-'}`,
+                'project'
+            );
+        }
+
         currentList.splice(fromIdx, 1);
+
         let insertIdx = currentList.length;
         if (beforeId) {
             const bi = currentList.findIndex(p => String(p.id) === beforeId);
-            if (bi >= 0)
-                insertIdx = bi;
-        }
-        else {
-            // Inserta al final del bloque del mismo estado (mantiene orden por estados)
+            if (bi >= 0) insertIdx = bi;
+        } else {
             const sameStateIdx = currentList
-                .map((p, i) => { var _a; return ({ i, estado: normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) }); })
+                .map((p, i) => ({ i, estado: normalizeProjectEstado((p.meta || {}).estado) }))
                 .filter(x => x.estado === target)
                 .map(x => x.i);
-            if (sameStateIdx.length)
-                insertIdx = Math.max(...sameStateIdx) + 1;
+            if (sameStateIdx.length) insertIdx = Math.max(...sameStateIdx) + 1;
         }
+
         currentList.splice(insertIdx, 0, moving);
         await saveProjectsLocal(currentList);
     };
