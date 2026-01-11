@@ -131,6 +131,38 @@ const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement
                 : "border-slate-100 hover:border-[color:rgba(8,136,200,0.25)] hover:bg-[color:rgba(8,136,200,0.06)] text-slate-700"}`, title: opt.label }, Icons[opt.id] || Icons.monitor)))),
         React.createElement("div", { className: "mt-2 text-[11px] text-slate-500 px-1" }, "Selecciona un icono")))));
 // --- COMPONENTE: TARJETA DE PROYECTO ---
+// --- AUDITORÍA (actividad embebida en cada proyecto; sin coste AWS) ---
+const getUserLabel = () => {
+    try {
+        const s = JSON.parse(localStorage.getItem('unitecnic_auth_session') || 'null');
+        const c = (s && s.claims) ? s.claims : {};
+        return (c.email || c['cognito:username'] || c.preferred_username || c.username || c.sub || 'Usuario');
+    } catch (e) {
+        return 'Usuario';
+    }
+};
+
+const ensureAudit = (p) => {
+    const audit = (p && p.audit && typeof p.audit === 'object') ? p.audit : {};
+    const comments = Array.isArray(audit.comments) ? audit.comments : [];
+    const activity = Array.isArray(audit.activity) ? audit.activity : [];
+    return { audit, comments, activity };
+};
+
+const addActivityToProject = (project, message, type = 'project') => {
+    const { audit, comments, activity } = ensureAudit(project);
+    const entry = {
+        id: 'e_' + Date.now() + '_' + Math.random().toString(16).slice(2),
+        ts: Date.now(),
+        user: getUserLabel(),
+        type,
+        message
+    };
+    // Limitamos a 200 entradas para no crecer infinito
+    const nextActivity = [...activity, entry].slice(-200);
+    return { ...project, audit: { ...audit, comments, activity: nextActivity } };
+};
+
 const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
     var _a;
     const { onDragStart, onDragEnd, onDragOver, onDrop, isDragging, isDragOver, blockClickRef } = dnd || {};
@@ -1536,36 +1568,6 @@ const MainApp = () => {
             if (s && s.access_token) return { 'Authorization': 'Bearer ' + s.access_token };
         } catch(e) { }
         return {};
-
-    // --- AUDITORÍA (actividad embebida en cada proyecto; sin coste adicional en AWS) ---
-    const getUserLabel = () => {
-        try {
-            const s = JSON.parse(localStorage.getItem('unitecnic_auth_session') || 'null');
-            const c = (s && s.claims) ? s.claims : {};
-            return (c.email || c['cognito:username'] || c.preferred_username || c.username || c.sub || 'Usuario');
-        } catch (e) {
-            return 'Usuario';
-        }
-    };
-    const ensureAudit = (p) => {
-        const audit = (p && p.audit && typeof p.audit === 'object') ? p.audit : {};
-        const comments = Array.isArray(audit.comments) ? audit.comments : [];
-        const activity = Array.isArray(audit.activity) ? audit.activity : [];
-        return { audit, comments, activity };
-    };
-    const addActivityToProject = (project, message, type = 'project') => {
-        const { audit, comments, activity } = ensureAudit(project);
-        const entry = {
-            id: 'e_' + Date.now() + '_' + Math.random().toString(16).slice(2),
-            ts: Date.now(),
-            user: getUserLabel(),
-            type,
-            message
-        };
-        const nextActivity = [...activity, entry].slice(-200);
-        return { ...project, audit: { ...audit, comments, activity: nextActivity } };
-    };
-
     };
 
     const flushPendingToAWS = async () => {
