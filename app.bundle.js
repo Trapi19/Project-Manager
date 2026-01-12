@@ -770,30 +770,34 @@ React.createElement("div", { className: "exec-card md:col-span-2" },
                         blockClickRef
                     } })))))))));
 };
+
 // --- COMPONENTE: VISTA PREVIA (Read Only) ---
 const ProjectPreview = ({ data }) => {
     const totalTasks = data.tasks.length;
     const completedTasks = data.tasks.filter(t => t.estado === 'Completado').length;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
     const getStatusColor = (status) => {
         switch (status) {
             case 'Completado': return 'status-completed';
             case 'Pendiente': return 'status-pending';
             case 'En Curso': return 'status-inprogress';
-                        default: return 'status-default';
+            default: return 'status-default';
         }
     };
+    
     const taskIndex = buildTaskIndex(data.tasks);
+    
     const getDependencyLabel = (task) => {
-        if (!task.dependsOn)
-            return null;
+        if (!task.dependsOn) return null;
         const dep = taskIndex.get(task.dependsOn);
-        if (!dep)
-            return 'Dependencia no encontrada';
+        if (!dep) return 'Dependencia no encontrada';
         return `${dep.area} - ${dep.tarea}`;
     };
+
     return (React.createElement("div", { className: "bg-gray-50 print-container" },
         React.createElement("div", { className: "max-w-7xl mx-auto space-y-6" },
+            // HEADER
             React.createElement("div", { id: "header-container", className: "print-header flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-xl shadow-sm border border-gray-200" },
                 React.createElement("div", { className: "header-left-part flex items-center w-full md:w-2/3 gap-4 md:gap-6" },
                     data.meta.clientLogoData && React.createElement("img", { src: normalizeDataImage(data.meta.clientLogoData), alt: "Logo Cliente", className: "h-14 w-auto object-contain shrink-0 logo-print" }),
@@ -803,22 +807,20 @@ const ProjectPreview = ({ data }) => {
                 React.createElement("div", { className: "header-right-part mt-4 md:mt-0 flex items-center gap-6 self-start md:self-center" },
                     React.createElement("div", { className: "hidden md:block w-px h-12 bg-gray-200 no-print" }),
                     React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "h-10 md:h-12 object-contain logo-print" }))),
+            
+            // TARJETAS RESUMEN
             React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-6" },
                 React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
                     React.createElement("div", { className: "flex items-center justify-between gap-4" },
                         React.createElement("div", { className: "min-w-0" },
                             React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Estado Global"),
-                            React.createElement("p", { className: "text-3xl font-bold text-gray-900 mt-2 tabular-nums" },
-                                progress,
-                                "%"),
+                            React.createElement("p", { className: "text-3xl font-bold text-gray-900 mt-2 tabular-nums" }, progress, "%"),
                             React.createElement("p", { className: "text-xs text-gray-400 mt-1" }, "Completado")),
                         React.createElement("div", { className: "shrink-0" },
                             React.createElement("svg", { width: "64", height: "64", viewBox: "0 0 64 64", className: "block" },
                                 React.createElement("circle", { cx: "32", cy: "32", r: "26", fill: "none", stroke: "var(--progress-track)", strokeWidth: "8" }),
                                 React.createElement("circle", { cx: "32", cy: "32", r: "26", fill: "none", stroke: "#2563EB", strokeWidth: "8", strokeLinecap: "round", transform: "rotate(-90 32 32)", strokeDasharray: 2 * Math.PI * 26, strokeDashoffset: (2 * Math.PI * 26) * (1 - (progress / 100)) }),
-                                React.createElement("text", { x: "32", y: "36", textAnchor: "middle", fontSize: "14", fontWeight: "700", fill: "var(--progress-text)", className: "tabular-nums" },
-                                    progress,
-                                    "%"))))),
+                                React.createElement("text", { x: "32", y: "36", textAnchor: "middle", fontSize: "14", fontWeight: "700", fill: "var(--progress-text)", className: "tabular-nums" }, progress, "%"))))),
                 React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
                     React.createElement("div", { className: "flex items-center justify-between" },
                         React.createElement("div", null,
@@ -833,6 +835,8 @@ const ProjectPreview = ({ data }) => {
                             React.createElement("p", { className: "text-3xl font-bold text-orange-600 mt-2" }, totalTasks - completedTasks)),
                         React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-orange-50 rounded-full text-orange-600" },
                             React.createElement("i", { className: "fas fa-clock" }))))),
+            
+            // TABLA DETALLE DE TRABAJOS
             React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
                 React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" },
                     React.createElement("h2", { className: "text-lg font-semibold text-gray-800" }, "Detalle de Trabajos")),
@@ -840,73 +844,86 @@ const ProjectPreview = ({ data }) => {
                     React.createElement("table", { className: "w-full table-fixed text-left border-collapse text-sm" },
                         React.createElement("thead", null,
                             React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider" },
-                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/5" }, "\u00C1rea"),
+                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/5" }, "Área"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Tarea"),
-                                                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6 internal-only" }, "Asignado"),
-React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Estado"),
+                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6 internal-only" }, "Asignado"),
+                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Estado"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Detalles"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Inicio"),
-                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "L\u00EDmite"))),
+                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Límite"))),
                         React.createElement("tbody", { className: "divide-y divide-gray-200" }, data.tasks.map((row) => {
                             var _a;
                             return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" },
+                                // COLUMNA 1: ÁREA
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("div", { className: "flex items-center" },
                                         React.createElement("div", { 
-    className: "p-1.5 rounded-lg mr-2 no-print flex items-center justify-center " + (
-        row.iconType === 'wifi' ? 'bg-blue-100 text-blue-600' :
-        row.iconType === 'server' ? 'bg-orange-100 text-orange-600' :
-        row.iconType === 'monitor' ? 'bg-indigo-100 text-indigo-600' :
-        row.iconType === 'tv' ? 'bg-purple-100 text-purple-600' :
-        row.iconType === 'users' ? 'bg-green-100 text-green-600' :
-        row.iconType === 'key' ? 'bg-yellow-100 text-yellow-600' :
-        row.iconType === 'alert' ? 'bg-red-100 text-red-600' :
-        row.iconType === 'lock' ? 'bg-slate-200 text-slate-700' :
-        'bg-gray-100 text-gray-600'
-    ),
-    style: { width: '32px', height: '32px' }
-}, Icons[row.iconType] || Icons.monitor),
+                                            className: "p-1.5 rounded-lg mr-2 no-print flex items-center justify-center " + (
+                                                row.iconType === 'wifi' ? 'bg-blue-100 text-blue-600' :
+                                                row.iconType === 'server' ? 'bg-orange-100 text-orange-600' :
+                                                row.iconType === 'monitor' ? 'bg-indigo-100 text-indigo-600' :
+                                                row.iconType === 'tv' ? 'bg-purple-100 text-purple-600' :
+                                                row.iconType === 'users' ? 'bg-green-100 text-green-600' :
+                                                row.iconType === 'key' ? 'bg-yellow-100 text-yellow-600' :
+                                                row.iconType === 'alert' ? 'bg-red-100 text-red-600' :
+                                                row.iconType === 'lock' ? 'bg-slate-200 text-slate-700' :
+                                                'bg-gray-100 text-gray-600'
+                                            ),
+                                            style: { width: '32px', height: '32px' }
+                                        }, Icons[row.iconType] || Icons.monitor),
                                         React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
-                                // --- COLUMNA TAREA CON SUBTAREAS ---
-React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-    React.createElement("div", { className: "flex flex-col gap-1" },
-        // 1. Título Tarea
-        React.createElement("span", { className: "text-gray-700 font-medium" }, row.tarea),
-        
-        // 2. Lista Subtareas
-        (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 pl-3 border-l-2 border-gray-100 space-y-1.5" },
-            row.subtasks.map(sub => 
-                React.createElement("div", { key: sub.id, className: "flex items-start gap-2 text-xs" },
-                    React.createElement("i", { 
-                        className: `fas mt-0.5 ${sub.done ? 'fa-check-square text-emerald-500' : 'fa-square text-gray-200'}`,
-                        style: { fontSize: '10px' }
-                    }),
-                    React.createElement("span", { 
-                        className: sub.done ? "text-gray-400 line-through decoration-gray-300" : "text-gray-600" 
-                    }, sub.text)
-                )
-            )
-        ),
+                                
+                                // COLUMNA 2: TAREA + SUBTAREAS
+                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                                    React.createElement("div", { className: "flex flex-col gap-1" },
+                                        // Texto principal de la tarea
+                                        React.createElement("span", { className: "text-gray-700 font-medium" }, row.tarea),
+                                        
+                                        // LISTA DE SUBTAREAS (Solo si existen)
+                                        (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 pl-3 border-l-2 border-gray-100 space-y-1.5" },
+                                            row.subtasks.map(sub => 
+                                                React.createElement("div", { key: sub.id, className: "flex items-start gap-2 text-xs" },
+                                                    React.createElement("i", { 
+                                                        className: `fas mt-0.5 ${sub.done ? 'fa-check-square text-emerald-500' : 'fa-square text-gray-200'}`,
+                                                        style: { fontSize: '10px' }
+                                                    }),
+                                                    React.createElement("span", { 
+                                                        className: sub.done ? "text-gray-400 line-through decoration-gray-300" : "text-gray-600" 
+                                                    }, sub.text)
+                                                )
+                                            )
+                                        ),
 
-        // 3. Bloqueos
-        isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill mt-1" },
-            React.createElement("i", { className: "fas fa-lock" }),
-            "Bloqueada por: ",
-            React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—')))
-    )
-),
-                                                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" },
+                                        // Etiqueta de Bloqueo
+                                        isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill mt-1" },
+                                            React.createElement("i", { className: "fas fa-lock" }),
+                                            "Bloqueada por: ",
+                                            React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—')))
+                                    )
+                                ),
+                                
+                                // COLUMNA 3: ASIGNADO
+                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" },
                                     React.createElement("span", { className: "text-gray-700" }, row.asignadoA ? row.asignadoA : '-')),
-React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                                
+                                // COLUMNA 4: ESTADO
+                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)),
+                                
+                                // COLUMNA 5: DETALLES
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')),
+                                
+                                // COLUMNA 6: INICIO
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))),
+                                
+                                // COLUMNA 7: LÍMITE
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaLimite)))));
                         }))))))));
 };
+
 // --- COMPONENTE: EDITOR DE PROYECTO ---
 const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme }) => {
     var _a;
