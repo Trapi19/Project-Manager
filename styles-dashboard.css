@@ -713,3 +713,113 @@
 
 .wl-tag-issue.overdue { background: rgba(239, 68, 68, 0.15); color: #b91c1c; }
 .dark .wl-tag-issue.overdue { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+
+/* --- ESTILOS PARA SUBTAREAS (Jerarquía) --- */
+
+.wl-subtask-container {
+    margin-top: 12px;
+    padding-left: 12px;
+    border-left: 2px solid var(--border); /* Línea vertical de jerarquía */
+}
+
+.wl-subtask-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.wl-subtask-progress-bg {
+    width: 100px;
+    height: 4px;
+    background-color: var(--surface-2); /* Gris muy suave */
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.wl-subtask-progress-bar {
+    height: 100%;
+    background-color: var(--brand); /* Azul marca */
+    transition: width 0.3s ease;
+}
+
+.wl-subtask-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wl-subtask-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Checkbox personalizado circular */
+.wl-subtask-check {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--muted);
+    border-radius: 50%; /* Círculo */
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    background-color: var(--surface);
+    flex-shrink: 0;
+}
+
+.wl-subtask-check:checked {
+    background-color: #10b981; /* Verde éxito */
+    border-color: #10b981;
+}
+
+.wl-subtask-check:checked::after {
+    content: '✔';
+    font-size: 10px;
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.wl-subtask-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: var(--text);
+    font-size: 0.85rem;
+    padding: 2px 0;
+    transition: all 0.2s;
+}
+
+.wl-subtask-input:focus {
+    outline: none;
+    border-bottom-color: var(--brand);
+}
+
+.wl-subtask-input.done {
+    text-decoration: line-through;
+    color: var(--muted);
+}
+
+/* Botón sutil para añadir */
+.wl-btn-add-sub {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--brand);
+    font-weight: 600;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+.wl-btn-add-sub:hover { background-color: var(--brand-soft); }
