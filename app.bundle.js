@@ -404,7 +404,7 @@ const executiveSummary = (() => {
 
             const idx = buildTaskIndex(tasks);
             tasks.forEach(t => {
-                const est = effectiveEstado\(t, idx\);
+                const est = effectiveEstado(t, idx);
                 // Carga de trabajo por persona (ASIGNADO A): cuenta tareas abiertas (Pendiente/En curso).
                 if (est !== 'Completado') {
                     const assigned = (t.asignadoA != null && String(t.asignadoA).trim()) ? String(t.asignadoA).trim() : 'Sin asignar';
