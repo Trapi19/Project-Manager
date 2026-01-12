@@ -1563,46 +1563,35 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                     React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
 
-// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (POR TAREA INDIVIDUAL) ---
+// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (FINAL MEJORADO) ---
 const WorkloadView = ({ projects, onBack }) => {
     
-    // LÓGICA DE AGRUPACIÓN: TAREA -> PERSONA
+    // 1. LÓGICA DE AGRUPACIÓN (CORREGIDA)
     const workloadData = React.useMemo(() => {
         const map = {};
         
         projects.forEach(p => {
-            // Opcional: Si el proyecto está 'Completado', ¿queremos ver tareas pendientes olvidadas?
-            // Asumiremos que si el proyecto está cerrado, no cuenta. Si quieres que cuente, quita esta línea.
             if (String(p.meta?.estado) === 'Completado') return;
 
-            // Filtramos solo las tareas que NO están completadas
             const activeTasks = (p.tasks || []).filter(t => String(t.estado) !== 'Completado');
 
             activeTasks.forEach(t => {
-                // CORRECCIÓN CLAVE: Usamos 'asignadoA' que es como lo guarda el Editor
                 let assignedTo = (t.asignadoA || '').trim();
                 
-                // Si la casilla está vacía, va al grupo "Sin Asignar"
-                if (!assignedTo) {
-                    assignedTo = "Sin Asignar";
-                }
+                if (!assignedTo) assignedTo = "Sin Asignar";
 
-                // Usamos el nombre de la persona como clave del mapa
                 const key = assignedTo;
 
-                // Si es la primera vez que vemos a esta persona, inicializamos su objeto
                 if (!map[key]) {
                     map[key] = { 
                         name: key, 
                         totalTasks: 0, 
-                        projectsMap: {} // Usamos un mapa interno para agrupar por proyectos dentro de la persona
+                        projectsMap: {} 
                     };
                 }
 
-                // Incrementamos su contador global
                 map[key].totalTasks++;
 
-                // Si esta persona aún no tenía fichado este proyecto, lo inicializamos
                 if (!map[key].projectsMap[p.id]) {
                     map[key].projectsMap[p.id] = {
                         id: p.id,
@@ -1612,13 +1601,10 @@ const WorkloadView = ({ projects, onBack }) => {
                     };
                 }
                 
-                // Añadimos la tarea específica a la lista de este proyecto para esta persona
                 map[key].projectsMap[p.id].tasks.push(t);
             });
         });
 
-        // Convertimos el objeto map en un array ordenado (el que tiene más trabajo primero)
-        // Y convertimos projectsMap a array para poder pintarlo
         return Object.values(map)
             .map(person => ({
                 ...person,
@@ -1627,62 +1613,75 @@ const WorkloadView = ({ projects, onBack }) => {
             .sort((a, b) => b.totalTasks - a.totalTasks);
     }, [projects]);
 
+    // 2. RENDERIZADO (DISEÑO MEJORADO DARK MODE)
     return (
-        React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" },
-            // Cabecera
-            React.createElement("div", { className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-4 flex items-center gap-4 shadow-sm no-print" },
-                React.createElement("button", { onClick: onBack, className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium transition-colors" },
+        React.createElement("div", { className: "min-h-screen bg-gray-50 dark:bg-slate-900 pb-20 transition-colors duration-300" },
+            // Cabecera Principal
+            React.createElement("div", { className: "bg-white dark:bg-[#0f172a] border-b border-gray-200 dark:border-white/10 sticky top-0 z-20 px-6 py-4 flex items-center gap-4 shadow-sm no-print" },
+                React.createElement("button", { onClick: onBack, className: "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white flex items-center gap-2 text-sm font-medium transition-colors" },
                     React.createElement("i", { className: "fas fa-arrow-left" }),
                     "Volver al Dashboard"
                 ),
-                React.createElement("div", { className: "h-6 w-px bg-gray-200" }),
-                React.createElement("h2", { className: "text-lg font-bold text-gray-800 flex items-center gap-2" },
+                React.createElement("div", { className: "h-6 w-px bg-gray-200 dark:bg-white/10" }),
+                React.createElement("h2", { className: "text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2" },
                     React.createElement("i", { className: "fas fa-users-cog text-indigo-500" }),
-                    "Carga de Trabajo (Por Asignación Individual)")
+                    "Carga de Trabajo Individual")
             ),
 
             // Contenido Principal
             React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10 space-y-8" },
                 workloadData.length === 0 
-                ? React.createElement("div", { className: "text-center text-gray-500 py-10" }, "No hay tareas pendientes asignadas.")
+                ? React.createElement("div", { className: "text-center text-gray-500 dark:text-gray-400 py-10" }, "No hay tareas pendientes asignadas.")
                 : workloadData.map((person, idx) => (
-                    React.createElement("div", { key: idx, className: "bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" },
-                        // Encabezado de la Persona
-                        React.createElement("div", { className: "px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center" },
-                            React.createElement("div", { className: "flex items-center gap-3" },
-                                React.createElement("div", { className: `h-10 w-10 rounded-full flex items-center justify-center font-bold text-lg ${person.name === 'Sin Asignar' ? 'bg-gray-200 text-gray-500' : 'bg-indigo-100 text-indigo-600'}` },
+                    React.createElement("div", { key: idx, className: "bg-white dark:bg-[#1e293b] rounded-2xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden transition-all duration-300 hover:shadow-md" },
+                        
+                        // Encabezado de la Persona (Glassy en Dark Mode)
+                        React.createElement("div", { className: "px-6 py-5 bg-gray-50/50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex justify-between items-center" },
+                            React.createElement("div", { className: "flex items-center gap-4" },
+                                // Avatar
+                                React.createElement("div", { className: `h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow-sm ${
+                                    person.name === 'Sin Asignar' 
+                                    ? 'bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-400' 
+                                    : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300'
+                                }` },
                                     person.name.charAt(0).toUpperCase()
                                 ),
                                 React.createElement("div", null,
-                                    React.createElement("h3", { className: "font-bold text-gray-900 text-lg" }, person.name),
-                                    React.createElement("p", { className: "text-xs text-gray-500" }, 
+                                    React.createElement("h3", { className: "font-bold text-gray-900 dark:text-white text-xl leading-tight" }, person.name),
+                                    React.createElement("p", { className: "text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5" }, 
                                         person.totalTasks === 1 ? "1 tarea activa" : `${person.totalTasks} tareas activas`
                                     )
                                 )
                             ),
-                            React.createElement("div", { className: `px-3 py-1 rounded-full text-xs font-bold border ${person.totalTasks >= 5 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'}` },
+                            // Badge de Carga
+                            React.createElement("div", { className: `px-3 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md ${
+                                person.totalTasks >= 5 
+                                ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/20' 
+                                : 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20'
+                            }` },
                                 person.totalTasks >= 5 ? "Carga alta" : "Carga normal"
                             )
                         ),
-                        // Lista de Proyectos donde participa esta persona
+
+                        // Cuerpo (Lista de Proyectos)
                         React.createElement("div", { className: "p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" },
                             person.projects.map(proj => (
-                                React.createElement("div", { key: proj.id, className: "bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 transition-colors cursor-pointer group", onClick: () => window.location.hash = `#/project/${proj.id}` },
+                                React.createElement("div", { key: proj.id, className: "bg-gray-50 dark:bg-black/20 rounded-xl p-4 border border-gray-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all cursor-pointer group", onClick: () => window.location.hash = `#/project/${proj.id}` },
                                     
                                     React.createElement("div", { className: "flex justify-between items-start mb-2" }, 
-                                        React.createElement("h4", { className: "font-bold text-gray-800 text-sm truncate w-full group-hover:text-indigo-600 transition-colors", title: proj.title }, proj.title)
+                                        React.createElement("h4", { className: "font-bold text-gray-800 dark:text-gray-200 text-sm truncate w-full group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors", title: proj.title }, proj.title)
                                     ),
-                                    React.createElement("div", { className: "text-[10px] text-gray-400 uppercase font-bold mb-3 flex items-center gap-1" },
+                                    React.createElement("div", { className: "text-[10px] text-gray-400 dark:text-gray-500 uppercase font-bold mb-3 flex items-center gap-1" },
                                         React.createElement("i", { className: "fas fa-building" }), proj.client
                                     ),
-                                    // Lista de sus tareas específicas dentro de este proyecto
+                                    // Lista de Tareas
                                     React.createElement("ul", { className: "space-y-2" },
                                         proj.tasks.map(t => (
-                                            React.createElement("li", { key: t.id, className: "flex items-start gap-2 text-xs border-t border-gray-200/50 pt-1.5 first:border-0 first:pt-0" },
-                                                React.createElement("i", { className: `fas fa-circle mt-1 text-[6px] ${String(t.estado).includes('Curso') ? 'text-amber-500' : 'text-slate-300'}` }),
+                                            React.createElement("li", { key: t.id, className: "flex items-start gap-2 text-xs border-t border-gray-200/50 dark:border-white/5 pt-1.5 first:border-0 first:pt-0" },
+                                                React.createElement("i", { className: `fas fa-circle mt-1 text-[6px] ${String(t.estado).includes('Curso') ? 'text-amber-500' : 'text-slate-300 dark:text-slate-600'}` }),
                                                 React.createElement("div", { className: "flex-1" },
-                                                    React.createElement("span", { className: "text-gray-700 font-medium block" }, t.tarea),
-                                                    t.fechaLimite && React.createElement("span", { className: "text-red-500 font-semibold text-[10px]" }, ` Vence: ${window.formatFechaES(t.fechaLimite)}`)
+                                                    React.createElement("span", { className: "text-gray-700 dark:text-gray-300 font-medium block leading-snug" }, t.tarea),
+                                                    t.fechaLimite && React.createElement("span", { className: "text-red-500 dark:text-red-400 font-semibold text-[10px]" }, ` Vence: ${window.formatFechaES(t.fechaLimite)}`)
                                                 )
                                             )
                                         ))
