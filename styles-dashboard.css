@@ -511,3 +511,136 @@
 .theme-dark .exec-card .text-gray-500 {
     color: rgba(255, 255, 255, 0.6) !important;
 }
+/* --- ESTILOS PARA VISTA DE CARGA DE TRABAJO (WorkloadView) --- */
+
+/* Contenedor Principal */
+.wl-container {
+    min-height: 100vh;
+    background-color: #f9fafb; /* gray-50 */
+    padding-bottom: 5rem;
+    transition: background-color 0.3s ease;
+}
+
+/* Barra Superior Sticky */
+.wl-topbar {
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* --- TARJETA DE PERSONA (Card) --- */
+.wl-card {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem; /* rounded-2xl */
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.wl-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Cabecera de la tarjeta (Efecto Glassy) */
+.wl-card-header {
+    padding: 1.25rem 1.5rem;
+    background-color: rgba(249, 250, 251, 0.5); /* gray-50 con opacidad */
+    border-bottom: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Avatar */
+.wl-avatar {
+    height: 3rem;
+    width: 3rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.125rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.wl-avatar.assigned { background-color: #e0e7ff; color: #4f46e5; } /* Indigo */
+.wl-avatar.unassigned { background-color: #e5e7eb; color: #6b7280; } /* Gray */
+
+/* Badge de Carga */
+.wl-badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-width: 1px;
+    backdrop-filter: blur(8px);
+}
+.wl-badge.high { background-color: #fef2f2; color: #dc2626; border-color: #fee2e2; }
+.wl-badge.normal { background-color: #ecfdf5; color: #059669; border-color: #d1fae5; }
+
+
+/* --- TARJETA DE PROYECTO (Sub-item) --- */
+.wl-project-grid {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+@media (min-width: 768px) { .wl-project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .wl-project-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.wl-project-card {
+    background-color: #f9fafb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    border: 1px solid #f3f4f6;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.wl-project-card:hover {
+    border-color: #c7d2fe; /* indigo-200 */
+}
+
+/* --- MODO OSCURO (DARK MODE) --- */
+/* Se activa cuando el body o html tiene la clase 'dark' */
+.dark .wl-container { background-color: #0f172a; } /* Slate 900 */
+
+.dark .wl-topbar {
+    background-color: #0f172a;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+.dark .wl-topbar h2, .dark .wl-topbar button:hover { color: white; }
+
+.dark .wl-card {
+    background-color: #1e293b; /* Slate 800 */
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .wl-card-header {
+    background-color: rgba(255, 255, 255, 0.05); /* Glassy Effect Dark */
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .wl-avatar.assigned { background-color: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+.dark .wl-avatar.unassigned { background-color: rgba(31, 41, 55, 1); color: #9ca3af; }
+
+.dark .wl-badge.high { background-color: rgba(239, 68, 68, 0.1); color: #fca5a5; border-color: rgba(239, 68, 68, 0.2); }
+.dark .wl-badge.normal { background-color: rgba(16, 185, 129, 0.1); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.2); }
+
+.dark .wl-project-card {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+.dark .wl-project-card:hover { border-color: rgba(99, 102, 241, 0.3); }
+.dark .wl-project-card h4 { color: #e2e8f0; }
+.dark .wl-project-card:hover h4 { color: #818cf8; }
+.dark .wl-text-secondary { color: #94a3b8; } /* gray-400 */

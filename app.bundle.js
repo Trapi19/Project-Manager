@@ -1563,33 +1563,24 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                     React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
 
-// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (FINAL MEJORADO) ---
+// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (CON CSS EXTERNO) ---
 const WorkloadView = ({ projects, onBack }) => {
     
-    // 1. LÓGICA DE AGRUPACIÓN (CORREGIDA)
+    // 1. LÓGICA DE AGRUPACIÓN (IGUAL QUE ANTES)
     const workloadData = React.useMemo(() => {
         const map = {};
-        
         projects.forEach(p => {
             if (String(p.meta?.estado) === 'Completado') return;
-
             const activeTasks = (p.tasks || []).filter(t => String(t.estado) !== 'Completado');
 
             activeTasks.forEach(t => {
                 let assignedTo = (t.asignadoA || '').trim();
-                
                 if (!assignedTo) assignedTo = "Sin Asignar";
-
                 const key = assignedTo;
 
                 if (!map[key]) {
-                    map[key] = { 
-                        name: key, 
-                        totalTasks: 0, 
-                        projectsMap: {} 
-                    };
+                    map[key] = { name: key, totalTasks: 0, projectsMap: {} };
                 }
-
                 map[key].totalTasks++;
 
                 if (!map[key].projectsMap[p.id]) {
@@ -1600,50 +1591,41 @@ const WorkloadView = ({ projects, onBack }) => {
                         tasks: []
                     };
                 }
-                
                 map[key].projectsMap[p.id].tasks.push(t);
             });
         });
-
         return Object.values(map)
-            .map(person => ({
-                ...person,
-                projects: Object.values(person.projectsMap)
-            }))
+            .map(person => ({ ...person, projects: Object.values(person.projectsMap) }))
             .sort((a, b) => b.totalTasks - a.totalTasks);
     }, [projects]);
 
-    // 2. RENDERIZADO (DISEÑO MEJORADO DARK MODE)
+    // 2. RENDERIZADO LIMPIO (USANDO CLASES CSS EXTERNAS)
     return (
-        React.createElement("div", { className: "min-h-screen bg-gray-50 dark:bg-slate-900 pb-20 transition-colors duration-300" },
-            // Cabecera Principal
-            React.createElement("div", { className: "bg-white dark:bg-[#0f172a] border-b border-gray-200 dark:border-white/10 sticky top-0 z-20 px-6 py-4 flex items-center gap-4 shadow-sm no-print" },
-                React.createElement("button", { onClick: onBack, className: "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white flex items-center gap-2 text-sm font-medium transition-colors" },
+        React.createElement("div", { className: "wl-container" },
+            // Cabecera
+            React.createElement("div", { className: "wl-topbar" },
+                React.createElement("button", { onClick: onBack, className: "text-gray-500 hover:text-gray-800 dark:text-gray-400 flex items-center gap-2 text-sm font-medium transition-colors" },
                     React.createElement("i", { className: "fas fa-arrow-left" }),
                     "Volver al Dashboard"
                 ),
                 React.createElement("div", { className: "h-6 w-px bg-gray-200 dark:bg-white/10" }),
-                React.createElement("h2", { className: "text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2" },
+                React.createElement("h2", { className: "text-lg font-bold text-gray-800 flex items-center gap-2" },
                     React.createElement("i", { className: "fas fa-users-cog text-indigo-500" }),
                     "Carga de Trabajo Individual")
             ),
 
-            // Contenido Principal
+            // Contenido
             React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10 space-y-8" },
                 workloadData.length === 0 
-                ? React.createElement("div", { className: "text-center text-gray-500 dark:text-gray-400 py-10" }, "No hay tareas pendientes asignadas.")
+                ? React.createElement("div", { className: "text-center text-gray-500 py-10" }, "No hay tareas pendientes asignadas.")
                 : workloadData.map((person, idx) => (
-                    React.createElement("div", { key: idx, className: "bg-white dark:bg-[#1e293b] rounded-2xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden transition-all duration-300 hover:shadow-md" },
+                    React.createElement("div", { key: idx, className: "wl-card" },
                         
-                        // Encabezado de la Persona (Glassy en Dark Mode)
-                        React.createElement("div", { className: "px-6 py-5 bg-gray-50/50 dark:bg-white/5 border-b border-gray-100 dark:border-white/5 flex justify-between items-center" },
+                        // Encabezado de la Tarjeta
+                        React.createElement("div", { className: "wl-card-header" },
                             React.createElement("div", { className: "flex items-center gap-4" },
-                                // Avatar
-                                React.createElement("div", { className: `h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-lg shadow-sm ${
-                                    person.name === 'Sin Asignar' 
-                                    ? 'bg-gray-200 text-gray-500 dark:bg-gray-800 dark:text-gray-400' 
-                                    : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300'
-                                }` },
+                                // Avatar con clase dinámica
+                                React.createElement("div", { className: `wl-avatar ${person.name === 'Sin Asignar' ? 'unassigned' : 'assigned'}` },
                                     person.name.charAt(0).toUpperCase()
                                 ),
                                 React.createElement("div", null,
@@ -1653,28 +1635,25 @@ const WorkloadView = ({ projects, onBack }) => {
                                     )
                                 )
                             ),
-                            // Badge de Carga
-                            React.createElement("div", { className: `px-3 py-1.5 rounded-full text-xs font-bold border backdrop-blur-md ${
-                                person.totalTasks >= 5 
-                                ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/20' 
-                                : 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20'
-                            }` },
+                            // Badge con clase dinámica
+                            React.createElement("div", { className: `wl-badge ${person.totalTasks >= 5 ? 'high' : 'normal'}` },
                                 person.totalTasks >= 5 ? "Carga alta" : "Carga normal"
                             )
                         ),
 
-                        // Cuerpo (Lista de Proyectos)
-                        React.createElement("div", { className: "p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" },
+                        // Grid de Proyectos
+                        React.createElement("div", { className: "wl-project-grid" },
                             person.projects.map(proj => (
-                                React.createElement("div", { key: proj.id, className: "bg-gray-50 dark:bg-black/20 rounded-xl p-4 border border-gray-100 dark:border-white/5 hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all cursor-pointer group", onClick: () => window.location.hash = `#/project/${proj.id}` },
+                                React.createElement("div", { key: proj.id, className: "wl-project-card group", onClick: () => window.location.hash = `#/project/${proj.id}` },
                                     
                                     React.createElement("div", { className: "flex justify-between items-start mb-2" }, 
-                                        React.createElement("h4", { className: "font-bold text-gray-800 dark:text-gray-200 text-sm truncate w-full group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors", title: proj.title }, proj.title)
+                                        React.createElement("h4", { className: "font-bold text-gray-800 text-sm truncate w-full transition-colors", title: proj.title }, proj.title)
                                     ),
-                                    React.createElement("div", { className: "text-[10px] text-gray-400 dark:text-gray-500 uppercase font-bold mb-3 flex items-center gap-1" },
+                                    React.createElement("div", { className: "text-[10px] text-gray-400 wl-text-secondary uppercase font-bold mb-3 flex items-center gap-1" },
                                         React.createElement("i", { className: "fas fa-building" }), proj.client
                                     ),
-                                    // Lista de Tareas
+                                    
+                                    // Lista de Tareas (usamos estilos inline mínimos o clases genéricas de tailwind para textos pequeños)
                                     React.createElement("ul", { className: "space-y-2" },
                                         proj.tasks.map(t => (
                                             React.createElement("li", { key: t.id, className: "flex items-start gap-2 text-xs border-t border-gray-200/50 dark:border-white/5 pt-1.5 first:border-0 first:pt-0" },
