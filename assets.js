@@ -49,8 +49,9 @@ const getClientTemplate = (data) => {
     return "st st-pending";
   };
 
-  const tasksSorted = [...tasks].sort((a, b) => (a.area || "").localeCompare(b.area || "", "es"));
-  const clientLogo = normalizeDataImage(meta.clientLogoData);
+    // IMPORTANTE: No reordenar las tareas al exportar. Mantener el orden actual (incluye reordenación por drag&drop).
+  const tasksSorted = [...tasks];
+const clientLogo = normalizeDataImage(meta.clientLogoData);
   const title = escapeHtml(meta.titulo || "Informe de Proyecto");
   const subtitle = escapeHtml(meta.subtitulo || "");
   const generatedAt = new Date().toLocaleString("es-ES");

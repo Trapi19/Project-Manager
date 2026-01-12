@@ -20,6 +20,11 @@
     .border-gray-200, .border-gray-300, .border-slate-200, .border { border-color: #ccc !important; }
     
     .no-print { display: none !important; }
+
+    /* Ocultar indicadores de sesión y sincronización (elementos "fixed" inyectados por JS) */
+    #unitecnic-auth-badge,
+    #gp-sync-indicator { display: none !important; }
+
     #root { margin: 0; padding: 0; width: 100% !important; max-width: 100% !important; }
     
     /* Contenedores y Layout */
