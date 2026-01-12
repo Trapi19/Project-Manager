@@ -662,7 +662,7 @@ React.createElement("div", { className: "exec-grid" },
                                 React.createElement("i", { className: "fas fa-list-check" })))),
 
                     // 4. BLOQUEOS
-                    React.createElement("div", { className: "exec-card", onClick: showBlockDetails, title: "Ver detalles de alertas" },
+                    React.createElement("div", { className: "exec-card", onClick: () => window.location.hash = '#/alerts', title: "Ir al Centro de Alertas" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
                                 React.createElement("div", { className: "exec-label" }, "Bloqueos y Alertas"),
@@ -1690,6 +1690,152 @@ const WorkloadView = ({ projects, onBack }) => {
         )
     );
 };
+
+// --- COMPONENTE: CENTRO DE ALERTAS Y BLOQUEOS (DISEÑO NATIVO) ---
+const AlertsView = ({ projects, onBack }) => {
+    
+    // 1. LÓGICA: Buscar problemas en todos los proyectos activos
+    const alertsData = React.useMemo(() => {
+        const result = [];
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        const parseISO = (s) => {
+            if(!s) return null;
+            const [y,m,d] = s.split('-').map(Number);
+            return new Date(y, m-1, d);
+        };
+
+        projects.forEach(p => {
+            if (String(p.meta?.estado) === 'Completado') return;
+
+            const idx = buildTaskIndex(p.tasks || []);
+            const issues = [];
+
+            (p.tasks || []).forEach(t => {
+                const estado = String(t.estado || '').toLowerCase();
+                if (estado.includes('completado')) return;
+
+                // A. Detectar Bloqueos
+                const isBlocked = isTaskBlocked(t, idx); // Usamos tu helper existente
+                
+                // B. Detectar Vencimientos
+                const limitDate = parseISO(t.fechaLimite);
+                const isOverdue = limitDate && limitDate < today;
+
+                if (isBlocked || isOverdue) {
+                    issues.push({
+                        ...t,
+                        type: isBlocked ? 'blocked' : 'overdue',
+                        reason: isBlocked 
+                            ? `Esperando: ${idx.get(t.dependsOn)?.tarea || 'Tarea previa'}` 
+                            : `Venció el ${window.formatFechaES(t.fechaLimite)}`
+                    });
+                }
+            });
+
+            if (issues.length > 0) {
+                // Ordenar: primero vencidas (rojo), luego bloqueadas (naranja)
+                issues.sort((a, b) => (a.type === 'overdue' ? -1 : 1));
+                result.push({
+                    project: p,
+                    totalIssues: issues.length,
+                    redCount: issues.filter(i => i.type === 'overdue').length,
+                    orangeCount: issues.filter(i => i.type === 'blocked').length,
+                    issues
+                });
+            }
+        });
+
+        // Ordenar proyectos: los que tienen más problemas rojos primero
+        return result.sort((a, b) => b.redCount - a.redCount || b.totalIssues - a.totalIssues);
+
+    }, [projects]);
+
+    // 2. RENDERIZADO (Reutilizando diseño wl-* para consistencia)
+    return (
+        React.createElement("div", { className: "wl-view-container" },
+            // Barra Superior Sticky
+            React.createElement("div", { className: "wl-header-sticky no-print" },
+                React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
+                    React.createElement("i", { className: "fas fa-arrow-left" }),
+                    "Volver"
+                ),
+                React.createElement("div", { style: { width: '1px', height: '24px', background: 'var(--border)' } }),
+                React.createElement("h2", { className: "wl-title" },
+                    React.createElement("i", { className: "fas fa-shield-halved", style: { color: '#ef4444' } }),
+                    "Centro de Alertas")
+            ),
+
+            // Contenido Principal
+            React.createElement("div", { className: "max-w-7xl mx-auto p-6" },
+                alertsData.length === 0 
+                ? React.createElement("div", { style: { textAlign: 'center', padding: '80px 0', color: 'var(--muted)' } }, 
+                    React.createElement("div", { className: "wl-alert-icon", style: { margin: '0 auto 16px auto', background: 'rgba(16,185,129,0.1)', color:'#10b981', width:'60px', height:'60px', fontSize:'24px' } },
+                        React.createElement("i", { className: "fas fa-check" })
+                    ),
+                    React.createElement("h3", { style: { fontSize:'18px', fontWeight:'700', color:'var(--text)', marginBottom:'8px'} }, "Todo en orden"),
+                    React.createElement("p", null, "No hay tareas bloqueadas ni vencidas en los proyectos activos.")
+                  )
+                : alertsData.map((item, idx) => (
+                    React.createElement("div", { key: item.project.id, className: "wl-person-card" }, // Reusamos la tarjeta contenedora
+                        
+                        // Encabezado del Proyecto
+                        React.createElement("div", { className: "wl-person-header", onClick: () => window.location.hash = `#/project/${item.project.id}`, style: { cursor: 'pointer' } },
+                            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '16px' } },
+                                // Icono de estado
+                                React.createElement("div", { className: `wl-alert-icon ${item.redCount > 0 ? 'red' : 'orange'}` },
+                                    React.createElement("i", { className: item.redCount > 0 ? "fas fa-triangle-exclamation" : "fas fa-lock" })
+                                ),
+                                React.createElement("div", null,
+                                    React.createElement("div", { className: "wl-person-name" }, item.project.meta.titulo),
+                                    React.createElement("div", { className: "wl-person-subtitle" }, item.project.meta.cliente || 'Sin cliente')
+                                )
+                            ),
+                            // Badge Resumen
+                            React.createElement("div", { style: { display:'flex', gap:'8px' } },
+                                item.redCount > 0 && React.createElement("span", { className: "wl-load-badge high" }, `${item.redCount} Vencidas`),
+                                item.orangeCount > 0 && React.createElement("span", { className: "wl-load-badge normal", style: { color:'#d97706', background:'rgba(245,158,11,0.1)', borderColor:'rgba(245,158,11,0.2)' } }, `${item.orangeCount} Bloqueos`)
+                            )
+                        ),
+
+                        // Lista de Problemas
+                        React.createElement("div", { className: "wl-grid-projects" },
+                            item.issues.map(t => (
+                                React.createElement("div", { key: t.id, className: "wl-subcard", style: { borderLeft: t.type === 'overdue' ? '3px solid #ef4444' : '3px solid #f59e0b' } },
+                                    
+                                    // Título Tarea
+                                    React.createElement("div", { className: "wl-proj-title", style: { marginBottom:'8px' } }, t.tarea),
+                                    
+                                    // Detalles del problema
+                                    React.createElement("div", { style: { display:'flex', flexDirection:'column', gap:'6px' } },
+                                        // Etiqueta del tipo
+                                        React.createElement("div", null,
+                                            React.createElement("span", { className: `wl-tag-issue ${t.type}` }, 
+                                                t.type === 'overdue' ? React.createElement(React.Fragment, null, React.createElement("i", {className:"fas fa-clock"}), " Vencida") 
+                                                : React.createElement(React.Fragment, null, React.createElement("i", {className:"fas fa-link"}), " Bloqueada")
+                                            )
+                                        ),
+                                        // Razón
+                                        React.createElement("div", { style: { fontSize:'0.85rem', color:'var(--muted)', display:'flex', alignItems:'center', gap:'6px' } },
+                                            React.createElement("i", { className: "fas fa-circle-info", style: { fontSize:'12px' } }),
+                                            t.reason
+                                        ),
+                                        // Responsable (si existe)
+                                        t.asignadoA && React.createElement("div", { style: { fontSize:'0.8rem', marginTop:'4px', fontWeight:'600', color:'var(--text)' } },
+                                            "Asignado a: ", t.asignadoA
+                                        )
+                                    )
+                                )
+                            ))
+                        )
+                    )
+                ))
+            )
+        )
+    );
+};
+
 // --- APP PRINCIPAL ---
 const MainApp = () => {
     const [theme, setTheme] = React.useState(() => localStorage.getItem('gp_theme') || 'light');
@@ -1812,7 +1958,7 @@ const makeDraftProject = () => ({
             estado: "En Ejecución", 
             responsableProyecto: "", 
             pep: "",
-            sharepointUrl: "" // <--- Nuevo campo
+            sharepointUrl: "" 
         },
         tasks: []
     });
@@ -1826,6 +1972,11 @@ const makeDraftProject = () => ({
                 setView('workload'); // Definiremos este estado ahora
                 return;
             }
+            if (parts[0] === 'alerts') {
+    setCurrentProject(null);
+    setView('alerts');
+    return;
+}
             if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
                 setCurrentProject(null);
                 setView('list');
@@ -2073,6 +2224,7 @@ const makeDraftProject = () => ({
     return (React.createElement("div", null,
         React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
         view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+        view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
