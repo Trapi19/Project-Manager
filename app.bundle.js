@@ -877,7 +877,7 @@ const ProjectPreview = ({ data }) => {
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "L\u00EDmite"))),
                         React.createElement("tbody", { className: "divide-y divide-gray-200" }, buildOrderedTasks(data.tasks).map((row) => {
                             var _a;
-                            return (React.createElement("tr", { key: row.id, className: (row.parentId ? "bg-slate-50/50 " : "") + "hover:bg-gray-50 transition-colors" },
+                            return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" },
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("div", { className: "flex items-center" },
                                         React.createElement("div", { 
@@ -897,13 +897,7 @@ const ProjectPreview = ({ data }) => {
                                         React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("div", { className: "flex flex-col gap-1" },
-                                        React.createElement(React.Fragment, null,
-                                            React.createElement("div", { className: "flex items-center gap-2", style: { marginLeft: ((row._depth || 0) * 16) + "px" } },
-                                                row.parentId ? React.createElement("span", { className: "text-slate-400" }, "↳") : null,
-                                                React.createElement("span", { className: "text-gray-700 font-medium" }, row.tarea),
-                                                row.parentId ? React.createElement("span", { className: "text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200" }, "Subtarea") : null),
-                                            row.parentId ? React.createElement("div", { className: "text-xs text-slate-500", style: { marginLeft: (((row._depth || 0) * 16) + 18) + "px" } },
-                                                "Padre: ", React.createElement("span", { className: "font-medium" }, ((taskIndex.get(row.parentId) || {}).tarea) || "—")) : null)),
+                                        React.createElement("span", { className: "text-gray-700 font-medium", style: { marginLeft: ((row._depth || 0) * 16) + "px" } }, row.tarea),
                                         isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill" },
                                             React.createElement("i", { className: "fas fa-lock" }),
                                             "Bloqueada por: ",
@@ -1617,7 +1611,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
                                 React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })),
                             React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
-                                React.createElement("button", { onClick: () => { if(!task.parentId) addSubtask(task.id); }, className: "text-slate-500 hover:text-indigo-600 px-2 py-1 rounded transition-colors inline-flex items-center gap-2", title: "Añadir subtarea" }, React.createElement("i", { className: "fas fa-level-down-alt" }), React.createElement("span", { className: "hidden md:inline text-sm" }, "Subtarea")),
+                                React.createElement("button", { onClick: () => { if(!task.parentId) addSubtask(task.id); }, className: "text-gray-300 hover:text-indigo-600 p-2 transition-colors opacity-0 group-hover:opacity-100", title: "Añadir subtarea", disabled: !!task.parentId }, React.createElement("i", { className: "fas fa-level-down-alt" })),
                                 React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" },
                                     React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
