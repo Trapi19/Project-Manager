@@ -400,12 +400,16 @@ const executiveSummary = (() => {
             tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
             tasksCompleted += stats.completed || 0;
 
-            // Carga de trabajo
-            workloadMap[resp] = (workloadMap[resp] || 0) + ((stats.pending || 0) + (stats.inProgress || 0));
+            // Carga de trabajo (por persona asignada a cada tarea)
 
             const idx = buildTaskIndex(tasks);
             tasks.forEach(t => {
-                const est = effectiveEstado(t, idx);
+                const est = effectiveEstado\(t, idx\);
+                // Carga de trabajo por persona (ASIGNADO A): cuenta tareas abiertas (Pendiente/En curso).
+                if (est !== 'Completado') {
+                    const assigned = (t.asignadoA != null && String(t.asignadoA).trim()) ? String(t.asignadoA).trim() : 'Sin asignar';
+                    workloadMap[assigned] = (workloadMap[assigned] || 0) + 1;
+                }
                 const lim = parseISO(t.fechaLimite);
                 // Vencimientos a 7 días
                 if (est !== 'Completado' && lim && lim >= today && lim <= nextWeek) {
@@ -669,7 +673,7 @@ React.createElement("div", { className: "exec-grid" },
 // 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
 React.createElement("div", { className: "exec-card md:col-span-2" },
     React.createElement("div", { className: "exec-card-top mb-5" }, // Aumentado margen inferior
-        React.createElement("div", { className: "exec-label" }, "Carga por Responsable"),
+        React.createElement("div", { className: "exec-label" }, "Carga por Persona"),
         React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))),
     React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" }, // Más espacio entre columnas
         executiveSummary.workloadData.map((item, i) => (
