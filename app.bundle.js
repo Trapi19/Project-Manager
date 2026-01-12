@@ -98,19 +98,56 @@ const isTaskBlocked = (task, taskIndex) => {
         return false; // si no existe, no bloqueamos
     return normalizeEstado(dep.estado) !== 'Completado';
 };
-const effectiveEstado = (task, taskIndex) => {
+const buildChildrenIndex = (tasks) => {
+    const idx = new Map();
+    (tasks || []).forEach(t => {
+        const pid = t && t.parentId ? t.parentId : null;
+        if (!pid) return;
+        if (!idx.has(pid)) idx.set(pid, []);
+        idx.get(pid).push(t);
+    });
+    return idx;
+};
+const buildOrderedTasks = (tasks) => {
+    const list = Array.isArray(tasks) ? tasks : [];
+    const childrenIdx = buildChildrenIndex(list);
+    const visited = new Set();
+    const out = [];
+    const walk = (t, depth) => {
+        if (!t || !t.id) return;
+        if (visited.has(t.id)) return;
+        visited.add(t.id);
+        out.push(Object.assign({}, t, { _depth: depth || 0 }));
+        const kids = childrenIdx.get(t.id) || [];
+        kids.forEach(k => walk(k, (depth || 0) + 1));
+    };
+    // Primero padres (sin parentId), luego cualquier huérfana
+    list.filter(t => !t.parentId).forEach(t => walk(t, 0));
+    list.filter(t => t.parentId && !visited.has(t.id)).forEach(t => walk(t, 0));
+    return out;
+};
+const effectiveEstado = (task, taskIndex, childrenIndex) => {
     const blocked = isTaskBlocked(task, taskIndex);
-    const estado = normalizeEstado(task.estado);
-    if (blocked && estado !== 'Completado')
-        return 'Pendiente';
+    // Si tiene subtareas, el estado efectivo se deriva de ellas
+    const kids = childrenIndex ? (childrenIndex.get(task.id) || []) : [];
+    let estado = normalizeEstado(task.estado);
+    if (kids && kids.length) {
+        const childStates = kids.map(k => effectiveEstado(k, taskIndex, childrenIndex));
+        if (childStates.every(s => s === 'Completado')) estado = 'Completado';
+        else if (childStates.some(s => s === 'En Curso')) estado = 'En Curso';
+        else estado = 'Pendiente';
+    }
+    if (blocked && estado !== 'Completado') return 'Pendiente';
     return estado;
 };
 const computeProjectStats = (tasks) => {
     const idx = buildTaskIndex(tasks);
-    const total = tasks.length || 0;
+    const childrenIdx = buildChildrenIndex(tasks || []);
+    const parents = (tasks || []).filter(t => !t.parentId);
+    const total = parents.length || 0;
     let completed = 0, inProgress = 0, pending = 0;
-    tasks.forEach(t => {
-        const e = effectiveEstado(t, idx);
+    parents.forEach(t => {
+        const e = effectiveEstado(t, idx, childrenIdx);
         if (e === 'Completado')
             completed++;
         else if (e === 'En Curso')
@@ -364,10 +401,11 @@ const executiveSummary = (() => {
             const tasks = (p?.tasks) || [];
             if (!tasks.length) return false;
             const idx = buildTaskIndex(tasks);
+    const childrenIdx = buildChildrenIndex(tasks || []);
             return tasks.some(t => {
                 const lim = parseISO(t?.fechaLimite);
                 if (!lim) return false;
-                const e = effectiveEstado(t, idx);
+                const e = effectiveEstado(t, idx, childrenIdx);
                 return e !== 'Completado' && lim < today;
             });
         };
@@ -404,8 +442,9 @@ const executiveSummary = (() => {
             workloadMap[resp] = (workloadMap[resp] || 0) + ((stats.pending || 0) + (stats.inProgress || 0));
 
             const idx = buildTaskIndex(tasks);
+    const childrenIdx = buildChildrenIndex(tasks || []);
             tasks.forEach(t => {
-                const est = effectiveEstado(t, idx);
+                const est = effectiveEstado(t, idx, childrenIdx);
                 const lim = parseISO(t.fechaLimite);
                 // Vencimientos a 7 días
                 if (est !== 'Completado' && lim && lim >= today && lim <= nextWeek) {
@@ -772,6 +811,7 @@ const ProjectPreview = ({ data }) => {
         }
     };
     const taskIndex = buildTaskIndex(data.tasks);
+    const childrenIdx = buildChildrenIndex(data.tasks || []);
     const getDependencyLabel = (task) => {
         if (!task.dependsOn)
             return null;
@@ -834,7 +874,7 @@ const ProjectPreview = ({ data }) => {
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Detalles"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Inicio"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "L\u00EDmite"))),
-                        React.createElement("tbody", { className: "divide-y divide-gray-200" }, data.tasks.map((row) => {
+                        React.createElement("tbody", { className: "divide-y divide-gray-200" }, buildOrderedTasks(data.tasks).map((row) => {
                             var _a;
                             return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" },
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
@@ -856,7 +896,7 @@ const ProjectPreview = ({ data }) => {
                                         React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("div", { className: "flex flex-col gap-1" },
-                                        React.createElement("span", { className: "text-gray-700 font-medium" }, row.tarea),
+                                        React.createElement("span", { className: "text-gray-700 font-medium", style: { marginLeft: ((row._depth || 0) * 16) + "px" } }, row.tarea),
                                         isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill" },
                                             React.createElement("i", { className: "fas fa-lock" }),
                                             "Bloqueada por: ",
@@ -1248,10 +1288,36 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 fechaFin: '',
                 fechaLimite: '',
                 iconType: 'monitor',
-                dependsOn: null
+                dependsOn: null,
+                parentId: null
             };
             let nextProject = { ...prev, tasks: [...prevTasks, newTask] };
             nextProject = addActivityToProject(nextProject, `Nueva tarea añadida: "${newTask.tarea}"`, 'task');
+            return nextProject;
+        });
+        setHasChanges(true);
+    };
+    const addSubtask = (parentId) => {
+        setData(prev => {
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const parent = prevTasks.find(t => t.id === parentId);
+            const parentArea = parent && parent.area ? parent.area : 'General';
+            const newTask = {
+                id: 't_' + Date.now(),
+                area: parentArea,
+                tarea: 'Nueva subtarea',
+                estado: 'Pendiente',
+                detalles: 'Descripción...',
+                fechaInicio: '',
+                fechaFin: '',
+                fechaLimite: '',
+                iconType: 'monitor',
+                dependsOn: null,
+                parentId: parentId
+            };
+            let nextProject = { ...prev, tasks: [...prevTasks, newTask] };
+            const parentName = parent ? (parent.tarea || parent.detalles || parent.id) : parentId;
+            nextProject = addActivityToProject(nextProject, `Nueva subtarea añadida en "${parentName}": "${newTask.tarea}"`, 'task');
             return nextProject;
         });
         setHasChanges(true);
@@ -1262,7 +1328,22 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
             const targetTask = prevTasks.find(t => t.id === id);
             const taskName = targetTask ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
-            const nextTasks = prevTasks.filter(t => t.id !== id);
+            const collectIds = (rootId) => {
+                const ids = new Set([rootId]);
+                let added = true;
+                while (added) {
+                    added = false;
+                    prevTasks.forEach(t => {
+                        if (t.parentId && ids.has(t.parentId) && !ids.has(t.id)) {
+                            ids.add(t.id);
+                            added = true;
+                        }
+                    });
+                }
+                return ids;
+            };
+            const idsToDelete = collectIds(id);
+            const nextTasks = prevTasks.filter(t => !idsToDelete.has(t.id));
             let nextProject = { ...prev, tasks: nextTasks };
             nextProject = addActivityToProject(nextProject, `Tarea eliminada: "${taskName}"`, 'task');
             return nextProject;
@@ -1284,7 +1365,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     };
     const exportCSV = () => {
         const headers = ["Area;Tarea;Estado;Detalles;Fecha Inicio;Fecha Limite"];
-        const rows = data.tasks.map(item => { var _a, _b; return `"${item.area}";"${item.tarea}";"${item.estado}";"${item.detalles}";"${(_a = item.fechaInicio) !== null && _a !== void 0 ? _a : ""}";"${(_b = item.fechaLimite) !== null && _b !== void 0 ? _b : ""}"`; });
+        const rows = buildOrderedTasks(data.tasks).map(item => { var _a, _b; return `"${item.area}";"${item.tarea}";"${item.estado}";"${item.detalles}";"${(_a = item.fechaInicio) !== null && _a !== void 0 ? _a : ""}";"${(_b = item.fechaLimite) !== null && _b !== void 0 ? _b : ""}"`; });
         const csvContent = "\uFEFF" + [headers, ...rows].join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -1486,7 +1567,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"),
                                 React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))),
-                        React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, data.tasks.map((task, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` },
+                        React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, buildOrderedTasks(data.tasks).map((task, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` },
                             React.createElement("td", { className: "px-6 py-4 min-w-[320px]" },
                                 React.createElement("div", { className: "flex flex-col gap-2" },
                                     React.createElement("div", { className: "flex items-center gap-2" },
@@ -1529,6 +1610,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
                                 React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })),
                             React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
+                                React.createElement("button", { onClick: () => { if(!task.parentId) addSubtask(task.id); }, className: "text-gray-300 hover:text-indigo-600 p-2 transition-colors opacity-0 group-hover:opacity-100", title: "Añadir subtarea", disabled: !!task.parentId }, React.createElement("i", { className: "fas fa-level-down-alt" })),
                                 React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" },
                                     React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
