@@ -21,12 +21,12 @@
     
     .no-print { display: none !important; }
 
+    /* Campos internos (no deben aparecer en entregables al cliente) */
+    .internal-only { display: none !important; }
+
     /* Ocultar indicadores de sesión y sincronización (elementos "fixed" inyectados por JS) */
     #unitecnic-auth-badge,
     #gp-sync-indicator { display: none !important; }
-
-    /* Campos internos (no deben aparecer al imprimir o generar PDF oficial) */
-    .internal-only { display: none !important; }
 
     #root { margin: 0; padding: 0; width: 100% !important; max-width: 100% !important; }
     
