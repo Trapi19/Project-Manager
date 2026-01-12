@@ -86,43 +86,9 @@ const normalizeProjectEstado = (estado) => {
 };
 const buildTaskIndex = (tasks) => {
     const idx = new Map();
-    (Array.isArray(tasks) ? tasks : []).forEach(t => { if (t && t.id) idx.set(t.id, t); });
+    tasks.forEach(t => idx.set(t.id, t));
     return idx;
 };
-
-const buildOrderedTasks = (list) => {
-    const tasks = (Array.isArray(list) ? list : []).filter(t => t && t.id);
-    const byParent = new Map();
-    tasks.forEach(t => {
-        const pid = t.parentId || null;
-        if (!byParent.has(pid)) byParent.set(pid, []);
-        byParent.get(pid).push(t);
-    });
-    // stable sort: keep original insertion order in array 'tasks'
-    const orderIndex = new Map();
-    tasks.forEach((t, i) => orderIndex.set(t.id, i));
-    byParent.forEach(arr => arr.sort((a,b) => (orderIndex.get(a.id)??0) - (orderIndex.get(b.id)??0)));
-
-    const visited = new Set();
-    const out = [];
-    const walk = (t, level) => {
-        if (!t || !t.id) return;
-        if (visited.has(t.id)) return;
-        visited.add(t.id);
-        out.push({ task: t, level: level || 0 });
-        const children = byParent.get(t.id) || [];
-        children.forEach(ch => walk(ch, (level || 0) + 1));
-    };
-
-    // roots
-    (byParent.get(null) || []).forEach(t => walk(t, 0));
-    // any orphans / cycles
-    tasks.filter(t => !visited.has(t.id)).forEach(t => walk(t, 0));
-
-    return out;
-};
-
-
 const isTaskBlocked = (task, taskIndex) => {
     const depId = task.dependsOn;
     if (!depId)
@@ -910,9 +876,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     var _a;
     const [data, setData] = useState(project);
     const [hasChanges, setHasChanges] = useState(false);
-    const safeTasks = React.useMemo(() => (Array.isArray(data.tasks) ? data.tasks.filter(Boolean) : []), [data.tasks]);
-    const taskIndex = React.useMemo(() => buildTaskIndex(safeTasks), [safeTasks]);
-    const orderedTasks = React.useMemo(() => buildOrderedTasks(safeTasks), [safeTasks]);
+    const taskIndex = React.useMemo(() => buildTaskIndex(data.tasks || []), [data.tasks]);
     const activityList = React.useMemo(() => {
         const a = (data && data.audit && Array.isArray(data.audit.activity)) ? data.audit.activity : [];
         return [...a].sort((x, y) => (Number(y.ts) || 0) - (Number(x.ts) || 0));
@@ -1271,53 +1235,75 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         });
         setHasChanges(true);
     };
-    const addTask = (parentId = null, baseArea = null) => {
+    const addTask = () => {
         setData(prev => {
-            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks.filter(Boolean) : [];
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
             const newTask = {
                 id: 't_' + Date.now(),
-                area: baseArea || 'General',
-                tarea: parentId ? 'Nueva subtarea' : 'Nueva tarea',
+                parentId: null,
+                area: 'General',
+                tarea: 'Nueva tarea',
                 estado: 'Pendiente',
                 detalles: 'Descripción...',
                 fechaInicio: '',
                 fechaFin: '',
                 fechaLimite: '',
                 iconType: 'monitor',
-                dependsOn: null,
-                parentId: parentId || null
+                dependsOn: null
             };
             let nextProject = { ...prev, tasks: [...prevTasks, newTask] };
-            nextProject = addActivityToProject(nextProject, parentId ? `Nueva subtarea añadida: "${newTask.tarea}"` : `Nueva tarea añadida: "${newTask.tarea}"`, 'task');
+            nextProject = addActivityToProject(nextProject, `Nueva tarea añadida: "${newTask.tarea}"`, 'task');
             return nextProject;
         });
         setHasChanges(true);
     };
-    const deleteTask = (id) => {
-        if (!confirm('¿Borrar tarea? (Se eliminarán también sus subtareas)')) return;
+
+    const addSubtask = (parentId) => {
         setData(prev => {
-            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks.filter(Boolean) : [];
-            const targetTask = prevTasks.find(t => t && t.id === id);
-            const taskName = targetTask ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
-
-            const toDelete = new Set();
-            const mark = (tid) => {
-                if (!tid || toDelete.has(tid)) return;
-                toDelete.add(tid);
-                prevTasks.forEach(t => { if (t && t.parentId === tid) mark(t.id); });
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const parent = prevTasks.find(t => t && t.id === parentId);
+            const newTask = {
+                id: 't_' + Date.now() + '_' + Math.random().toString(16).slice(2),
+                parentId,
+                area: (parent && parent.area) ? parent.area : 'General',
+                tarea: 'Nueva subtarea',
+                estado: 'Pendiente',
+                detalles: '',
+                fechaInicio: '',
+                fechaFin: '',
+                fechaLimite: '',
+                iconType: 'monitor',
+                dependsOn: null
             };
-            mark(id);
+            let nextProject = { ...prev, tasks: [...prevTasks, newTask] };
+            const parentName = parent ? (parent.tarea || parent.detalles || parent.id) : parentId;
+            nextProject = addActivityToProject(nextProject, `Subtarea añadida a "${parentName}"`, 'task');
+            return nextProject;
+        });
+        setHasChanges(true);
+    };
 
-            const nextTasks = prevTasks.filter(t => t && !toDelete.has(t.id)).map(t => {
-                // limpiar dependencias que apunten a tareas borradas
-                if (t.dependsOn && toDelete.has(t.dependsOn)) return { ...t, dependsOn: null };
-                // si su padre fue eliminado por alguna razón (huérfana), la convertimos en tarea raíz
-                if (t.parentId && toDelete.has(t.parentId)) return { ...t, parentId: null };
-                return t;
-            });
-
+    const deleteTask = (id) => {
+        if (!confirm('¿Borrar tarea?')) return;
+        setData(prev => {
+            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
+            const targetTask = prevTasks.find(t => t.id === id);
+            const taskName = targetTask ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
+                        const toDelete = new Set([id]);
+            let added = true;
+            while (added) {
+                added = false;
+                prevTasks.forEach(t => {
+                    if (!t) return;
+                    if (t.parentId && toDelete.has(t.parentId) && !toDelete.has(t.id)) {
+                        toDelete.add(t.id);
+                        added = true;
+                    }
+                });
+            }
+            const nextTasks = prevTasks.filter(t => t && !toDelete.has(t.id));
             let nextProject = { ...prev, tasks: nextTasks };
-            nextProject = addActivityToProject(nextProject, `Tarea eliminada: "${taskName}" (+${Math.max(0, toDelete.size - 1)} subtareas)`, 'task');
+            nextProject = addActivityToProject(nextProject, `Tarea eliminada: "${taskName}"`, 'task');
             return nextProject;
         });
         setHasChanges(true);
@@ -1337,6 +1323,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     };
     const exportCSV = () => {
         const headers = ["Area;Tarea;Estado;Detalles;Fecha Inicio;Fecha Limite"];
+                const safeTasks = (data.tasks || []).filter(Boolean);
         const rows = safeTasks.map(item => { var _a, _b; return `"${item.area}";"${item.tarea}";"${item.estado}";"${item.detalles}";"${(_a = item.fechaInicio) !== null && _a !== void 0 ? _a : ""}";"${(_b = item.fechaLimite) !== null && _b !== void 0 ? _b : ""}"`; });
         const csvContent = "\uFEFF" + [headers, ...rows].join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1539,58 +1526,110 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"),
                                 React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))),
-                        React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, orderedTasks.map(({ task, level }) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` },
-                            React.createElement("td", { className: "px-6 py-4 min-w-[320px]" },
-                                React.createElement("div", { className: "flex flex-col gap-2" },
-                                    React.createElement("div", { className: "flex items-center gap-2" },
-                                        React.createElement("span", { draggable: true, onDragStart: (e) => handleTaskDragStart(e, task.id), onDragEnd: handleTaskDragEnd, className: "task-drag-handle inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:border-gray-300 cursor-grab active:cursor-grabbing", title: "Arrastra para reordenar" },
-                                            React.createElement("i", { className: "fas fa-grip-vertical" })),
-                                        React.createElement(IconPicker, { value: task.iconType, open: openIconPickerId === task.id, onToggle: () => setOpenIconPickerId(prev => prev === task.id ? null : task.id), onChange: (newId) => { updateTask(task.id, 'iconType', newId); setOpenIconPickerId(null); } }),
-                                        React.createElement("input", { type: "text", className: "flex-1 border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none font-medium", value: task.area, onChange: (e) => updateTask(task.id, 'area', e.target.value) }),
-                                        React.createElement("div", { className: "flex flex-wrap items-center gap-2 pl-12 min-w-0" },
-                                            React.createElement("div", { className: "text-[11px] text-gray-500 shrink-0" }, "Depende de"),
-                                            React.createElement("select", { className: "flex-1 min-w-[240px] border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[color:var(--brand)]", value: task.dependsOn || '', onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value ? e.target.value : null) },
-                                                React.createElement("option", { value: "" }, "(ninguna)"),
-                                                safeTasks
-                                                    .filter(t => t && t.id !== task.id)
-                                                    .map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))),
-                                            isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" },
-                                                React.createElement("i", { className: "fas fa-lock" }),
-                                                " Bloqueada")))))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-                                React.createElement("div", { className: "space-y-1" },
-                                    level > 0 && React.createElement("div", { className: "text-[11px] text-slate-500 flex items-center gap-2" },
-                                        React.createElement("span", { className: "inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-semibold" }, "↳ Subtarea"),
-                                        React.createElement("span", { className: "truncate" }, "Padre: ", (task.parentId && taskIndex.get(task.parentId) && (taskIndex.get(task.parentId).tarea || taskIndex.get(task.parentId).area)) || "(sin padre)")),
-                                    React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) }))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
-                                React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                        : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => {
-                                        const newEstado = e.target.value;
-                                        const blocked = isTaskBlocked(task, taskIndex);
-                                        if (blocked && (newEstado === 'En Curso' || newEstado === 'Completado')) {
-                                            alert('Esta tarea depende de otra aún no completada. Marca la tarea previa como Completado para poder iniciarla.');
-                                            updateTask(task.id, 'estado', 'Pendiente');
-                                            return;
-                                        }
-                                        updateTask(task.id, 'estado', newEstado);
-                                    } },
-                                    React.createElement("option", { value: "Pendiente" }, "Pendiente"),
-                                    React.createElement("option", { value: "En Curso" }, "En Curso"),
-                                    React.createElement("option", { value: "Completado" }, "Completado"))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-                                React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "A\u00F1adir notas..." })),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
-                                React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaInicio), onChange: (e) => updateTask(task.id, 'fechaInicio', e.target.value) })),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
-                                React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })),
-                            React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
-                                React.createElement("div", { className: "flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" },
-                                    React.createElement("button", { type: "button", onClick: () => addTask(task.id, task.area), className: "text-gray-300 hover:text-blue-600 p-2 rounded transition-colors", title: "Añadir subtarea" },
-                                        React.createElement("i", { className: "fas fa-plus" })),
-                                    React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors", title: "Eliminar" },
-                                        React.createElement("i", { className: "fas fa-times" })))))))))))))));
+                        React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop },
+    buildOrderedTasks(((data.tasks) || []).filter(Boolean)).map((task, idx) => {
+        // Detect subtask + depth (provided by buildOrderedTasks)
+        const isSubtask = !!task.parentId;
+        const depth = task._depth || 0;
+
+        return (React.createElement("tr", {
+            key: task.id,
+            onDragOver: (e) => handleTaskRowDragOver(e, task.id),
+            onDrop: (e) => handleTaskRowDrop(e, task.id),
+            className: `hover:bg-blue-50/50 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-blue-400' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''} ${isSubtask ? 'bg-slate-50/80' : ''}`
+        },
+            // Column 1: Icons + Area
+            React.createElement("td", { className: "px-6 py-4 min-w-[320px]" },
+                React.createElement("div", { className: "flex flex-col gap-2" },
+                    React.createElement("div", { className: "flex items-center gap-2", style: { paddingLeft: (depth * 24) + 'px' } },
+
+                        // Branch icon for subtasks
+                        isSubtask && React.createElement("i", { className: "fas fa-level-up-alt fa-rotate-90 text-gray-400 mr-1" }),
+
+                        React.createElement("span", { draggable: true, onDragStart: (e) => handleTaskDragStart(e, task.id), onDragEnd: handleTaskDragEnd, className: "task-drag-handle inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:border-gray-300 cursor-grab active:cursor-grabbing shadow-sm", title: "Arrastra para reordenar" },
+                            React.createElement("i", { className: "fas fa-grip-vertical" })),
+
+                        React.createElement(IconPicker, { value: task.iconType, open: openIconPickerId === task.id, onToggle: () => setOpenIconPickerId(prev => prev === task.id ? null : task.id), onChange: (newId) => { updateTask(task.id, 'iconType', newId); setOpenIconPickerId(null); } }),
+
+                        React.createElement("input", { type: "text", className: "flex-1 border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none font-medium", value: task.area, onChange: (e) => updateTask(task.id, 'area', e.target.value) })
+                    ),
+
+                    // Dependencies (below area, aligned with indentation)
+                    React.createElement("div", { className: "flex flex-wrap items-center gap-2 min-w-0", style: { paddingLeft: (depth * 24 + 48) + 'px' } },
+                        React.createElement("div", { className: "text-[11px] text-gray-500 shrink-0" }, "Depende de"),
+                        React.createElement("select", { className: "flex-1 min-w-[180px] border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500", value: task.dependsOn || '', onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value ? Number(e.target.value) : null) },
+                            React.createElement("option", { value: "" }, "(ninguna)"),
+                            (((data.tasks) || []).filter(Boolean))
+                                .filter(t => t.id !== task.id)
+                                .map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))),
+                        isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200" },
+                            React.createElement("i", { className: "fas fa-lock" }), " Bloqueada"))
+                    )
+                )
+            ),
+
+            // Column 2: Task title
+            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+                React.createElement("div", { className: isSubtask ? "pl-3 border-l-4 border-blue-200" : "" },
+                    React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) })
+                )
+            ),
+
+            // Column 3: Status
+            React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
+                React.createElement("select", {
+                    className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'}`,
+                    value: task.estado,
+                    onChange: (e) => {
+                        const newEstado = e.target.value;
+                        const blocked = isTaskBlocked(task, taskIndex);
+                        if (blocked && (newEstado === 'En Curso' || newEstado === 'Completado')) {
+                            alert('Esta tarea depende de otra aún no completada.');
+                            updateTask(task.id, 'estado', 'Pendiente');
+                            return;
+                        }
+                        updateTask(task.id, 'estado', newEstado);
+                    }
+                },
+                    React.createElement("option", { value: "Pendiente" }, "Pendiente"),
+                    React.createElement("option", { value: "En Curso" }, "En Curso"),
+                    React.createElement("option", { value: "Completado" }, "Completado"))
+            ),
+
+            // Column 4: Details
+            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+                React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "Añadir notas..." })
+            ),
+
+            // Column 5: Start date
+            React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
+                React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaInicio), onChange: (e) => updateTask(task.id, 'fechaInicio', e.target.value) })
+            ),
+
+            // Column 6: Due date
+            React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
+                React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })
+            ),
+
+            // Column 7: Actions
+            React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
+                React.createElement("button", {
+                    onClick: () => { if (!task.parentId) addSubtask(task.id); },
+                    className: `p-2 rounded transition-colors mr-1 ${task.parentId ? 'opacity-20 cursor-not-allowed' : 'text-blue-400 hover:text-blue-700 bg-blue-50 hover:bg-blue-100'}`,
+                    title: "Añadir subtarea",
+                    disabled: !!task.parentId
+                },
+                    React.createElement("i", { className: "fas fa-level-down-alt" })
+                ),
+
+                React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors hover:bg-red-50", title: "Eliminar" },
+                    React.createElement("i", { className: "fas fa-times" }))
+            )
+        ));
+    })
+))))))));
 };
 // --- APP PRINCIPAL ---
 // --- APP PRINCIPAL ---
@@ -1666,15 +1705,7 @@ const MainApp = () => {
             });
             if (!res.ok) throw new Error(`Error AWS: ${res.status}`);
             const data = await res.json();
-            const listRaw = Array.isArray(data) ? data : (data.projects || data.Items || []);
-            const list = (Array.isArray(listRaw) ? listRaw : []).map(p => {
-                try {
-                    const tasks = Array.isArray(p && p.tasks) ? p.tasks.filter(Boolean) : [];
-                    return { ...p, tasks };
-                } catch (e) {
-                    return p;
-                }
-            });
+            const list = Array.isArray(data) ? data : (data.projects || data.Items || []);
             localStorage.setItem('unitecnic_projects', JSON.stringify(list));
             return list;
         } catch (err) {
