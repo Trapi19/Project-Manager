@@ -1558,7 +1558,120 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" },
                                     React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
-// --- APP PRINCIPAL ---
+// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO ---
+const WorkloadView = ({ projects, onBack }) => {
+    // 1. Agrupar tareas pendientes por responsable
+    const workloadData = React.useMemo(() => {
+        const map = {};
+        
+        projects.forEach(p => {
+            // Ignoramos proyectos completados
+            if (String(p.meta.estado) === 'Completado') return;
+
+            // Obtenemos responsable (y si añadiste ejecutor, podrías usarlo aquí)
+            const person = (p.meta.responsableProyecto || 'Sin asignar').trim();
+            const ejecutor = (p.meta.ejecutorProyecto || '').trim();
+            
+            // Decidimos a quién asignar la carga (prioridad al Ejecutor si existe, si no al Responsable)
+            // Si prefieres ver solo responsables, quita la parte del ejecutor.
+            const assignee = ejecutor || person;
+
+            if (!map[assignee]) {
+                map[assignee] = { 
+                    name: assignee, 
+                    totalTasks: 0, 
+                    projects: [] 
+                };
+            }
+
+            // Filtramos solo tareas NO completadas
+            const activeTasks = (p.tasks || []).filter(t => String(t.estado) !== 'Completado');
+            
+            if (activeTasks.length > 0) {
+                map[assignee].totalTasks += activeTasks.length;
+                map[assignee].projects.push({
+                    id: p.id,
+                    title: p.meta.titulo,
+                    client: p.meta.cliente,
+                    status: p.meta.estado,
+                    tasks: activeTasks
+                });
+            }
+        });
+
+        // Convertir a array y ordenar por cantidad de tareas (de más a menos)
+        return Object.values(map).sort((a, b) => b.totalTasks - a.totalTasks);
+    }, [projects]);
+
+    return (
+        React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" },
+            // Cabecera
+            React.createElement("div", { className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-4 flex items-center gap-4 shadow-sm" },
+                React.createElement("button", { onClick: onBack, className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium transition-colors" },
+                    React.createElement("i", { className: "fas fa-arrow-left" }),
+                    "Volver al Dashboard"
+                ),
+                React.createElement("div", { className: "h-6 w-px bg-gray-200" }),
+                React.createElement("h2", { className: "text-lg font-bold text-gray-800 flex items-center gap-2" },
+                    React.createElement("i", { className: "fas fa-users text-indigo-500" }),
+                    "Detalle de Carga de Trabajo")
+            ),
+
+            // Contenido Principal
+            React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10 space-y-8" },
+                workloadData.length === 0 
+                ? React.createElement("div", { className: "text-center text-gray-500 py-10" }, "No hay tareas pendientes asignadas a nadie.")
+                : workloadData.map((person, idx) => (
+                    React.createElement("div", { key: idx, className: "bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" },
+                        // Encabezado de la Persona
+                        React.createElement("div", { className: "px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex justify-between items-center" },
+                            React.createElement("div", { className: "flex items-center gap-3" },
+                                React.createElement("div", { className: "h-10 w-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg" },
+                                    person.name.charAt(0).toUpperCase()
+                                ),
+                                React.createElement("div", null,
+                                    React.createElement("h3", { className: "font-bold text-gray-900 text-lg" }, person.name),
+                                    React.createElement("p", { className: "text-xs text-gray-500" }, 
+                                        person.totalTasks === 1 ? "1 tarea pendiente" : `${person.totalTasks} tareas pendientes`
+                                    )
+                                )
+                            ),
+                            // Barra de "Salud" visual (Rojo si tiene muchas tareas)
+                            React.createElement("div", { className: `px-3 py-1 rounded-full text-xs font-bold border ${person.totalTasks > 8 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'}` },
+                                person.totalTasks > 8 ? "Sobrecarga" : "Carga normal"
+                            )
+                        ),
+                        // Lista de Proyectos y Tareas de esa persona
+                        React.createElement("div", { className: "p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" },
+                            person.projects.map(proj => (
+                                React.createElement("div", { key: proj.id, className: "bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 transition-colors cursor-pointer", onClick: () => window.location.hash = `#/project/${proj.id}` },
+                                    React.createElement("div", { className: "flex justify-between items-start mb-3" },
+                                        React.createElement("h4", { className: "font-bold text-gray-800 text-sm truncate w-full", title: proj.title }, proj.title),
+                                        React.createElement("i", { className: "fas fa-external-link-alt text-gray-300 text-xs" })
+                                    ),
+                                    React.createElement("div", { className: "text-xs text-gray-500 mb-3 flex items-center gap-2" },
+                                        React.createElement("i", { className: "fas fa-building" }), proj.client
+                                    ),
+                                    React.createElement("ul", { className: "space-y-2" },
+                                        proj.tasks.map(t => (
+                                            React.createElement("li", { key: t.id, className: "flex items-start gap-2 text-xs" },
+                                                React.createElement("i", { className: `fas fa-circle mt-1 text-[6px] ${String(t.estado).includes('Curso') ? 'text-amber-500' : 'text-gray-300'}` }),
+                                                React.createElement("span", { className: "text-gray-600" }, 
+                                                    t.tarea,
+                                                    t.fechaLimite && React.createElement("span", { className: "ml-1 text-red-400 font-semibold" }, `(${window.formatFechaES(t.fechaLimite)})`)
+                                                )
+                                            )
+                                        ))
+                                    )
+                                )
+                            ))
+                        )
+                    )
+                ))
+            )
+        )
+    );
+};
 // --- APP PRINCIPAL ---
 const MainApp = () => {
     const [theme, setTheme] = React.useState(() => localStorage.getItem('gp_theme') || 'light');
@@ -1690,6 +1803,11 @@ const makeDraftProject = () => ({
         try {
             const raw = String(window.location.hash || '').replace(/^#\/?/, '');
             const parts = raw.split('/').filter(Boolean);
+            if (parts[0] === 'workload') {
+                setCurrentProject(null);
+                setView('workload'); // Definiremos este estado ahora
+                return;
+            }
             if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
                 setCurrentProject(null);
                 setView('list');
@@ -1936,6 +2054,7 @@ const makeDraftProject = () => ({
             React.createElement("div", { className: "loader" }));
     return (React.createElement("div", null,
         React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
+        view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
