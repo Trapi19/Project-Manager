@@ -1,7 +1,7 @@
-/* importer.js - Importador v2 (Sin recarga) */
+/* importer.js - Versión final v2 */
 (function() {
-  // Ahora aceptamos una función "callback" para devolver el resultado
   window.importProjectFromXML = function(callback) {
+    // 1. Crear input oculto
     var input = document.createElement('input');
     input.type = 'file';
     input.accept = '.xml';
@@ -13,6 +13,7 @@
       var reader = new FileReader();
       reader.onload = function(event) {
         try {
+          // 2. Leer XML
           var text = event.target.result;
           var parser = new DOMParser();
           var xmlDoc = parser.parseFromString(text, "text/xml");
@@ -24,6 +25,7 @@
           var xmlTasks = xmlDoc.getElementsByTagName("Task");
           var newTasks = [];
           
+          // 3. Procesar Tareas
           for (var i = 0; i < xmlTasks.length; i++) {
             var xt = xmlTasks[i];
             var isNull = xt.getElementsByTagName("IsNull")[0]?.textContent === "1";
@@ -41,7 +43,7 @@
               else if (pct > 0) estado = "En Curso";
 
               newTasks.push({
-                id: 'imp_' + (xt.getElementsByTagName("UID")[0]?.textContent || Math.random()),
+                id: 'imp_' + (xt.getElementsByTagName("UID")[0]?.textContent || Math.random()).toString().replace('.',''),
                 area: "Ingeniería",
                 tarea: name,
                 estado: estado,
@@ -55,13 +57,14 @@
           }
 
           if (newTasks.length === 0) {
-            alert("No se encontraron tareas válidas.");
+            alert("El archivo XML no contiene tareas válidas.");
             return;
           }
 
+          // 4. Crear objeto Proyecto
           var newProject = {
             id: 'imp_' + Date.now(),
-            __isDraft: true, // Esto hace que se abra en modo edición
+            __isDraft: true, // Esto fuerza el modo edición
             meta: {
               titulo: projTitle,
               subtitulo: "Importado de MS Project",
@@ -74,14 +77,16 @@
             audit: { activity: [], comments: [] }
           };
 
-          // MAGIA: En vez de guardar y recargar, ejecutamos el callback
+          // 5. Devolver al programa (sin recargar)
           if (callback && typeof callback === 'function') {
             callback(newProject);
+          } else {
+            console.warn("No se proporcionó callback de recepción.");
           }
 
         } catch (err) {
           console.error(err);
-          alert("Error al procesar el XML.");
+          alert("Error al leer el archivo Project. Revisa el formato XML.");
         }
       };
       reader.readAsText(file);
