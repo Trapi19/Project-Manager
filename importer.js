@@ -1,7 +1,7 @@
-/* importer.js - Importador automático de MS Project */
+/* importer.js - Importador v2 (Sin recarga) */
 (function() {
-  window.importProjectFromXML = function() {
-    // 1. Crear un input invisible temporalmente
+  // Ahora aceptamos una función "callback" para devolver el resultado
+  window.importProjectFromXML = function(callback) {
     var input = document.createElement('input');
     input.type = 'file';
     input.accept = '.xml';
@@ -13,17 +13,14 @@
       var reader = new FileReader();
       reader.onload = function(event) {
         try {
-          // 2. Procesar el contenido del archivo
           var text = event.target.result;
           var parser = new DOMParser();
           var xmlDoc = parser.parseFromString(text, "text/xml");
           
-          // Obtener datos del proyecto
           var projTitle = xmlDoc.getElementsByTagName("Title")[0]?.textContent || 
                           xmlDoc.getElementsByTagName("Name")[0]?.textContent || 
                           "Proyecto Importado";
           
-          // Obtener tareas
           var xmlTasks = xmlDoc.getElementsByTagName("Task");
           var newTasks = [];
           
@@ -33,7 +30,6 @@
             var isSummary = xt.getElementsByTagName("Summary")[0]?.textContent === "1";
             var name = xt.getElementsByTagName("Name")[0]?.textContent;
             
-            // Filtramos carpetas y tareas vacías
             if (!isNull && !isSummary && name) {
               var start = (xt.getElementsByTagName("Start")[0]?.textContent || "").split('T')[0];
               var finish = (xt.getElementsByTagName("Finish")[0]?.textContent || "").split('T')[0];
@@ -46,7 +42,7 @@
 
               newTasks.push({
                 id: 'imp_' + (xt.getElementsByTagName("UID")[0]?.textContent || Math.random()),
-                area: "Ingeniería", // Área por defecto
+                area: "Ingeniería",
                 tarea: name,
                 estado: estado,
                 detalles: notes,
@@ -59,13 +55,13 @@
           }
 
           if (newTasks.length === 0) {
-            alert("No se encontraron tareas válidas en el archivo XML.");
+            alert("No se encontraron tareas válidas.");
             return;
           }
 
-          // 3. Crear el objeto Proyecto compatible con tu App
           var newProject = {
-            id: 'local_' + Date.now(),
+            id: 'imp_' + Date.now(),
+            __isDraft: true, // Esto hace que se abra en modo edición
             meta: {
               titulo: projTitle,
               subtitulo: "Importado de MS Project",
@@ -78,27 +74,18 @@
             audit: { activity: [], comments: [] }
           };
 
-          // 4. Guardar directamente en el navegador y recargar
-          // Esto evita tener que modificar la lógica compleja de React
-          var currentProjects = JSON.parse(localStorage.getItem('unitecnic_projects') || '[]');
-          currentProjects.push(newProject);
-          localStorage.setItem('unitecnic_projects', JSON.stringify(currentProjects));
-
-          // Forzamos sincronización pendiente si usas AWS
-          localStorage.setItem('unitecnic_projects_pending', JSON.stringify(currentProjects));
-          
-          alert("Proyecto importado correctamente: " + projTitle + "\n(" + newTasks.length + " tareas). La página se recargará.");
-          window.location.reload();
+          // MAGIA: En vez de guardar y recargar, ejecutamos el callback
+          if (callback && typeof callback === 'function') {
+            callback(newProject);
+          }
 
         } catch (err) {
           console.error(err);
-          alert("Error al leer el archivo XML. Asegúrate de que es un archivo válido de Project.");
+          alert("Error al procesar el XML.");
         }
       };
       reader.readAsText(file);
     };
-
-    // Activar el selector de archivos
     input.click();
   };
 })();

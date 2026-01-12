@@ -608,7 +608,7 @@ React.createElement("button", { type: "button", className: "actions-item", role:
                         React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onImport(); } },
                             React.createElement("i", { className: "fas fa-file-arrow-up" }),
                             React.createElement("span", null, "Importar Backup")),
-                        React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); if(window.importProjectFromXML) window.importProjectFromXML(); } },
+                        React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); if(window.importProjectFromXML) window.importProjectFromXML((p) => onSelect(p)); } },
                             React.createElement("i", { className: "fas fa-business-time", style: { color: "#d97706" } }),
                             React.createElement("span", null, "Importar Project XML"))))))),
         projects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" },
