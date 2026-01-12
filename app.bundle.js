@@ -1578,7 +1578,7 @@ const WorkloadView = ({ projects, onBack }) => {
             const activeTasks = (p.tasks || []).filter(t => String(t.estado) !== 'Completado');
 
             activeTasks.forEach(t => {
-                // AQUI ESTA LA CLAVE: Miramos la tarea (t.asignado), no el proyecto
+                // AQUI ESTA EL CAMBIO: Miramos la tarea (t.asignado), no el proyecto
                 let assignedTo = (t.asignado || '').trim();
                 
                 // Si la casilla está vacía, va al grupo "Sin Asignar"
@@ -1586,6 +1586,7 @@ const WorkloadView = ({ projects, onBack }) => {
                     assignedTo = "Sin Asignar";
                 }
 
+                // Usamos el nombre de la persona como clave
                 const key = assignedTo;
 
                 // Si es la primera vez que vemos a esta persona, creamos su ficha
@@ -1597,7 +1598,7 @@ const WorkloadView = ({ projects, onBack }) => {
                     };
                 }
 
-                // Sumamos una tarea a su contador
+                // Sumamos una tarea a su contador total
                 map[key].totalTasks++;
 
                 // Si aún no habíamos metido este proyecto en la ficha de esta persona, lo creamos
@@ -1610,7 +1611,7 @@ const WorkloadView = ({ projects, onBack }) => {
                     };
                 }
                 
-                // Guardamos la tarea en su lista
+                // Guardamos la tarea en la lista de ese proyecto para esa persona
                 map[key].projectsMap[p.id].tasks.push(t);
             });
         });
