@@ -401,17 +401,11 @@ const executiveSummary = (() => {
             tasksCompleted += stats.completed || 0;
 
             // Carga de trabajo
-            // Carga de trabajo: se calcula por tarea y por persona asignada (ver bucle de tareas).
+            workloadMap[resp] = (workloadMap[resp] || 0) + ((stats.pending || 0) + (stats.inProgress || 0));
 
             const idx = buildTaskIndex(tasks);
             tasks.forEach(t => {
                 const est = effectiveEstado(t, idx);
-
-                // Carga de trabajo por persona (ASIGNADO A): cuenta tareas abiertas (Pendiente/En Curso).
-                if (est !== 'Completado') {
-                    const assigned = (t.asignadoA != null && String(t.asignadoA).trim()) ? String(t.asignadoA).trim() : 'Sin asignar';
-                    workloadMap[assigned] = (workloadMap[assigned] || 0) + 1;
-                }
                 const lim = parseISO(t.fechaLimite);
                 // Vencimientos a 7 días
                 if (est !== 'Completado' && lim && lim >= today && lim <= nextWeek) {
@@ -675,7 +669,7 @@ React.createElement("div", { className: "exec-grid" },
 // 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
 React.createElement("div", { className: "exec-card md:col-span-2" },
     React.createElement("div", { className: "exec-card-top mb-5" }, // Aumentado margen inferior
-        React.createElement("div", { className: "exec-label" }, "Carga por Persona"),
+        React.createElement("div", { className: "exec-label" }, "Carga por Responsable"),
         React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))),
     React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" }, // Más espacio entre columnas
         executiveSummary.workloadData.map((item, i) => (
@@ -836,7 +830,8 @@ const ProjectPreview = ({ data }) => {
                             React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider" },
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/5" }, "\u00C1rea"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Tarea"),
-                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Estado"),
+                                                                React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6 internal-only" }, "Asignado"),
+React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Estado"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Detalles"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Inicio"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "L\u00EDmite"))),
@@ -867,7 +862,9 @@ const ProjectPreview = ({ data }) => {
                                             React.createElement("i", { className: "fas fa-lock" }),
                                             "Bloqueada por: ",
                                             React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—'))))),
-                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                                                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" },
+                                    React.createElement("span", { className: "text-gray-700" }, row.asignadoA ? row.asignadoA : '-')),
+React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')),
@@ -1206,7 +1203,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             fechaInicio: 'Fecha inicio',
             fechaFin: 'Fecha fin',
             fechaLimite: 'Fecha límite',
-            dependsOn: 'Dependencia'
+            dependsOn: 'Dependencia',
+            asignadoA: 'Asignado a'
         };
         setData(prev => {
             const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
@@ -1488,7 +1486,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[320px]" }, "\u00C1REA / TIPO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "TAREA"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "ESTADO"),
-                                React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "DETALLES"),
+                                                                React.createElement("th", { className: "px-4 py-3 font-semibold whitespace-nowrap min-w-[200px] internal-only" }, "ASIGNADO A"),
+React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "DETALLES"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"),
                                 React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))),
@@ -1528,7 +1527,9 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                     React.createElement("option", { value: "Pendiente" }, "Pendiente"),
                                     React.createElement("option", { value: "En Curso" }, "En Curso"),
                                     React.createElement("option", { value: "Completado" }, "Completado"))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+                                                        React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
+                                React.createElement("input", { type: "text", className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500", value: task.asignadoA || '', onChange: (e) => updateTask(task.id, 'asignadoA', e.target.value), placeholder: "Asignado..." })),
+React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "A\u00F1adir notas..." })),
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
                                 React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaInicio), onChange: (e) => updateTask(task.id, 'fechaInicio', e.target.value) })),
