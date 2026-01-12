@@ -1562,48 +1562,61 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" },
                                     React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
-// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO ---
+// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (CORREGIDO) ---
 const WorkloadView = ({ projects, onBack }) => {
-    // 1. Agrupar tareas pendientes por responsable
+    // 1. Agrupar tareas pendientes (DUPLICANDO si hay responsable Y ejecutor distintos)
     const workloadData = React.useMemo(() => {
         const map = {};
         
         projects.forEach(p => {
-            // Ignoramos proyectos completados
+            // Ignoramos proyectos completados o en pausa si prefieres
             if (String(p.meta.estado) === 'Completado') return;
 
-            // Obtenemos responsable (y si añadiste ejecutor, podrías usarlo aquí)
-            const person = (p.meta.responsableProyecto || 'Sin asignar').trim();
+            // Detectamos personas
+            const responsable = (p.meta.responsableProyecto || 'Sin asignar').trim();
             const ejecutor = (p.meta.ejecutorProyecto || '').trim();
-            
-            // Decidimos a quién asignar la carga (prioridad al Ejecutor si existe, si no al Responsable)
-            // Si prefieres ver solo responsables, quita la parte del ejecutor.
-            const assignee = ejecutor || person;
 
-            if (!map[assignee]) {
-                map[assignee] = { 
-                    name: assignee, 
-                    totalTasks: 0, 
-                    projects: [] 
-                };
+            // Creamos lista de implicados en este proyecto
+            const personasImplicadas = [];
+            
+            // Siempre añadimos al responsable
+            personasImplicadas.push({ nombre: responsable, rol: 'Responsable' });
+
+            // Si hay ejecutor y ES DISTINTO del responsable, lo añadimos también
+            if (ejecutor && ejecutor.toLowerCase() !== responsable.toLowerCase()) {
+                personasImplicadas.push({ nombre: ejecutor, rol: 'Técnico / Ejecutor' });
             }
 
-            // Filtramos solo tareas NO completadas
+            // Filtramos solo tareas NO completadas para calcular la carga
             const activeTasks = (p.tasks || []).filter(t => String(t.estado) !== 'Completado');
-            
+
             if (activeTasks.length > 0) {
-                map[assignee].totalTasks += activeTasks.length;
-                map[assignee].projects.push({
-                    id: p.id,
-                    title: p.meta.titulo,
-                    client: p.meta.cliente,
-                    status: p.meta.estado,
-                    tasks: activeTasks
+                // Asignamos la carga a CADA persona implicada
+                personasImplicadas.forEach(persona => {
+                    const key = persona.nombre;
+                    
+                    if (!map[key]) {
+                        map[key] = { 
+                            name: key, 
+                            totalTasks: 0, 
+                            projects: [] 
+                        };
+                    }
+
+                    map[key].totalTasks += activeTasks.length;
+                    map[key].projects.push({
+                        id: p.id,
+                        title: p.meta.titulo,
+                        client: p.meta.cliente,
+                        status: p.meta.estado,
+                        roleInProject: persona.rol, // <--- Guardamos qué rol tiene aquí
+                        tasks: activeTasks
+                    });
                 });
             }
         });
 
-        // Convertir a array y ordenar por cantidad de tareas (de más a menos)
+        // Convertir a array y ordenar por cantidad de tareas
         return Object.values(map).sort((a, b) => b.totalTasks - a.totalTasks);
     }, [projects]);
 
@@ -1636,22 +1649,24 @@ const WorkloadView = ({ projects, onBack }) => {
                                 React.createElement("div", null,
                                     React.createElement("h3", { className: "font-bold text-gray-900 text-lg" }, person.name),
                                     React.createElement("p", { className: "text-xs text-gray-500" }, 
-                                        person.totalTasks === 1 ? "1 tarea pendiente" : `${person.totalTasks} tareas pendientes`
+                                        person.totalTasks === 1 ? "1 tarea activa" : `${person.totalTasks} tareas activas`
                                     )
                                 )
                             ),
-                            // Barra de "Salud" visual (Rojo si tiene muchas tareas)
                             React.createElement("div", { className: `px-3 py-1 rounded-full text-xs font-bold border ${person.totalTasks > 8 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'}` },
                                 person.totalTasks > 8 ? "Sobrecarga" : "Carga normal"
                             )
                         ),
-                        // Lista de Proyectos y Tareas de esa persona
+                        // Lista de Proyectos y Tareas
                         React.createElement("div", { className: "p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" },
                             person.projects.map(proj => (
-                                React.createElement("div", { key: proj.id, className: "bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 transition-colors cursor-pointer", onClick: () => window.location.hash = `#/project/${proj.id}` },
-                                    React.createElement("div", { className: "flex justify-between items-start mb-3" },
-                                        React.createElement("h4", { className: "font-bold text-gray-800 text-sm truncate w-full", title: proj.title }, proj.title),
-                                        React.createElement("i", { className: "fas fa-external-link-alt text-gray-300 text-xs" })
+                                React.createElement("div", { key: proj.id, className: "bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 transition-colors cursor-pointer relative", onClick: () => window.location.hash = `#/project/${proj.id}` },
+                                    // Badge del Rol (Responsable o Técnico)
+                                    React.createElement("div", { className: "absolute top-2 right-2 text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-white border border-gray-200 text-gray-400" }, 
+                                        proj.roleInProject
+                                    ),
+                                    React.createElement("div", { className: "flex justify-between items-start mb-1 pr-16" }, // Padding right para no chocar con el badge
+                                        React.createElement("h4", { className: "font-bold text-gray-800 text-sm truncate w-full", title: proj.title }, proj.title)
                                     ),
                                     React.createElement("div", { className: "text-xs text-gray-500 mb-3 flex items-center gap-2" },
                                         React.createElement("i", { className: "fas fa-building" }), proj.client
@@ -1676,6 +1691,7 @@ const WorkloadView = ({ projects, onBack }) => {
         )
     );
 };
+
 // --- APP PRINCIPAL ---
 const MainApp = () => {
     const [theme, setTheme] = React.useState(() => localStorage.getItem('gp_theme') || 'light');
