@@ -675,7 +675,11 @@ React.createElement("div", { className: "exec-grid" },
                             React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-tight" }, executiveSummary.blockedProjects, " Proyectos afectados"))),
 
 // 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
-React.createElement("div", { className: "exec-card md:col-span-2" },
+React.createElement("div", { 
+    className: "exec-card md:col-span-2 cursor-pointer hover:ring-2 hover:ring-indigo-100 transition-all", // Clases visuales
+    onClick: () => window.location.hash = '#/workload', // La magia del clic
+    title: "Ver detalle detallado por persona"
+},
     React.createElement("div", { className: "exec-card-top mb-5" }, // Aumentado margen inferior
         React.createElement("div", { className: "exec-label" }, "Carga por Persona"),
         React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))),
