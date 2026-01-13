@@ -1415,7 +1415,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setShowExportMenu(false);
         setTimeout(() => window.print(), 500);
     };
-    return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 relative" },
+return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 relative" },
+        // --- MODALES Y TOASTS (Gantt, Auditoría, Guardado) ---
         showGantt && (React.createElement("div", { className: "fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 no-print", onClick: () => { setShowGantt(false); setGanttWarnings([]); } },
             React.createElement("div", { className: "bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden", onClick: (e) => e.stopPropagation() },
                 React.createElement("div", { className: "px-5 py-4 border-b flex items-center justify-between" },
@@ -1466,13 +1467,14 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 )
             )
         )),
-
         showToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-50 z-[9999] pointer-events-none" },
             React.createElement("div", { className: "bg-green-500 rounded-full p-1" },
                 React.createElement("i", { className: "fas fa-check text-white text-xs" })),
             React.createElement("div", null,
                 React.createElement("h4", { className: "font-bold text-sm" }, "Guardado"),
                 React.createElement("p", { className: "text-xs text-gray-400" }, "Listo para exportar.")))),
+
+        // --- BARRA SUPERIOR (HEADER) ---
         React.createElement("div", { className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-3 flex justify-between items-center shadow-sm no-print" },
             React.createElement("div", { className: "flex items-center gap-4" },
                 React.createElement("button", { onClick: handleBack, className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium" },
@@ -1487,11 +1489,14 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                     React.createElement("span", { className: "hidden sm:inline" }, viewMode === 'edit' ? 'Vista previa' : 'Editar proyecto'))),
             React.createElement("div", { className: "flex gap-3 relative" },
                 isNewDraft && (React.createElement("button", { onClick: handleCancelNew, className: "px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white/90 border border-white/10 transition", title: "Descartar el nuevo proyecto" }, "Cancelar")),
-               (!isNewDraft && viewMode === 'edit') && React.createElement("button", { 
+                
+                // BOTÓN CANCELAR EDICIÓN (NUEVO)
+                (!isNewDraft && viewMode === 'edit') && React.createElement("button", { 
                     onClick: handleCancelEdit, 
                     className: "px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition shadow-sm",
                     title: "Descartar cambios y volver" 
                 }, "Cancelar"),
+
                 React.createElement("button", { onClick: handleSave, disabled: isSaving, className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}` },
                     isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }),
                     React.createElement("span", { className: "hidden sm:inline" }, isSaving ? 'Guardando...' : 'Guardar Progreso')),
@@ -1529,6 +1534,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("p", { className: "font-medium" }, "PDF Oficial"),
                                 React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))
                 ))),
+
+        // --- CONTENIDO PRINCIPAL (VISTA PREVIA O EDICIÓN) ---
         viewMode === 'preview' ? (React.createElement("div", { className: "py-8" },
             React.createElement(ProjectPreview, { data: data }))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" },
             React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
