@@ -879,7 +879,25 @@ React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal 
 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')),
+                                    // Texto de detalles original
+        React.createElement("div", { className: "text-sm text-gray-600 mb-2" }, row.detalles || ''),
+        
+        // Bloque de Subtareas (Solo si existen)
+        (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 pt-2 border-t border-gray-100" },
+            row.subtasks.map(sub => 
+                React.createElement("div", { key: sub.id, className: "flex items-start gap-2 mt-1" },
+                    // Casilla visual (no editable)
+                    React.createElement("span", { className: sub.done ? "text-emerald-600 font-bold text-sm" : "text-gray-300 text-sm" }, 
+                        sub.done ? "☑" : "☐"
+                    ),
+                    // Texto de la subtarea
+                    React.createElement("span", { className: `text-xs ${sub.done ? "line-through text-gray-400" : "text-gray-600 font-medium"}` }, 
+                        sub.text
+                    )
+                )
+            )
+        )
+    ),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
@@ -1287,16 +1305,29 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setHasChanges(true);
     };
 
-    // --- FUNCIONES NUEVAS PARA SUBTAREAS ---
+// --- FUNCIONES NUEVAS PARA SUBTAREAS (VERSIÓN 2: Edición directa) ---
     const addSubtask = (taskId) => {
-        const text = prompt("Escribe la subtarea:");
-        if (!text) return;
+        // Añadimos directamente una subtarea vacía para editarla en pantalla
         setData(prev => {
             const nextTasks = prev.tasks.map(t => {
                 if (t.id !== taskId) return t;
                 const subs = t.subtasks || [];
-                // Creamos la subtarea
-                return { ...t, subtasks: [...subs, { id: Date.now(), text, done: false }] };
+                return { ...t, subtasks: [...subs, { id: Date.now(), text: "", done: false }] };
+            });
+            return { ...prev, tasks: nextTasks };
+        });
+        setHasChanges(true);
+    };
+
+    const updateSubtask = (taskId, subId, newText) => {
+        // Guarda lo que escribes en la subtarea
+        setData(prev => {
+            const nextTasks = prev.tasks.map(t => {
+                if (t.id !== taskId) return t;
+                const subs = (t.subtasks || []).map(s => 
+                    s.id === subId ? { ...s, text: newText } : s
+                );
+                return { ...t, subtasks: subs };
             });
             return { ...prev, tasks: nextTasks };
         });
@@ -1318,6 +1349,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     };
 
     const deleteSubtask = (taskId, subId) => {
+        // Aquí sí mantenemos la confirmación para evitar borrar por error
         if(!confirm("¿Borrar subtarea?")) return;
         setData(prev => {
             const nextTasks = prev.tasks.map(t => {
@@ -1576,15 +1608,27 @@ React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowra
                                             isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" },
                                                 React.createElement("i", { className: "fas fa-lock" }),
                                                 " Bloqueada")))))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+        // Tarea principal
         React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full font-medium", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) }),
         
         // ZONA DE SUBTAREAS
         React.createElement("div", { className: "subtasks-container" },
             (task.subtasks || []).map(sub => (
                 React.createElement("div", { key: sub.id, className: "subtask-item" },
+                    // Checkbox
                     React.createElement("input", { type: "checkbox", className: "subtask-checkbox", checked: !!sub.done, onChange: () => toggleSubtask(task.id, sub.id) }),
-                    React.createElement("span", { className: `subtask-input ${sub.done ? 'done' : ''}` }, sub.text),
+                    
+                    // AHORA ESTO ES UN INPUT EDITABLE
+                    React.createElement("input", { 
+                        type: "text", 
+                        className: `subtask-input ${sub.done ? 'done' : ''}`, 
+                        value: sub.text, 
+                        placeholder: "Escribe la subtarea...",
+                        onChange: (e) => updateSubtask(task.id, sub.id, e.target.value) 
+                    }),
+                    
+                    // Botón borrar
                     React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "btn-del-subtask", title: "Borrar subtarea" },
                         React.createElement("i", { className: "fas fa-times" })
                     )
