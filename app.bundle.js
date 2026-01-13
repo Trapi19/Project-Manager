@@ -1145,6 +1145,17 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         if (isNewDraft)
             return handleCancelNew();
         onBack && onBack();
+
+    const handleCancelEdit = () => {
+        // Si hay cambios, pedimos confirmación antes de descartar
+        if (hasChanges && !confirm("¿Descartar los cambios no guardados?")) return;
+        
+        // Restauramos los datos originales (project) y volvemos a vista previa
+        setData(project);
+        setHasChanges(false);
+        setViewMode('preview');
+    };
+    
     };
     const handleSave = async () => {
         const res = await onSave(data);
@@ -1476,6 +1487,11 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                     React.createElement("span", { className: "hidden sm:inline" }, viewMode === 'edit' ? 'Vista previa' : 'Editar proyecto'))),
             React.createElement("div", { className: "flex gap-3 relative" },
                 isNewDraft && (React.createElement("button", { onClick: handleCancelNew, className: "px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white/90 border border-white/10 transition", title: "Descartar el nuevo proyecto" }, "Cancelar")),
+               (!isNewDraft && viewMode === 'edit') && React.createElement("button", { 
+                    onClick: handleCancelEdit, 
+                    className: "px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition shadow-sm",
+                    title: "Descartar cambios y volver" 
+                }, "Cancelar"),
                 React.createElement("button", { onClick: handleSave, disabled: isSaving, className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}` },
                     isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }),
                     React.createElement("span", { className: "hidden sm:inline" }, isSaving ? 'Guardando...' : 'Guardar Progreso')),
