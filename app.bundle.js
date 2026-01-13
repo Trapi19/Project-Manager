@@ -589,8 +589,15 @@ const executiveSummary = (() => {
                     React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
                         React.createElement("div", { className: "relative group" },
                             React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
-                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input pl-12" })
+                            React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
+                        React.createElement("div", { className: "relative group" },
+                            React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
+                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input pl-12" })), // <--- CORREGIDO (Añadido ), )
                         React.createElement("div", { className: "flex items-center gap-2" },
+                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"),
+                            React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
+                                React.createElement("option", { value: "Todos" }, "Todos"),
+                                clients.map(c => React.createElement("option", { key: c, value: c }, c))))))),
                             React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"),
                             React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
                                 React.createElement("option", { value: "Todos" }, "Todos"),
@@ -789,7 +796,7 @@ React.createElement("div", { className: "exec-card md:col-span-2" },
                         isDragging: draggingProjectId === p.id,
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
-                    } })))))))));
+                    } })))))));
 };
 // --- COMPONENTE: VISTA PREVIA (Read Only) ---
 const ProjectPreview = ({ data }) => {
