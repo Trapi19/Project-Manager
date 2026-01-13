@@ -1,6 +1,5 @@
-
 // @ts-nocheck
-// COMPONENTES REACT (APP PRINCIPAL) ---
+// --- 3. COMPONENTES REACT (APP PRINCIPAL) ---
 const { useState, useEffect } = React;
 const Icons = {
     check: React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
@@ -1157,19 +1156,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
     };
-
-    // --- NUEVA FUNCIÓN: Cancelar edición ---
-    const handleCancelEdit = () => {
-        if (hasChanges) {
-            const confirmDiscard = window.confirm("¿Descartar cambios no guardados y volver?");
-            if (!confirmDiscard) return;
-        }
-        // Restaurar datos originales y volver a vista previa
-        setData(project);
-        setHasChanges(false);
-        setViewMode('preview');
-    };
-
     const updateMeta = (field, value) => {
         const META_LABELS = {
             titulo: 'Título',
@@ -1490,9 +1476,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                     React.createElement("span", { className: "hidden sm:inline" }, viewMode === 'edit' ? 'Vista previa' : 'Editar proyecto'))),
             React.createElement("div", { className: "flex gap-3 relative" },
                 isNewDraft && (React.createElement("button", { onClick: handleCancelNew, className: "px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white/90 border border-white/10 transition", title: "Descartar el nuevo proyecto" }, "Cancelar")),
-                
-                (!isNewDraft && viewMode === 'edit') && (React.createElement("button", { onClick: handleCancelEdit, className: "px-4 py-2 rounded-lg text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 transition shadow-sm", title: "Descartar cambios y volver" }, "Cancelar")),
-
                 React.createElement("button", { onClick: handleSave, disabled: isSaving, className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}` },
                     isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }),
                     React.createElement("span", { className: "hidden sm:inline" }, isSaving ? 'Guardando...' : 'Guardar Progreso')),
@@ -2249,5 +2232,3 @@ const makeDraftProject = () => ({
 };
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(MainApp, null));
-
-
