@@ -1824,10 +1824,32 @@ const WorkloadView = ({ projects, onBack }) => {
     );
 };
 
-// --- COMPONENTE: VISTA DETALLADA DE ALERTAS (NUEVO) ---
+// --- COMPONENTE: VISTA DETALLADA DE ALERTAS (MEJORADO CON FILTROS) ---
 const AlertsView = ({ projects, onBack }) => {
-    
-    // Lógica de cálculo (similar al Resumen Ejecutivo pero detallada)
+    // 1. Estados para filtros (Igual que en el Dashboard)
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const [clientFilter, setClientFilter] = React.useState('Todos');
+
+    // 2. Helpers para normalizar datos
+    const normClient = (p) => ((p.meta && p.meta.cliente) ? p.meta.cliente : 'Sin cliente').trim() || 'Sin cliente';
+    const clients = React.useMemo(() => 
+        Array.from(new Set(projects.map(normClient))).sort((a, b) => a.localeCompare(b, 'es')),
+    [projects]);
+
+    // 3. Filtrado de proyectos (Para que coincida con el Dashboard)
+    const filteredProjects = React.useMemo(() => {
+        return projects.filter(p => {
+            const matchesClient = clientFilter === 'Todos' || normClient(p) === clientFilter;
+            const q = (searchTerm || '').toString().trim().toLowerCase();
+            if (!q) return matchesClient;
+            
+            const m = (p && p.meta) ? p.meta : {};
+            const hay = ((m.titulo || '') + ' ' + (m.subtitulo || '') + ' ' + (m.cliente || '') + ' ' + (m.pep || '')).toLowerCase();
+            return matchesClient && hay.includes(q);
+        });
+    }, [projects, clientFilter, searchTerm]);
+
+    // 4. Lógica de cálculo de alertas (Usando filteredProjects)
     const alertsData = React.useMemo(() => {
         const blockedProjects = [];
         const redProjects = [];
@@ -1842,8 +1864,8 @@ const AlertsView = ({ projects, onBack }) => {
             return new Date(y, (m || 1) - 1, d || 1);
         };
 
-        projects.forEach(p => {
-            // Ignorar completados
+        filteredProjects.forEach(p => {
+            // Ignorar completados (igual que Dashboard)
             const pState = (p.meta && p.meta.estado) ? p.meta.estado : 'En Ejecución';
             if (String(pState).toLowerCase() === 'completado') return;
 
@@ -1851,14 +1873,12 @@ const AlertsView = ({ projects, onBack }) => {
             const idx = buildTaskIndex(tasks);
             const blockedTasks = [];
             let hasOverdue = false;
-            let pendingCount = 0;
             
             tasks.forEach(t => {
                 const est = effectiveEstado(t, idx);
                 
-                // 1. Detectar Bloqueos
+                // A. Bloqueos
                 if (est !== 'Completado' && isTaskBlocked(t, idx)) {
-                    // Buscar quién la bloquea
                     let blockerName = "Desconocido";
                     if(t.dependsOn) {
                         const parent = idx.get(t.dependsOn);
@@ -1867,9 +1887,8 @@ const AlertsView = ({ projects, onBack }) => {
                     blockedTasks.push({ ...t, blockerName });
                 }
 
-                // 2. Datos para Alertas Rojas
+                // B. Vencimientos
                 if (est !== 'Completado') {
-                    pendingCount++;
                     const lim = parseISO(t.fechaLimite);
                     if (lim && lim < today) hasOverdue = true;
                 }
@@ -1885,7 +1904,7 @@ const AlertsView = ({ projects, onBack }) => {
                 });
             }
 
-            // Agrupar Alertas Rojas
+            // Agrupar Alertas Rojas (Lógica exacta del Dashboard)
             const stats = computeProjectStats(tasks);
             const tooMany = (stats.total >= 5 && (stats.pending / stats.total) >= 0.6 && stats.progress < 50);
             
@@ -1904,34 +1923,60 @@ const AlertsView = ({ projects, onBack }) => {
         });
 
         return { blockedProjects, redProjects };
-    }, [projects]);
+    }, [filteredProjects]);
 
     return (
         React.createElement("div", { className: "wl-view-container" },
-            // Barra Superior Sticky
-            React.createElement("div", { className: "wl-header-sticky no-print" },
-                React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
-                    React.createElement("i", { className: "fas fa-arrow-left" }),
-                    "Volver"
+            // HEADER STICKY CON FILTROS
+            React.createElement("div", { className: "wl-header-sticky no-print", style: { flexDirection: 'column', alignItems: 'stretch', gap: '12px', height: 'auto', padding: '12px 16px' } },
+                
+                // Fila superior: Título y Volver
+                React.createElement("div", { className: "flex justify-between items-center" },
+                    React.createElement("div", { className: "flex items-center gap-4" },
+                        React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
+                            React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"
+                        ),
+                        React.createElement("div", { style: { width: '1px', height: '24px', background: 'var(--border)' } }),
+                        React.createElement("h2", { className: "wl-title" },
+                            React.createElement("i", { className: "fas fa-shield-halved", style: { color: '#ef4444' } }), " Centro de Alertas"
+                        )
+                    )
                 ),
-                React.createElement("div", { style: { width: '1px', height: '24px', background: 'var(--border)' } }),
-                React.createElement("h2", { className: "wl-title" },
-                    React.createElement("i", { className: "fas fa-shield-halved", style: { color: '#ef4444' } }),
-                    "Centro de Alertas")
+
+                // Fila inferior: BARRA DE FILTROS (Nueva)
+                React.createElement("div", { className: "flex flex-col sm:flex-row gap-3 bg-gray-50 p-2 rounded-lg border border-gray-100" },
+                    React.createElement("div", { className: "relative group flex-1" },
+                        React.createElement("i", { className: "fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" }),
+                        React.createElement("input", { 
+                            type: "text", 
+                            placeholder: "Buscar en alertas...", 
+                            value: searchTerm, 
+                            onChange: (e) => setSearchTerm(e.target.value), 
+                            className: "w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none" 
+                        })
+                    ),
+                    React.createElement("select", { 
+                        className: "py-1.5 px-3 text-sm border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 outline-none", 
+                        value: clientFilter, 
+                        onChange: (e) => setClientFilter(e.target.value) 
+                    },
+                        React.createElement("option", { value: "Todos" }, "Todos los clientes"),
+                        clients.map(c => React.createElement("option", { key: c, value: c }, c))
+                    )
+                )
             ),
 
-            // Contenido Principal
             React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-8" },
-                
                 // SECCIÓN 1: PROYECTOS BLOQUEADOS
                 React.createElement("div", null,
                     React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" },
-                        React.createElement("i", { className: "fas fa-lock text-orange-500" }),
-                        "Bloqueos por Dependencias",
+                        React.createElement("i", { className: "fas fa-lock text-orange-500" }), " Bloqueos por Dependencias",
                         React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.blockedProjects.length)
                     ),
                     alertsData.blockedProjects.length === 0 
-                    ? React.createElement("div", { className: "p-8 text-center text-gray-400 bg-white rounded-xl border border-dashed" }, "No hay tareas bloqueadas.")
+                    ? React.createElement("div", { className: "p-8 text-center text-gray-400 bg-white rounded-xl border border-dashed" }, 
+                        searchTerm || clientFilter !== 'Todos' ? "No hay bloqueos con estos filtros." : "No hay tareas bloqueadas."
+                      )
                     : React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
                         alertsData.blockedProjects.map(proj => (
                             React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` },
@@ -1954,16 +1999,16 @@ const AlertsView = ({ projects, onBack }) => {
                         ))
                     )
                 ),
-
                 // SECCIÓN 2: ALERTAS ROJAS
                 React.createElement("div", null,
                     React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" },
-                        React.createElement("i", { className: "fas fa-bell text-red-500" }),
-                        "Alertas Críticas",
+                        React.createElement("i", { className: "fas fa-bell text-red-500" }), " Alertas Críticas",
                         React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.redProjects.length)
                     ),
                     alertsData.redProjects.length === 0 
-                    ? React.createElement("div", { className: "p-8 text-center text-gray-400 bg-white rounded-xl border border-dashed" }, "Todo en orden.")
+                    ? React.createElement("div", { className: "p-8 text-center text-gray-400 bg-white rounded-xl border border-dashed" }, 
+                        searchTerm || clientFilter !== 'Todos' ? "No hay alertas rojas con estos filtros." : "Todo en orden."
+                      )
                     : React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
                         alertsData.redProjects.map(proj => (
                             React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px', borderLeft: '4px solid #ef4444' }, onClick: () => window.location.hash = `#/project/${proj.id}` },
