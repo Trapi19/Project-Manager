@@ -530,24 +530,15 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                         React.createElement("div", { className: "exec-progress" },
                             React.createElement("div", { className: "exec-progress-fill", style: { width: `${executiveSummary.progressAvg}%` } }))),
 
-// 3. TAREAS (Ahora interactiva: lleva a Carga de Trabajo)
-                    React.createElement("div", { 
-                        className: "exec-card cursor-pointer hover:ring-2 hover:ring-blue-100 transition-all", 
-                        onClick: () => window.location.hash = '#/workload', // <--- Te lleva a la vista detallada
-                        title: "Ver desglose de tareas" 
-                    },
+                    // 3. TAREAS
+                    React.createElement("div", { className: "exec-card" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
                                 React.createElement("div", { className: "exec-label" }, "Carga de trabajo"),
                                 React.createElement("div", { className: "exec-value" }, executiveSummary.tasksTotal),
                                 React.createElement("div", { className: "exec-note" }, "Abiertas: ", executiveSummary.tasksOpen)),
                             React.createElement("div", { className: "exec-card-icon" },
-                                React.createElement("i", { className: "fas fa-list-check" }))),
-                        // Barra de progreso visual que ya tenías o un indicador extra si quieres
-                        React.createElement("div", { className: "mt-4 text-[10px] text-gray-400 font-medium" },
-                            "Haga clic para ver el detalle por técnico"
-                        )
-                    ),
+                                React.createElement("i", { className: "fas fa-list-check" })))),
 
                     // 4. INCIDENCIAS (BLOQUEOS + ALERTAS) - LINKADO A LA NUEVA VISTA
                     React.createElement("div", { 
