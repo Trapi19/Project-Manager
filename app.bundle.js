@@ -1596,8 +1596,39 @@ React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowra
                                             isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" },
                                                 React.createElement("i", { className: "fas fa-lock" }),
                                                 " Bloqueada")))))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-                                React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) })),
+                            // --- NUEVA CELDA DE TAREA (CON SUBTAREAS) ---
+React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+    React.createElement("textarea", {
+        rows: "1",
+        className: "w-full border-none p-0 focus:ring-0 outline-none resize-none bg-transparent font-semibold text-gray-800 text-sm mb-1",
+        value: task.tarea,
+        onChange: (e) => updateTask(task.id, 'tarea', e.target.value),
+        placeholder: "Nombre de la tarea..."
+    }),
+    React.createElement("div", { className: "wl-subtask-container" },
+        (task.subtasks && task.subtasks.length > 0) && (() => {
+            const total = task.subtasks.length;
+            const done = task.subtasks.filter(s => s.done).length;
+            const pct = Math.round((done / total) * 100);
+            return React.createElement("div", { className: "wl-subtask-header" },
+                React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase" }, `Subtareas ${done}/${total}`),
+                React.createElement("div", { className: "wl-subtask-progress-bg" },
+                    React.createElement("div", { className: "wl-subtask-progress-bar", style: { width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : 'var(--brand)' } })
+                )
+            );
+        })(),
+        React.createElement("div", { className: "wl-subtask-list" },
+            (task.subtasks || []).map(sub => (
+                React.createElement("div", { key: sub.id, className: "wl-subtask-row" },
+                    React.createElement("input", { type: "checkbox", className: "wl-subtask-check", checked: sub.done, onChange: (e) => updateSubtask(task.id, sub.id, 'done', e.target.checked) }),
+                    React.createElement("input", { type: "text", className: `wl-subtask-input ${sub.done ? 'done' : ''}`, value: sub.text, onChange: (e) => updateSubtask(task.id, sub.id, 'text', e.target.value), placeholder: "Subtarea...", onKeyDown: (e) => { if(e.key === 'Enter') addSubtask(task.id); if(e.key === 'Backspace' && sub.text === '') deleteSubtask(task.id, sub.id); } }),
+                    React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "text-gray-300 hover:text-red-500 px-1", title: "Borrar subtarea" }, React.createElement("i", { className: "fas fa-times text-xs" }))
+                )
+            ))
+        ),
+        React.createElement("button", { onClick: () => addSubtask(task.id), className: "wl-btn-add-sub" }, React.createElement("i", { className: "fas fa-plus-circle" }), (task.subtasks && task.subtasks.length > 0) ? "Añadir otra" : "Añadir subtarea")
+    )
+),
                             React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
                                 React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
@@ -1616,86 +1647,16 @@ React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowra
                                     React.createElement("option", { value: "Completado" }, "Completado"))),
                                                         React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
                                 React.createElement("input", { type: "text", className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500", value: task.asignadoA || '', onChange: (e) => updateTask(task.id, 'asignadoA', e.target.value), placeholder: "Asignado..." })),
-                            // --- CELDA DE TAREA CON SUBTAREAS ---
+// --- CELDA DE DETALLES (CORREGIDA) ---
 React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-    // 1. Título principal (Textarea existente)
-    React.createElement("textarea", { 
-        rows: "1", 
-        className: "w-full border-none p-0 focus:ring-0 outline-none resize-none bg-transparent font-semibold text-gray-800 text-sm mb-1", // Estilo más "título"
-        value: task.tarea, 
-        onChange: (e) => updateTask(task.id, 'tarea', e.target.value),
-        placeholder: "Nombre de la tarea..."
-    }),
-
-    // 2. Contenedor de Subtareas (Sólo si tiene alguna o queremos añadir)
-    React.createElement("div", { className: "wl-subtask-container" },
-        
-        // Cabecera Mini (Progreso) - Solo visible si hay subtareas
-        (task.subtasks && task.subtasks.length > 0) && (() => {
-            const total = task.subtasks.length;
-            const done = task.subtasks.filter(s => s.done).length;
-            const pct = Math.round((done / total) * 100);
-            return React.createElement("div", { className: "wl-subtask-header" },
-                React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase" }, 
-                    `Subtareas ${done}/${total}`
-                ),
-                // Mini barra de progreso
-                React.createElement("div", { className: "wl-subtask-progress-bg" },
-                    React.createElement("div", { 
-                        className: "wl-subtask-progress-bar", 
-                        style: { width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : 'var(--brand)' } 
-                    })
-                )
-            );
-        })(),
-
-        // Lista de Subtareas
-        React.createElement("div", { className: "wl-subtask-list" },
-            (task.subtasks || []).map(sub => (
-                React.createElement("div", { key: sub.id, className: "wl-subtask-row" },
-                    // Checkbox
-                    React.createElement("input", { 
-                        type: "checkbox", 
-                        className: "wl-subtask-check",
-                        checked: sub.done, 
-                        onChange: (e) => updateSubtask(task.id, sub.id, 'done', e.target.checked)
-                    }),
-                    // Input de texto subtarea
-                    React.createElement("input", { 
-                        type: "text", 
-                        className: `wl-subtask-input ${sub.done ? 'done' : ''}`, 
-                        value: sub.text, 
-                        onChange: (e) => updateSubtask(task.id, sub.id, 'text', e.target.value),
-                        placeholder: "Subtarea...",
-                        onKeyDown: (e) => {
-                            // Al pulsar Enter, crear otra subtarea automáticamente
-                            if(e.key === 'Enter') addSubtask(task.id);
-                            // Al pulsar Backspace en vacío, borrar
-                            if(e.key === 'Backspace' && sub.text === '') deleteSubtask(task.id, sub.id);
-                        }
-                    }),
-                    // Botón eliminar sutil (X)
-                    React.createElement("button", { 
-                        onClick: () => deleteSubtask(task.id, sub.id),
-                        className: "text-gray-300 hover:text-red-500 px-1",
-                        title: "Borrar subtarea"
-                    }, React.createElement("i", { className: "fas fa-times text-xs" }))
-                )
-            ))
-        ),
-
-        // Botón "Añadir Subtarea"
-        React.createElement("button", { 
-            onClick: () => addSubtask(task.id), 
-            className: "wl-btn-add-sub"
-        },
-            React.createElement("i", { className: "fas fa-plus-circle" }),
-            (task.subtasks && task.subtasks.length > 0) ? "Añadir otra" : "Añadir subtarea"
-        )
-    )
+    React.createElement("textarea", {
+        rows: "3",
+        className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full",
+        value: task.detalles || '',
+        onChange: (e) => updateTask(task.id, 'detalles', e.target.value),
+        placeholder: "Escribe aquí los detalles..."
+    })
 ),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
-                                React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaInicio), onChange: (e) => updateTask(task.id, 'fechaInicio', e.target.value) })),
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
                                 React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })),
                             React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
