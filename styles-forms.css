@@ -90,3 +90,69 @@ input:focus, textarea:focus, select:focus {
 .theme-dark .bg-gray-200 {
     background-color: rgba(255, 255, 255, 0.2) !important;
 }
+
+/* --- ESTILOS PARA SUBTAREAS (Añadido) --- */
+.subtasks-container {
+    margin-top: 8px;
+    padding-left: 2px;
+}
+
+.subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-size: 13px;
+}
+
+.subtask-checkbox {
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--brand);
+}
+
+.subtask-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    font-size: 12px;
+    color: #4b5563;
+    padding: 2px 0;
+}
+.subtask-input:focus {
+    outline: none;
+    border-bottom-color: var(--brand);
+}
+.subtask-input.done {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+
+.btn-add-subtask {
+    margin-top: 6px;
+    background: none;
+    border: none;
+    color: var(--brand);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+.btn-add-subtask:hover {
+    background-color: rgba(8,136,200,0.1);
+}
+.btn-del-subtask {
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 10px;
+    opacity: 0.6;
+    background: none; border: none;
+}
+.btn-del-subtask:hover { opacity: 1; }

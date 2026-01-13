@@ -1286,6 +1286,50 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         });
         setHasChanges(true);
     };
+
+    // --- FUNCIONES NUEVAS PARA SUBTAREAS ---
+    const addSubtask = (taskId) => {
+        const text = prompt("Escribe la subtarea:");
+        if (!text) return;
+        setData(prev => {
+            const nextTasks = prev.tasks.map(t => {
+                if (t.id !== taskId) return t;
+                const subs = t.subtasks || [];
+                // Creamos la subtarea
+                return { ...t, subtasks: [...subs, { id: Date.now(), text, done: false }] };
+            });
+            return { ...prev, tasks: nextTasks };
+        });
+        setHasChanges(true);
+    };
+
+    const toggleSubtask = (taskId, subId) => {
+        setData(prev => {
+            const nextTasks = prev.tasks.map(t => {
+                if (t.id !== taskId) return t;
+                const subs = (t.subtasks || []).map(s => 
+                    s.id === subId ? { ...s, done: !s.done } : s
+                );
+                return { ...t, subtasks: subs };
+            });
+            return { ...prev, tasks: nextTasks };
+        });
+        setHasChanges(true);
+    };
+
+    const deleteSubtask = (taskId, subId) => {
+        if(!confirm("¿Borrar subtarea?")) return;
+        setData(prev => {
+            const nextTasks = prev.tasks.map(t => {
+                if (t.id !== taskId) return t;
+                const subs = (t.subtasks || []).filter(s => s.id !== subId);
+                return { ...t, subtasks: subs };
+            });
+            return { ...prev, tasks: nextTasks };
+        });
+        setHasChanges(true);
+    };
+    // ---------------------------------------
     // EXPORTACIONES
     const exportHTML = () => {
         const finalHTML = getClientTemplate(data);
@@ -1533,7 +1577,24 @@ React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowra
                                                 React.createElement("i", { className: "fas fa-lock" }),
                                                 " Bloqueada")))))),
                             React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-                                React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) })),
+        React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full font-medium", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) }),
+        
+        // ZONA DE SUBTAREAS
+        React.createElement("div", { className: "subtasks-container" },
+            (task.subtasks || []).map(sub => (
+                React.createElement("div", { key: sub.id, className: "subtask-item" },
+                    React.createElement("input", { type: "checkbox", className: "subtask-checkbox", checked: !!sub.done, onChange: () => toggleSubtask(task.id, sub.id) }),
+                    React.createElement("span", { className: `subtask-input ${sub.done ? 'done' : ''}` }, sub.text),
+                    React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "btn-del-subtask", title: "Borrar subtarea" },
+                        React.createElement("i", { className: "fas fa-times" })
+                    )
+                )
+            )),
+            React.createElement("button", { onClick: () => addSubtask(task.id), className: "btn-add-subtask" },
+                React.createElement("i", { className: "fas fa-plus-circle" }), " Subtarea"
+            )
+        )
+    ),
                             React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
                                 React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
