@@ -1,5 +1,6 @@
+
 // @ts-nocheck
-// --- 3. COMPONENTES REACT (APP PRINCIPAL) ---
+// COMPONENTES REACT (APP PRINCIPAL) ---
 const { useState, useEffect } = React;
 const Icons = {
     check: React.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
@@ -847,62 +848,72 @@ React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal 
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Detalles"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Inicio"),
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "L\u00EDmite"))),
-                        React.createElement("tbody", { className: "divide-y divide-gray-200" }, data.tasks.map((row) => {
-                            var _a;
-                            return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" },
-                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    React.createElement("div", { className: "flex items-center" },
-                                        React.createElement("div", { 
-    className: "p-1.5 rounded-lg mr-2 no-print flex items-center justify-center " + (
-        row.iconType === 'wifi' ? 'bg-blue-100 text-blue-600' :
-        row.iconType === 'server' ? 'bg-orange-100 text-orange-600' :
-        row.iconType === 'monitor' ? 'bg-indigo-100 text-indigo-600' :
-        row.iconType === 'tv' ? 'bg-purple-100 text-purple-600' :
-        row.iconType === 'users' ? 'bg-green-100 text-green-600' :
-        row.iconType === 'key' ? 'bg-yellow-100 text-yellow-600' :
-        row.iconType === 'alert' ? 'bg-red-100 text-red-600' :
-        row.iconType === 'lock' ? 'bg-slate-200 text-slate-700' :
-        'bg-gray-100 text-gray-600'
-    ),
-    style: { width: '32px', height: '32px' }
-}, Icons[row.iconType] || Icons.monitor),
-                                        React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
-                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    React.createElement("div", { className: "flex flex-col gap-1" },
-                                        React.createElement("span", { className: "text-gray-700 font-medium" }, row.tarea),
-                                        isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill" },
-                                            React.createElement("i", { className: "fas fa-lock" }),
-                                            "Bloqueada por: ",
-                                            React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—'))))),
-                                                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" },
-                                    React.createElement("span", { className: "text-gray-700" }, row.asignadoA ? row.asignadoA : '-')),
-React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)),
-                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    // Texto de detalles original
-        React.createElement("div", { className: "text-sm text-gray-600 mb-2" }, row.detalles || ''),
-        
-        // Bloque de Subtareas (Solo si existen)
-        (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 pt-2 border-t border-gray-100" },
-            row.subtasks.map(sub => 
-                React.createElement("div", { key: sub.id, className: "flex items-start gap-2 mt-1" },
-                    // Casilla visual (no editable)
-                    React.createElement("span", { className: sub.done ? "text-emerald-600 font-bold text-sm" : "text-gray-300 text-sm" }, 
-                        sub.done ? "☑" : "☐"
+React.createElement("tbody", { className: "divide-y divide-gray-200" },
+    data.tasks.map((row) => {
+        var _a;
+        return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" },
+            
+            // 1. Columna ÁREA
+            React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                React.createElement("div", { className: "flex items-center" },
+                    React.createElement("div", { 
+                        className: "p-1.5 rounded-lg mr-2 no-print flex items-center justify-center " + (
+                            row.iconType === 'wifi' ? 'bg-blue-100 text-blue-600' :
+                            row.iconType === 'server' ? 'bg-orange-100 text-orange-600' :
+                            row.iconType === 'monitor' ? 'bg-indigo-100 text-indigo-600' :
+                            row.iconType === 'tv' ? 'bg-purple-100 text-purple-600' :
+                            row.iconType === 'users' ? 'bg-green-100 text-green-600' :
+                            row.iconType === 'key' ? 'bg-yellow-100 text-yellow-600' :
+                            row.iconType === 'alert' ? 'bg-red-100 text-red-600' :
+                            row.iconType === 'lock' ? 'bg-slate-200 text-slate-700' :
+                            'bg-gray-100 text-gray-600'
+                        ),
+                        style: { width: '32px', height: '32px' }
+                    }, Icons[row.iconType] || Icons.monitor),
+                    React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
+
+            // 2. Columna TAREA (Subtareas aquí)
+            React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                React.createElement("div", { className: "flex flex-col gap-1" },
+                    React.createElement("span", { className: "text-gray-900 font-bold" }, row.tarea),
+                    
+                    (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 ml-1 border-l-2 border-gray-200 pl-2" },
+                        row.subtasks.map(sub => 
+                            React.createElement("div", { key: sub.id, className: "flex items-start gap-2 mt-1" },
+                                React.createElement("span", { className: sub.done ? "text-emerald-600 font-bold text-xs" : "text-gray-300 text-xs" }, sub.done ? "☑" : "☐"),
+                                React.createElement("span", { className: `text-xs ${sub.done ? "line-through text-gray-400" : "text-gray-600"}` }, sub.text)
+                            )
+                        )
                     ),
-                    // Texto de la subtarea
-                    React.createElement("span", { className: `text-xs ${sub.done ? "line-through text-gray-400" : "text-gray-600 font-medium"}` }, 
-                        sub.text
-                    )
+
+                    isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill mt-1" },
+                        React.createElement("i", { className: "fas fa-lock" }),
+                        "Bloqueada por: ",
+                        React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—')))
                 )
-            )
-        )
-    ),
-                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))),
-                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaLimite)))));
-                        }))))))));
+            ),
+
+            // 3. Columna ASIGNADO
+            React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" },
+                React.createElement("span", { className: "text-gray-700" }, row.asignadoA ? row.asignadoA : '-')),
+
+            // 4. Columna ESTADO
+            React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)),
+
+            // 5. Columna DETALLES (Limpia)
+            React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')),
+
+            // 6. Columna FECHA INICIO
+            React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))),
+
+            // 7. Columna FECHA LÍMITE
+            React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+                React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaLimite)))
+        ));
+    }))))))));
 };
 // --- COMPONENTE: EDITOR DE PROYECTO ---
 const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme }) => {
@@ -1136,16 +1147,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             return handleCancelNew();
         onBack && onBack();
     };
-
-    const handleCancelEdit = () => {
-        if (hasChanges) {
-            const ok = confirm('Se perderán los cambios no guardados. ¿Continuar?');
-            if (!ok) return;
-        }
-        setData(project);
-        setHasChanges(false);
-        setViewMode('preview');
-    };
     const handleSave = async () => {
         const res = await onSave(data);
         setHasChanges(false);
@@ -1156,6 +1157,19 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
     };
+
+    // --- NUEVA FUNCIÓN: Cancelar edición ---
+    const handleCancelEdit = () => {
+        if (hasChanges) {
+            const confirmDiscard = window.confirm("¿Descartar cambios no guardados y volver?");
+            if (!confirmDiscard) return;
+        }
+        // Restaurar datos originales y volver a vista previa
+        setData(project);
+        setHasChanges(false);
+        setViewMode('preview');
+    };
+
     const updateMeta = (field, value) => {
         const META_LABELS = {
             titulo: 'Título',
@@ -1475,7 +1489,10 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                     React.createElement("i", { className: `fas ${viewMode === 'edit' ? 'fa-eye' : 'fa-pen'}` }),
                     React.createElement("span", { className: "hidden sm:inline" }, viewMode === 'edit' ? 'Vista previa' : 'Editar proyecto'))),
             React.createElement("div", { className: "flex gap-3 relative" },
-                (viewMode === 'edit' && (isNewDraft || hasChanges)) && (React.createElement("button", { onClick: isNewDraft ? handleCancelNew : handleCancelEdit, className: "px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white/90 border border-white/10 transition", title: isNewDraft ? "Descartar el nuevo proyecto" : "Cancelar cambios sin guardar" }, "Cancelar")),
+                isNewDraft && (React.createElement("button", { onClick: handleCancelNew, className: "px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white/90 border border-white/10 transition", title: "Descartar el nuevo proyecto" }, "Cancelar")),
+                
+                (!isNewDraft && viewMode === 'edit') && (React.createElement("button", { onClick: handleCancelEdit, className: "px-4 py-2 rounded-lg text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 transition shadow-sm", title: "Descartar cambios y volver" }, "Cancelar")),
+
                 React.createElement("button", { onClick: handleSave, disabled: isSaving, className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}` },
                     isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }),
                     React.createElement("span", { className: "hidden sm:inline" }, isSaving ? 'Guardando...' : 'Guardar Progreso')),
@@ -2232,3 +2249,5 @@ const makeDraftProject = () => ({
 };
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(MainApp, null));
+
+
