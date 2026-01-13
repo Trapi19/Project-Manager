@@ -870,34 +870,46 @@ React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal 
     style: { width: '32px', height: '32px' }
 }, Icons[row.iconType] || Icons.monitor),
                                         React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
-                                React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    React.createElement("div", { className: "flex flex-col gap-1" },
-                                        React.createElement("span", { className: "text-gray-700 font-medium" }, row.tarea),
-                                        isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill" },
-                                            (row.subtasks && row.subtasks.length > 0) && React.createElement(
-  "div",
-  { className: "mt-2" },
-  React.createElement(
-    "div",
-    { className: "text-[10px] font-bold text-gray-400 uppercase mb-1" },
-    `Subtareas ${row.subtasks.filter(s => s.done).length}/${row.subtasks.length}`
-  ),
-  React.createElement(
-    "ul",
-    { className: "pl-4 list-disc text-sm text-gray-600 space-y-1" },
-    (row.subtasks || []).map(sub =>
-      React.createElement(
-        "li",
-        { key: sub.id, className: sub.done ? "line-through text-gray-400" : "" },
-        sub.text || ""
+                                        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+  React.createElement("div", { className: "flex flex-col gap-1" },
+
+    // Nombre de la tarea
+    React.createElement("span", { className: "text-gray-700 font-medium" }, row.tarea),
+
+    // Pastilla de bloqueo (solo si está bloqueada)
+    isTaskBlocked(row, taskIndex) && (
+      React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill" },
+        React.createElement("i", { className: "fas fa-lock" }),
+        "Bloqueada por: ",
+        React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—')
+      )
+    ),
+
+    // Subtareas (se muestran SIEMPRE que existan, esté o no bloqueada)
+    (row.subtasks && row.subtasks.length > 0) && (
+      React.createElement("div", { className: "mt-1" },
+        React.createElement(
+          "div",
+          { className: "text-[10px] font-bold text-gray-400 uppercase mb-1" },
+          `Subtareas ${row.subtasks.filter(s => s.done).length}/${row.subtasks.length}`
+        ),
+        React.createElement(
+          "ul",
+          { className: "pl-4 list-disc text-sm text-gray-600 space-y-1" },
+          (row.subtasks || []).map(sub =>
+            React.createElement(
+              "li",
+              { key: sub.id || (sub.text || '') + String(Math.random()), className: sub.done ? "line-through text-gray-400" : "" },
+              sub.text || ""
+            )
+          )
+        )
       )
     )
+
   )
 ),
 
-                                            React.createElement("i", { className: "fas fa-lock" }),
-                                            "Bloqueada por: ",
-                                            React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—'))))),
                                                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" },
                                     React.createElement("span", { className: "text-gray-700" }, row.asignadoA ? row.asignadoA : '-')),
 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
