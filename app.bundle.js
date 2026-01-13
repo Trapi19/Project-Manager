@@ -589,7 +589,7 @@ const executiveSummary = (() => {
                     React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
                         React.createElement("div", { className: "relative group" },
                             React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
-                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input" })),
+                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input pl-12" })
                         React.createElement("div", { className: "flex items-center gap-2" },
                             React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"),
                             React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
@@ -1971,7 +1971,7 @@ const AlertsView = ({ projects, onBack }) => {
                             placeholder: "Buscar en alertas...", 
                             value: searchTerm, 
                             onChange: (e) => setSearchTerm(e.target.value), 
-                            className: "w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none" 
+                            className: "w-full pl-12 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
                         })
                     ),
                     React.createElement("select", { 
