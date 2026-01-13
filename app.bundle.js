@@ -399,11 +399,22 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
             tasksCompleted += stats.completed || 0;
 
             const idx = buildTaskIndex(tasks);
-            tasks.forEach(t => {
+           tasks.forEach(t => {
                 const est = effectiveEstado(t, idx);
+                // Carga de trabajo por persona (ASIGNADO A): cuenta tareas abiertas (Pendiente/En curso).
                 if (est !== 'Completado') {
-                    const assigned = (t.asignadoA != null && String(t.asignadoA).trim()) ? String(t.asignadoA).trim() : 'Sin asignar';
-                    workloadMap[assigned] = (workloadMap[assigned] || 0) + 1;
+                    // LÓGICA DE SEPARACIÓN DE NOMBRES
+                    let raw = (t.asignadoA || '').trim();
+                    if (!raw) raw = "Sin asignar";
+                    
+                    // Separamos por /, ;, & o " y "
+                    const names = raw.split(/[\/,;&]|\s+y\s+/).map(s => s.trim()).filter(Boolean);
+                    const finalNames = names.length > 0 ? names : ["Sin asignar"];
+
+                    // Sumamos +1 a cada persona
+                    finalNames.forEach(name => {
+                        workloadMap[name] = (workloadMap[name] || 0) + 1;
+                    });
                 }
                 const lim = parseISO(t.fechaLimite);
                 if (est !== 'Completado' && lim && lim >= today && lim <= nextWeek) {
@@ -1596,46 +1607,61 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                     React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
 
-// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO ---
+// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (CORREGIDO: SEPARA NOMBRES MULTIPLES) ---
 const WorkloadView = ({ projects, onBack }) => {
     
-    // LÓGICA (Sin cambios, solo agrupación)
+    // LÓGICA DE CÁLCULO
     const workloadData = React.useMemo(() => {
         const map = {};
+        
         projects.forEach(p => {
             if (String(p.meta?.estado) === 'Completado') return;
             const activeTasks = (p.tasks || []).filter(t => String(t.estado) !== 'Completado');
 
             activeTasks.forEach(t => {
-                let assignedTo = (t.asignadoA || '').trim();
-                if (!assignedTo) assignedTo = "Sin Asignar";
-                const key = assignedTo;
+                // 1. Obtenemos el texto crudo
+                let raw = (t.asignadoA || '').trim();
+                if (!raw) raw = "Sin Asignar";
 
-                if (!map[key]) {
-                    map[key] = { name: key, totalTasks: 0, projectsMap: {} };
-                }
-                map[key].totalTasks++;
+                // 2. MAGIA: Separamos por barras (/), comas (,) o " y "
+                const names = raw.split(/[\/,;&]|\s+y\s+/).map(s => s.trim()).filter(Boolean);
+                
+                // Si al separar no queda nada, volvemos a "Sin Asignar"
+                const finalNames = names.length > 0 ? names : ["Sin Asignar"];
 
-                if (!map[key].projectsMap[p.id]) {
-                    map[key].projectsMap[p.id] = {
-                        id: p.id,
-                        title: p.meta.titulo || 'Sin título',
-                        client: p.meta.cliente || 'Varios',
-                        tasks: []
-                    };
-                }
-                map[key].projectsMap[p.id].tasks.push(t);
+                // 3. Asignamos la tarea a CADA persona encontrada
+                finalNames.forEach(personName => {
+                    const key = personName;
+
+                    if (!map[key]) {
+                        map[key] = { name: key, totalTasks: 0, projectsMap: {} };
+                    }
+                    map[key].totalTasks++;
+
+                    if (!map[key].projectsMap[p.id]) {
+                        map[key].projectsMap[p.id] = {
+                            id: p.id,
+                            title: p.meta.titulo || 'Sin título',
+                            client: p.meta.cliente || 'Varios',
+                            tasks: []
+                        };
+                    }
+                    // Evitamos duplicar la tarea visualmente si la misma persona sale 2 veces en el texto (raro, pero posible)
+                    if (!map[key].projectsMap[p.id].tasks.some(existing => existing.id === t.id)) {
+                        map[key].projectsMap[p.id].tasks.push(t);
+                    }
+                });
             });
         });
+
         return Object.values(map)
             .map(person => ({ ...person, projects: Object.values(person.projectsMap) }))
             .sort((a, b) => b.totalTasks - a.totalTasks);
     }, [projects]);
 
-    // RENDERIZADO (Usando clases wl-* y variables del sistema)
+    // RENDERIZADO
     return (
         React.createElement("div", { className: "wl-view-container" },
-            // Barra Superior Sticky
             React.createElement("div", { className: "wl-header-sticky no-print" },
                 React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
                     React.createElement("i", { className: "fas fa-arrow-left" }),
@@ -1647,7 +1673,6 @@ const WorkloadView = ({ projects, onBack }) => {
                     "Carga de Trabajo")
             ),
 
-            // Contenido Principal
             React.createElement("div", { className: "max-w-7xl mx-auto p-6" },
                 workloadData.length === 0 
                 ? React.createElement("div", { style: { textAlign: 'center', padding: '60px 0', color: 'var(--muted)' } }, 
@@ -1656,11 +1681,8 @@ const WorkloadView = ({ projects, onBack }) => {
                   )
                 : workloadData.map((person, idx) => (
                     React.createElement("div", { key: idx, className: "wl-person-card" },
-                        
-                        // Encabezado de la Tarjeta (Persona)
                         React.createElement("div", { className: "wl-person-header" },
                             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: '16px' } },
-                                // Avatar
                                 React.createElement("div", { className: "wl-avatar-large" },
                                     person.name.charAt(0).toUpperCase()
                                 ),
@@ -1671,31 +1693,21 @@ const WorkloadView = ({ projects, onBack }) => {
                                     )
                                 )
                             ),
-                            // Badge Carga
                             React.createElement("div", { className: `wl-load-badge ${person.totalTasks >= 5 ? 'high' : 'normal'}` },
                                 person.totalTasks >= 5 ? "Carga Alta" : "Normal"
                             )
                         ),
-
-                        // Cuerpo (Grid de Proyectos)
                         React.createElement("div", { className: "wl-grid-projects" },
                             person.projects.map(proj => (
                                 React.createElement("div", { key: proj.id, className: "wl-subcard", onClick: () => window.location.hash = `#/project/${proj.id}` },
-                                    
-                                    // Título Proyecto
                                     React.createElement("div", { className: "wl-proj-title", title: proj.title }, proj.title),
-                                    
-                                    // Cliente (Tag)
                                     React.createElement("div", { className: "wl-client-tag" },
                                         React.createElement("i", { className: "fas fa-building" }), 
                                         proj.client
                                     ),
-                                    
-                                    // Lista de Tareas
                                     React.createElement("div", null,
                                         proj.tasks.map(t => (
                                             React.createElement("div", { key: t.id, className: "wl-task-row" },
-                                                // Punto de estado
                                                 React.createElement("i", { 
                                                     className: "fas fa-circle", 
                                                     style: { 
@@ -1704,7 +1716,6 @@ const WorkloadView = ({ projects, onBack }) => {
                                                         color: String(t.estado).includes('Curso') ? '#f59e0b' : 'var(--muted)' 
                                                     } 
                                                 }),
-                                                // Texto tarea
                                                 React.createElement("div", { className: "wl-task-text" }, 
                                                     t.tarea,
                                                     t.fechaLimite && React.createElement("span", { className: "wl-date-warn" }, 
