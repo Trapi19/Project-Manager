@@ -1145,17 +1145,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         if (isNewDraft)
             return handleCancelNew();
         onBack && onBack();
-
-    const handleCancelEdit = () => {
-        // Si hay cambios, pedimos confirmación antes de descartar
-        if (hasChanges && !confirm("¿Descartar los cambios no guardados?")) return;
-        
-        // Restauramos los datos originales (project) y volvemos a vista previa
-        setData(project);
-        setHasChanges(false);
-        setViewMode('preview');
-    };
-    
     };
     const handleSave = async () => {
         const res = await onSave(data);
@@ -1415,8 +1404,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setShowExportMenu(false);
         setTimeout(() => window.print(), 500);
     };
-return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 relative" },
-        // --- MODALES Y TOASTS ---
+    return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 relative" },
         showGantt && (React.createElement("div", { className: "fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 no-print", onClick: () => { setShowGantt(false); setGanttWarnings([]); } },
             React.createElement("div", { className: "bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden", onClick: (e) => e.stopPropagation() },
                 React.createElement("div", { className: "px-5 py-4 border-b flex items-center justify-between" },
@@ -1467,14 +1455,13 @@ return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 r
                 )
             )
         )),
+
         showToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-50 z-[9999] pointer-events-none" },
             React.createElement("div", { className: "bg-green-500 rounded-full p-1" },
                 React.createElement("i", { className: "fas fa-check text-white text-xs" })),
             React.createElement("div", null,
                 React.createElement("h4", { className: "font-bold text-sm" }, "Guardado"),
                 React.createElement("p", { className: "text-xs text-gray-400" }, "Listo para exportar.")))),
-
-        // --- BARRA SUPERIOR (HEADER) ---
         React.createElement("div", { className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-3 flex justify-between items-center shadow-sm no-print" },
             React.createElement("div", { className: "flex items-center gap-4" },
                 React.createElement("button", { onClick: handleBack, className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium" },
@@ -1489,14 +1476,6 @@ return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 r
                     React.createElement("span", { className: "hidden sm:inline" }, viewMode === 'edit' ? 'Vista previa' : 'Editar proyecto'))),
             React.createElement("div", { className: "flex gap-3 relative" },
                 isNewDraft && (React.createElement("button", { onClick: handleCancelNew, className: "px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white/90 border border-white/10 transition", title: "Descartar el nuevo proyecto" }, "Cancelar")),
-                
-                // BOTÓN CANCELAR (EDICIÓN)
-                (!isNewDraft && viewMode === 'edit') && React.createElement("button", { 
-                    onClick: handleCancelEdit, 
-                    className: "px-4 py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition shadow-sm",
-                    title: "Descartar cambios y volver" 
-                }, "Cancelar"),
-
                 React.createElement("button", { onClick: handleSave, disabled: isSaving, className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}` },
                     isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }),
                     React.createElement("span", { className: "hidden sm:inline" }, isSaving ? 'Guardando...' : 'Guardar Progreso')),
@@ -1534,8 +1513,6 @@ return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 r
                                 React.createElement("p", { className: "font-medium" }, "PDF Oficial"),
                                 React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))
                 ))),
-
-        // --- CONTENIDO PRINCIPAL ---
         viewMode === 'preview' ? (React.createElement("div", { className: "py-8" },
             React.createElement(ProjectPreview, { data: data }))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" },
             React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
@@ -1559,31 +1536,32 @@ return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 r
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Proyecto"),
                             React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "" })),
                             React.createElement("div", { className: "mt-4" },
-                                React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Ejecución / Técnico"),
-                                React.createElement("input", { 
-                                    type: "text", 
-                                    className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", 
-                                    value: data.meta.ejecutorProyecto || '', 
-                                    onChange: (e) => updateMeta('ejecutorProyecto', e.target.value), 
-                                    placeholder: "Quién ejecuta la obra..." 
-                                })),
+    React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Ejecución / Técnico"),
+    React.createElement("input", { 
+        type: "text", 
+        className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", 
+        value: data.meta.ejecutorProyecto || '', 
+        onChange: (e) => updateMeta('ejecutorProyecto', e.target.value), 
+        placeholder: "Quién ejecuta la obra..." 
+    })
+),
                         React.createElement("div", null,
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "PEP"),
                             React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.pep || '', onChange: (e) => updateMeta('pep', e.target.value), placeholder: "Ej: PEP-2026-001" })),
                         React.createElement("div", null,
-                            React.createElement("div", null,
-                                React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Carpeta SharePoint"),
-                                React.createElement("div", { className: "relative" },
-                                    React.createElement("i", { className: "fas fa-folder-open absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" }),
-                                    React.createElement("input", { 
-                                        type: "url", 
-                                        className: "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow", 
-                                        value: data.meta.sharepointUrl || '', 
-                                        onChange: (e) => updateMeta('sharepointUrl', e.target.value), 
-                                        placeholder: "https://unitecnic.sharepoint.com/..." 
-                                    })
-                                )
-                            ),
+    React.createElement("div", null,
+        React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Carpeta SharePoint"),
+        React.createElement("div", { className: "relative" },
+            React.createElement("i", { className: "fas fa-folder-open absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" }),
+            React.createElement("input", { 
+                type: "url", 
+                className: "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow", 
+                value: data.meta.sharepointUrl || '', 
+                onChange: (e) => updateMeta('sharepointUrl', e.target.value), 
+                placeholder: "https://unitecnic.sharepoint.com/..." 
+            })
+        )
+    ),
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Logo del cliente"),
                             React.createElement("div", { className: "flex items-center gap-3" },
                                 React.createElement("div", { className: "h-12 w-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden" }, data.meta.clientLogoData ? (React.createElement("img", { src: data.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: "fas fa-image text-slate-400" }))),
@@ -1617,8 +1595,8 @@ return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 r
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[320px]" }, "\u00C1REA / TIPO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "TAREA"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "ESTADO"),
-                                React.createElement("th", { className: "px-4 py-3 font-semibold whitespace-nowrap min-w-[200px] internal-only" }, "ASIGNADO A"),
-                                React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "DETALLES"),
+                                                                React.createElement("th", { className: "px-4 py-3 font-semibold whitespace-nowrap min-w-[200px] internal-only" }, "ASIGNADO A"),
+React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "DETALLES"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"),
                                 React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))),
@@ -1637,38 +1615,46 @@ return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 r
                                                 data.tasks
                                                     .filter(t => t.id !== task.id)
                                                     .map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))),
-                                            isTaskBlocked(task, idx) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" },
+                                            isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" },
                                                 React.createElement("i", { className: "fas fa-lock" }),
                                                 " Bloqueada")))))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-                                React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full font-medium", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) }),
-                                React.createElement("div", { className: "subtasks-container" },
-                                    (task.subtasks || []).map(sub => (
-                                        React.createElement("div", { key: sub.id, className: "subtask-item" },
-                                            React.createElement("input", { type: "checkbox", className: "subtask-checkbox", checked: !!sub.done, onChange: () => toggleSubtask(task.id, sub.id) }),
-                                            React.createElement("input", { 
-                                                type: "text", 
-                                                className: `subtask-input ${sub.done ? 'done' : ''}`, 
-                                                value: sub.text, 
-                                                placeholder: "Escribe la subtarea...",
-                                                onChange: (e) => updateSubtask(task.id, sub.id, e.target.value) 
-                                            }),
-                                            React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "btn-del-subtask", title: "Borrar subtarea" },
-                                                React.createElement("i", { className: "fas fa-times" })
-                                            )
-                                        )
-                                    )),
-                                    React.createElement("button", { onClick: () => addSubtask(task.id), className: "btn-add-subtask" },
-                                        React.createElement("i", { className: "fas fa-plus-circle" }), " Subtarea"
-                                    )
-                                )
-                            ),
+React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+        // Tarea principal
+        React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full font-medium", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) }),
+        
+        // ZONA DE SUBTAREAS
+        React.createElement("div", { className: "subtasks-container" },
+            (task.subtasks || []).map(sub => (
+                React.createElement("div", { key: sub.id, className: "subtask-item" },
+                    // Checkbox
+                    React.createElement("input", { type: "checkbox", className: "subtask-checkbox", checked: !!sub.done, onChange: () => toggleSubtask(task.id, sub.id) }),
+                    
+                    // AHORA ESTO ES UN INPUT EDITABLE
+                    React.createElement("input", { 
+                        type: "text", 
+                        className: `subtask-input ${sub.done ? 'done' : ''}`, 
+                        value: sub.text, 
+                        placeholder: "Escribe la subtarea...",
+                        onChange: (e) => updateSubtask(task.id, sub.id, e.target.value) 
+                    }),
+                    
+                    // Botón borrar
+                    React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "btn-del-subtask", title: "Borrar subtarea" },
+                        React.createElement("i", { className: "fas fa-times" })
+                    )
+                )
+            )),
+            React.createElement("button", { onClick: () => addSubtask(task.id), className: "btn-add-subtask" },
+                React.createElement("i", { className: "fas fa-plus-circle" }), " Subtarea"
+            )
+        )
+    ),
                             React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
                                 React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
                                             : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => {
                                         const newEstado = e.target.value;
-                                        const blocked = isTaskBlocked(task, idx);
+                                        const blocked = isTaskBlocked(task, taskIndex);
                                         if (blocked && (newEstado === 'En Curso' || newEstado === 'Completado')) {
                                             alert('Esta tarea depende de otra aún no completada. Marca la tarea previa como Completado para poder iniciarla.');
                                             updateTask(task.id, 'estado', 'Pendiente');
@@ -1679,9 +1665,9 @@ return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 r
                                     React.createElement("option", { value: "Pendiente" }, "Pendiente"),
                                     React.createElement("option", { value: "En Curso" }, "En Curso"),
                                     React.createElement("option", { value: "Completado" }, "Completado"))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
+                                                        React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
                                 React.createElement("input", { type: "text", className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500", value: task.asignadoA || '', onChange: (e) => updateTask(task.id, 'asignadoA', e.target.value), placeholder: "Asignado..." })),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "A\u00F1adir notas..." })),
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
                                 React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaInicio), onChange: (e) => updateTask(task.id, 'fechaInicio', e.target.value) })),
