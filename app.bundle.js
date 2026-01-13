@@ -248,30 +248,29 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
                 "Abrir ",
                 React.createElement("i", { className: "fas fa-arrow-right" })))));
 };
-// --- COMPONENTE: DASHBOARD ---
+
+// --- COMPONENTE: DASHBOARD (PROJECT LIST) ---
 const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, onBackup, onImport, theme, onToggleTheme }) => {
     const normClient = (p) => ((p.meta && p.meta.cliente) ? p.meta.cliente : 'Sin cliente').trim() || 'Sin cliente';
     const clients = Array.from(new Set(projects.map(normClient))).sort((a, b) => a.localeCompare(b, 'es'));
     const [clientFilter, setClientFilter] = useState('Todos');
     const [searchTerm, setSearchTerm] = useState('');
-    // --- DRAG & DROP (sin librerías externas; compatible con abrir index.html en local) ---
+    
+    // --- DRAG & DROP ---
     const [draggingProjectId, setDraggingProjectId] = useState(null);
     const [dragOverProjectId, setDragOverProjectId] = useState(null);
     const blockClickRef = React.useRef(false);
-    // --- MENÚ DE ACCIONES (Backup / Importar) ---
+    
+    // --- MENÚ DE ACCIONES ---
     const [actionsOpen, setActionsOpen] = useState(false);
     const actionsRef = React.useRef(null);
+    
     useEffect(() => {
-        if (!actionsOpen)
-            return;
+        if (!actionsOpen) return;
         const onDocMouseDown = (e) => {
-            if (actionsRef.current && !actionsRef.current.contains(e.target))
-                setActionsOpen(false);
+            if (actionsRef.current && !actionsRef.current.contains(e.target)) setActionsOpen(false);
         };
-        const onKey = (e) => {
-            if (e.key === 'Escape')
-                setActionsOpen(false);
-        };
+        const onKey = (e) => { if (e.key === 'Escape') setActionsOpen(false); };
         document.addEventListener('mousedown', onDocMouseDown);
         document.addEventListener('keydown', onKey);
         return () => {
@@ -279,33 +278,27 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
             document.removeEventListener('keydown', onKey);
         };
     }, [actionsOpen]);
+
     const cleanupProjectDnd = () => {
         setDraggingProjectId(null);
         setDragOverProjectId(null);
-        // Permite volver a hacer click inmediatamente después de soltar
         setTimeout(() => { blockClickRef.current = false; }, 0);
     };
     const readDraggedProjectId = (e) => {
-        try {
-            return e.dataTransfer.getData('application/x-unitecnic-project') || e.dataTransfer.getData('text/plain');
-        }
-        catch (err) {
-            return '';
-        }
+        try { return e.dataTransfer.getData('application/x-unitecnic-project') || e.dataTransfer.getData('text/plain'); }
+        catch (err) { return ''; }
     };
     const handleProjectDragStart = (e, project) => {
         try {
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('application/x-unitecnic-project', String(project.id));
             e.dataTransfer.setData('text/plain', String(project.id));
-        }
-        catch (err) { }
+        } catch (err) { }
         blockClickRef.current = true;
         setDraggingProjectId(project.id);
     };
     const handleProjectDragEnd = () => {
         cleanupProjectDnd();
-        // Evita que un drag dispare un click "Abrir" al soltar
         setTimeout(() => { blockClickRef.current = false; }, 200);
     };
     const handleProjectCardDragOver = (e, targetProject) => {
@@ -314,12 +307,10 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         setDragOverProjectId(targetProject.id);
     };
     const handleProjectCardDrop = (e, targetProject) => {
-        var _a;
         e.preventDefault();
         const draggedId = readDraggedProjectId(e);
-        if (!draggedId || !onMoveProject)
-            return;
-        const targetEstado = normalizeProjectEstado((_a = targetProject === null || targetProject === void 0 ? void 0 : targetProject.meta) === null || _a === void 0 ? void 0 : _a.estado);
+        if (!draggedId || !onMoveProject) return;
+        const targetEstado = normalizeProjectEstado(targetProject?.meta?.estado);
         onMoveProject(draggedId, targetEstado, targetProject.id);
         setDragOverProjectId(null);
         cleanupProjectDnd();
@@ -331,12 +322,12 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
     const handleSectionDrop = (e, targetEstado) => {
         e.preventDefault();
         const draggedId = readDraggedProjectId(e);
-        if (!draggedId || !onMoveProject)
-            return;
+        if (!draggedId || !onMoveProject) return;
         onMoveProject(draggedId, targetEstado, null);
         setDragOverProjectId(null);
         cleanupProjectDnd();
     };
+
     const filteredProjects = projects.filter(p => {
         const matchesClient = clientFilter === 'Todos' || normClient(p) === clientFilter;
         const q = (searchTerm || '').toString().trim().toLowerCase();
@@ -345,13 +336,15 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         const hay = ((m.titulo || '') + ' ' + (m.subtitulo || '') + ' ' + (m.cliente || '') + ' ' + (m.pep || '')).toLowerCase();
         return matchesClient && hay.includes(q);
     });
-    const activeProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Ejecución'; });
-    const pausedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Pausa'; });
-    const reviewProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'En Revisión'; });
-    const completedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) === 'Completado'; });
-    // --- RESUMEN EJECUTIVO (CENTRO DE CONTROL) ---
-    const nonCompletedProjects = filteredProjects.filter(p => { var _a; return normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado) !== 'Completado'; });
-const executiveSummary = (() => {
+
+    const activeProjects = filteredProjects.filter(p => normalizeProjectEstado(p?.meta?.estado) === 'En Ejecución');
+    const pausedProjects = filteredProjects.filter(p => normalizeProjectEstado(p?.meta?.estado) === 'En Pausa');
+    const reviewProjects = filteredProjects.filter(p => normalizeProjectEstado(p?.meta?.estado) === 'En Revisión');
+    const completedProjects = filteredProjects.filter(p => normalizeProjectEstado(p?.meta?.estado) === 'Completado');
+    const nonCompletedProjects = filteredProjects.filter(p => normalizeProjectEstado(p?.meta?.estado) !== 'Completado');
+
+    // --- CÁLCULO RESUMEN EJECUTIVO ---
+    const executiveSummary = (() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const nextWeek = new Date(today);
@@ -405,24 +398,19 @@ const executiveSummary = (() => {
             tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
             tasksCompleted += stats.completed || 0;
 
-            // Carga de trabajo (por persona asignada a cada tarea)
-
             const idx = buildTaskIndex(tasks);
             tasks.forEach(t => {
                 const est = effectiveEstado(t, idx);
-                // Carga de trabajo por persona (ASIGNADO A): cuenta tareas abiertas (Pendiente/En curso).
                 if (est !== 'Completado') {
                     const assigned = (t.asignadoA != null && String(t.asignadoA).trim()) ? String(t.asignadoA).trim() : 'Sin asignar';
                     workloadMap[assigned] = (workloadMap[assigned] || 0) + 1;
                 }
                 const lim = parseISO(t.fechaLimite);
-                // Vencimientos a 7 días
                 if (est !== 'Completado' && lim && lim >= today && lim <= nextWeek) {
                     upcomingDeadlines.push({ tarea: t.tarea, proyecto: title, fecha: t.fechaLimite, responsable: resp });
                 }
             });
 
-            // Bloqueos
             if (tasks.length) {
                 const blockedCount = tasks.filter(t => normalizeEstado(t.estado) !== 'Completado' && isTaskBlocked(t, idx)).length;
                 if (blockedCount > 0) {
@@ -432,7 +420,6 @@ const executiveSummary = (() => {
                 }
             }
 
-            // Alertas Rojas
             const overdue = hasOverdueOpenTask(p);
             const tooMany = hasTooManyPending(stats);
             if (overdue || tooMany) {
@@ -459,123 +446,7 @@ const executiveSummary = (() => {
         };
     })();
 
-    const __gpEscapeHtml = (v) => {
-        const s = String(v == null ? '' : v);
-        return s
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    };
-    const __gpShowModal = (title, bodyHtml) => {
-        try {
-            const existing = document.getElementById('gp-modal-overlay');
-            if (existing) existing.remove();
-            const overlay = document.createElement('div');
-            overlay.id = 'gp-modal-overlay';
-            overlay.style.cssText = [
-                'position:fixed',
-                'inset:0',
-                'background:rgba(0,0,0,0.45)',
-                'display:flex',
-                'align-items:center',
-                'justify-content:center',
-                'z-index:9999',
-                'padding:16px'
-            ].join(';');
-
-            const panel = document.createElement('div');
-            panel.style.cssText = [
-                'background:#ffffff',
-                'border-radius:16px',
-                'max-width:760px',
-                'width:100%',
-                'box-shadow:0 20px 60px rgba(0,0,0,0.25)',
-                'border:1px solid rgba(0,0,0,0.10)',
-                'overflow:hidden'
-            ].join(';');
-
-            panel.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(0,0,0,0.08);">
-                    <div style="font-weight:800;font-size:16px;color:#111827;">${__gpEscapeHtml(title)}</div>
-                    <button id="gp-modal-close" type="button"
-                        style="border:1px solid rgba(0,0,0,0.12);background:#ffffff;border-radius:10px;padding:8px 12px;font-weight:700;color:#111827;cursor:pointer;">
-                        Cerrar
-                    </button>
-                </div>
-                <div style="padding:16px 18px;color:#111827;font-size:14px;line-height:1.5;max-height:70vh;overflow:auto;">
-                    ${bodyHtml}
-                </div>
-            `;
-            overlay.appendChild(panel);
-            document.body.appendChild(overlay);
-
-            const cleanup = () => {
-                try { overlay.remove(); } catch {}
-                document.removeEventListener('keydown', onKeyDown);
-            };
-            const onKeyDown = (ev) => { if (ev.key === 'Escape') cleanup(); };
-
-            overlay.addEventListener('click', (e) => { if (e.target === overlay) cleanup(); });
-            const btn = overlay.querySelector('#gp-modal-close');
-            if (btn) btn.addEventListener('click', cleanup);
-            document.addEventListener('keydown', onKeyDown);
-        } catch (e) {
-            console.error(e);
-            alert('No se pudo mostrar el detalle.');
-        }
-    };
-
-    const showBlockDetails = () => {
-        try {
-            const blocked = (executiveSummary.blockedProjectDetails || []);
-            const red = (executiveSummary.redProjectDetails || []);
-
-            const parts = [];
-
-            // Bloqueos por dependencias
-            parts.push(`<div style="margin-bottom:14px;">
-                <div style="font-weight:800;margin-bottom:6px;">Bloqueos por dependencias</div>
-                <div style="color:#6B7280;margin-bottom:10px;">Una tarea queda bloqueada si depende de otra que aún no está en “Completado”.</div>
-            </div>`);
-
-            if (blocked.length) {
-                const items = blocked
-                    .slice()
-                    .sort((a, b) => (b.blockedCount || 0) - (a.blockedCount || 0))
-                    .map(x => `<li><span style="font-weight:700;">${__gpEscapeHtml(x.title)}</span>: ${__gpEscapeHtml(x.blockedCount)}</li>`)
-                    .join('');
-                parts.push(`<ul style="margin:0 0 16px 18px; padding:0; list-style:disc;">${items}</ul>`);
-            } else {
-                parts.push(`<div style="margin-bottom:16px;color:#111827;">No hay tareas bloqueadas por dependencias en los proyectos filtrados.</div>`);
-            }
-
-            // Alertas (rojo)
-            parts.push(`<div style="margin-top:6px;margin-bottom:10px;">
-                <div style="font-weight:800;margin-bottom:6px;">Alertas (rojo)</div>
-                <div style="color:#6B7280;">
-                    Vencidas: existe al menos 1 tarea abierta con fecha límite anterior a hoy. <br/>
-                    Muchas pendientes: ≥60% de tareas en “Pendiente” (mín. 5 tareas) y avance &lt; 50%.
-                </div>
-            </div>`);
-
-            if (red.length) {
-                const items = red
-                    .map(x => `<li><span style="font-weight:700;">${__gpEscapeHtml(x.title)}</span>: ${__gpEscapeHtml((x.reasons || []).join(' y '))}</li>`)
-                    .join('');
-                parts.push(`<ul style="margin:0 0 6px 18px; padding:0; list-style:disc;">${items}</ul>`);
-            } else {
-                parts.push(`<div style="color:#111827;">No hay proyectos en rojo con los filtros actuales.</div>`);
-            }
-
-            __gpShowModal('Detalle de bloqueos y alertas', parts.join(''));
-        }
-        catch (e) {
-            console.error(e);
-            alert('No se pudo mostrar el detalle de bloqueos y alertas.');
-        }
-    };
+    // AQUI ESTÁ LA CLAVE DEL MARGEN: 'max-w-7xl mx-auto'
     return (React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10" },
         React.createElement("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4" },
             React.createElement("div", { className: "flex items-start gap-4" },
@@ -586,22 +457,22 @@ const executiveSummary = (() => {
                     React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" },
                         React.createElement("i", { className: "fas fa-hdd text-orange-500" }),
                         " Modo Cloud (AWS)"),
+                    // BUSCADOR CORREGIDO (pl-12 y estructura correcta)
                     React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
                         React.createElement("div", { className: "relative group" },
                             React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
-                            React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
-                        React.createElement("div", { className: "relative group" },
-                            React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }),
-                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input pl-12" })), // <--- CORREGIDO (Añadido ), )
+                            React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape') setSearchTerm(''); }, className: "apple-search-input pl-12" })
+                        ),
                         React.createElement("div", { className: "flex items-center gap-2" },
                             React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"),
                             React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
                                 React.createElement("option", { value: "Todos" }, "Todos"),
-                                clients.map(c => React.createElement("option", { key: c, value: c }, c))))))),
-                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"),
-                            React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) },
-                                React.createElement("option", { value: "Todos" }, "Todos"),
-                                clients.map(c => React.createElement("option", { key: c, value: c }, c))))))),
+                                clients.map(c => React.createElement("option", { key: c, value: c }, c))
+                            )
+                        )
+                    )
+                )
+            ),
             React.createElement("div", { className: "flex items-center gap-2 no-print" },
                 React.createElement("button", { onClick: onCreate, className: "btn-apple-primary no-print", title: "Crear nuevo proyecto" },
                     React.createElement("i", { className: "fas fa-plus" }),
@@ -616,6 +487,7 @@ const executiveSummary = (() => {
                         React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onImport(); } },
                             React.createElement("i", { className: "fas fa-file-arrow-up" }),
                             React.createElement("span", null, "Importar\u2026"))))))),
+        
         projects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" },
             React.createElement("div", { className: "text-gray-300 text-6xl mb-6" },
                 React.createElement("i", { className: "fas fa-folder-open" })),
@@ -633,8 +505,7 @@ const executiveSummary = (() => {
                     React.createElement("div", { className: "exec-pill", title: "Se recalcula con los filtros activos" },
                         React.createElement("i", { className: "fas fa-sliders", "aria-hidden": "true" }),
                         React.createElement("span", null, "Seg\u00FAn filtros"))),
-// --- CUADRO DE MANDO INTERACTIVO ---
-React.createElement("div", { className: "exec-grid" },
+                React.createElement("div", { className: "exec-grid" },
                     // 1. PROYECTOS
                     React.createElement("div", { className: "exec-card", onClick: () => setClientFilter('Todos'), title: "Ver todos" },
                         React.createElement("div", { className: "exec-card-top" },
@@ -669,7 +540,7 @@ React.createElement("div", { className: "exec-grid" },
                             React.createElement("div", { className: "exec-card-icon" },
                                 React.createElement("i", { className: "fas fa-list-check" })))),
 
-// 4. BLOQUEOS Y ALERTAS (CORREGIDO: Suma Bloqueos + Alertas Rojas)
+                    // 4. INCIDENCIAS (BLOQUEOS + ALERTAS) - LINKADO A LA NUEVA VISTA
                     React.createElement("div", { 
                         className: "exec-card cursor-pointer hover:ring-2 hover:ring-red-100 transition-all", 
                         onClick: () => window.location.hash = '#/alerts', 
@@ -678,7 +549,6 @@ React.createElement("div", { className: "exec-grid" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
                                 React.createElement("div", { className: "exec-label" }, "Incidencias"),
-                                // AQUÍ ESTÁ LA CLAVE: Sumamos blockedTasks + redProjects
                                 React.createElement("div", { className: "exec-value", style: { color: (executiveSummary.blockedTasks + executiveSummary.redProjects) > 0 ? '#ef4444' : 'inherit' } }, 
                                     (executiveSummary.blockedTasks + executiveSummary.redProjects)
                                 ),
@@ -689,7 +559,6 @@ React.createElement("div", { className: "exec-grid" },
                             React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" },
                                 React.createElement("i", { className: "fas fa-shield-halved" }))
                         ),
-                        // Desglose visual en la parte inferior de la tarjeta
                         React.createElement("div", { className: "mt-4 flex flex-col gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-tight" },
                             React.createElement("div", { className: "flex items-center gap-2" },
                                 React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-orange-400' : 'bg-gray-200'}` }),
@@ -702,43 +571,43 @@ React.createElement("div", { className: "exec-grid" },
                         )
                     ),
 
-// 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
-React.createElement("div", { 
-    className: "exec-card md:col-span-2 cursor-pointer hover:ring-2 hover:ring-indigo-100 transition-all", // Clases visuales
-    onClick: () => window.location.hash = '#/workload', // La magia del clic
-    title: "Ver detalle detallado por persona"
-},
-    React.createElement("div", { className: "exec-card-top mb-5" }, // Aumentado margen inferior
-        React.createElement("div", { className: "exec-label" }, "Carga por Persona"),
-        React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))),
-    React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" }, // Más espacio entre columnas
-        executiveSummary.workloadData.map((item, i) => (
-            React.createElement("div", { key: i },
-                React.createElement("div", { className: "flex justify-between text-sm mb-2" }, // Aumentado de 11px a sm (14px)
-                    React.createElement("span", { className: "font-bold truncate" }, item.name),
-                    React.createElement("span", { className: "text-gray-500 font-medium" }, item.count)),
-                React.createElement("div", { className: "w-full h-2 bg-gray-200 rounded-full overflow-hidden" }, // Aumentado grosor de h-1 a h-2
-                    React.createElement("div", { className: "h-full bg-indigo-500", style: { width: `${Math.min(100, (item.count / 10) * 100)}%` } }))
-            )
-        )))),
+                    // 5. CARGA POR RESPONSABLE (DOBLE)
+                    React.createElement("div", { 
+                        className: "exec-card md:col-span-2 cursor-pointer hover:ring-2 hover:ring-indigo-100 transition-all", 
+                        onClick: () => window.location.hash = '#/workload', 
+                        title: "Ver detalle detallado por persona"
+                    },
+                        React.createElement("div", { className: "exec-card-top mb-5" },
+                            React.createElement("div", { className: "exec-label" }, "Carga por Persona"),
+                            React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))),
+                        React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" },
+                            executiveSummary.workloadData.map((item, i) => (
+                                React.createElement("div", { key: i },
+                                    React.createElement("div", { className: "flex justify-between text-sm mb-2" },
+                                        React.createElement("span", { className: "font-bold truncate" }, item.name),
+                                        React.createElement("span", { className: "text-gray-500 font-medium" }, item.count)),
+                                    React.createElement("div", { className: "w-full h-2 bg-gray-200 rounded-full overflow-hidden" },
+                                        React.createElement("div", { className: "h-full bg-indigo-500", style: { width: `${Math.min(100, (item.count / 10) * 100)}%` } }))
+                                )
+                            )))),
 
-// 6. PRÓXIMOS VENCIMIENTOS (DOBLE - CIAN)
-React.createElement("div", { className: "exec-card md:col-span-2" },
-    React.createElement("div", { className: "exec-card-top mb-5" },
-        React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"),
-        React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))),
-    React.createElement("div", { className: "space-y-3" }, // Aumentado espacio entre filas
-        executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (
-            React.createElement("div", { key: i, className: "flex items-center justify-between p-3 rounded-xl bg-black/5" }, // Más padding y redondeado
-                React.createElement("div", { className: "min-w-0 flex-1" },
-                    React.createElement("div", { className: "text-sm font-bold truncate" }, item.tarea), // Aumentado de 11px a sm
-                    React.createElement("div", { className: "text-[11px] text-gray-500 truncate mt-0.5" }, item.proyecto)), // Aumentado de 9px a 11px
-                React.createElement("div", { className: "ml-4 text-[12px] font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-md" }, window.formatFechaES(item.fecha))) // Fecha más grande y con fondo
-        )) : React.createElement("p", { className: "text-sm italic text-gray-400 p-2" }, "Sin vencimientos cercanos")))
+                    // 6. PRÓXIMOS VENCIMIENTOS (DOBLE)
+                    React.createElement("div", { className: "exec-card md:col-span-2" },
+                        React.createElement("div", { className: "exec-card-top mb-5" },
+                            React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"),
+                            React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))),
+                        React.createElement("div", { className: "space-y-3" },
+                            executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (
+                                React.createElement("div", { key: i, className: "flex items-center justify-between p-3 rounded-xl bg-black/5" },
+                                    React.createElement("div", { className: "min-w-0 flex-1" },
+                                        React.createElement("div", { className: "text-sm font-bold truncate" }, item.tarea),
+                                        React.createElement("div", { className: "text-[11px] text-gray-500 truncate mt-0.5" }, item.proyecto)),
+                                    React.createElement("div", { className: "ml-4 text-[12px] font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-md" }, window.formatFechaES(item.fecha)))
+                            )) : React.createElement("p", { className: "text-sm italic text-gray-400 p-2" }, "Sin vencimientos cercanos")))
                 )
-            ), // <--- ESTE ES EL QUE FALTABA (Cierra la sección entera del Resumen Ejecutivo)
+            ),
 
-            // A PARTIR DE AQUÍ LAS SECCIONES DE PROYECTOS QUEDAN FUERA
+            // SECCIONES DE PROYECTOS
             React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
                 React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }),
@@ -796,8 +665,9 @@ React.createElement("div", { className: "exec-card md:col-span-2" },
                         isDragging: draggingProjectId === p.id,
                         isDragOver: dragOverProjectId === p.id,
                         blockClickRef
-                    } })))))));
+                    } })))))))));
 };
+
 // --- COMPONENTE: VISTA PREVIA (Read Only) ---
 const ProjectPreview = ({ data }) => {
     const totalTasks = data.tasks.length;
