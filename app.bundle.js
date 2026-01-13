@@ -662,19 +662,38 @@ React.createElement("div", { className: "exec-grid" },
                             React.createElement("div", { className: "exec-card-icon" },
                                 React.createElement("i", { className: "fas fa-list-check" })))),
 
-                    // 4. BLOQUEOS
-                
-                      React.createElement("div", { className: "exec-card cursor-pointer hover:ring-2 hover:ring-red-100 transition-all", onClick: () => window.location.hash = '#/alerts', title: "Abrir centro de alertas" },
+// 4. BLOQUEOS Y ALERTAS (CORREGIDO: Suma Bloqueos + Alertas Rojas)
+                    React.createElement("div", { 
+                        className: "exec-card cursor-pointer hover:ring-2 hover:ring-red-100 transition-all", 
+                        onClick: () => window.location.hash = '#/alerts', 
+                        title: "Abrir centro de alertas" 
+                    },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
-                                React.createElement("div", { className: "exec-label" }, "Bloqueos y Alertas"),
-                                React.createElement("div", { className: "exec-value", style: { color: executiveSummary.blockedTasks > 0 ? '#ef4444' : 'inherit' } }, executiveSummary.blockedTasks),
-                                React.createElement("div", { className: "exec-note" }, executiveSummary.blockedTasks > 0 ? "Requiere atención" : "Sin incidencias")),
+                                React.createElement("div", { className: "exec-label" }, "Incidencias"),
+                                // AQUÍ ESTÁ LA CLAVE: Sumamos blockedTasks + redProjects
+                                React.createElement("div", { className: "exec-value", style: { color: (executiveSummary.blockedTasks + executiveSummary.redProjects) > 0 ? '#ef4444' : 'inherit' } }, 
+                                    (executiveSummary.blockedTasks + executiveSummary.redProjects)
+                                ),
+                                React.createElement("div", { className: "exec-note" }, 
+                                    (executiveSummary.blockedTasks + executiveSummary.redProjects) > 0 ? "Requiere atención" : "Sin incidencias"
+                                )
+                            ),
                             React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" },
-                                React.createElement("i", { className: "fas fa-shield-halved" }))),
-                        React.createElement("div", { className: "mt-4 flex items-center gap-2" },
-                            React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}` }),
-                            React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-tight" }, executiveSummary.blockedProjects, " Proyectos afectados"))),
+                                React.createElement("i", { className: "fas fa-shield-halved" }))
+                        ),
+                        // Desglose visual en la parte inferior de la tarjeta
+                        React.createElement("div", { className: "mt-4 flex flex-col gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-tight" },
+                            React.createElement("div", { className: "flex items-center gap-2" },
+                                React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-orange-400' : 'bg-gray-200'}` }),
+                                React.createElement("span", null, executiveSummary.blockedTasks, " Tareas Bloqueadas")
+                            ),
+                            React.createElement("div", { className: "flex items-center gap-2" },
+                                React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.redProjects > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-200'}` }),
+                                React.createElement("span", null, executiveSummary.redProjects, " Alertas Críticas")
+                            )
+                        )
+                    ),
 
 // 5. CARGA POR RESPONSABLE (DOBLE - ÍNDIGO)
 React.createElement("div", { 
