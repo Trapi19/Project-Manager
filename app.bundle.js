@@ -698,8 +698,8 @@ React.createElement("div", {
         )))),
 
 // 6. PRÓXIMOS VENCIMIENTOS (DOBLE - CIAN)
-React.createElement("div", { className: "exec-card md:col-span-2" },
-    React.createElement("div", { className: "exec-card-top mb-5" },
+React.createElement("div", { className: "exec-card md:col-span-2 cursor-pointer hover:ring-2 hover:ring-cyan-100 transition-all", onClick: () => window.location.hash = '#/deadlines', title: "Ver calendario completo" },
+React.createElement("div", { className: "exec-card-top mb-5" },
         React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"),
         React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))),
     React.createElement("div", { className: "space-y-3" }, // Aumentado espacio entre filas
@@ -2012,6 +2012,96 @@ const AlertsView = ({ projects, onBack }) => {
     );
 };
 
+// --- COMPONENTE: VISTA DE VENCIMIENTOS (CALENDARIO) ---
+const DeadlinesView = ({ projects, onBack }) => {
+    // 1. Lógica: Recopilar todas las tareas con fecha de todos los proyectos
+    const allDeadlines = React.useMemo(() => {
+        const list = [];
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+        projects.forEach(p => {
+            if (String(p.meta?.estado) === 'Completado') return;
+            
+            (p.tasks || []).forEach(t => {
+                const est = String(t.estado || '').toLowerCase();
+                if (est.includes('completado')) return;
+                
+                if (t.fechaLimite) {
+                    list.push({
+                        ...t,
+                        projectId: p.id,
+                        projectTitle: p.meta.titulo || 'Sin título',
+                        client: p.meta.cliente || 'Sin cliente',
+                        isOverdue: t.fechaLimite < today
+                    });
+                }
+            });
+        });
+
+        // Ordenar por fecha (las más antiguas/vencidas primero)
+        return list.sort((a, b) => a.fechaLimite.localeCompare(b.fechaLimite));
+    }, [projects]);
+
+    // 2. Renderizado
+    return (
+        React.createElement("div", { className: "wl-view-container" },
+            // Barra Superior
+            React.createElement("div", { className: "wl-header-sticky no-print" },
+                React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
+                    React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"
+                ),
+                React.createElement("div", { style: { width: '1px', height: '24px', background: 'var(--border)' } }),
+                React.createElement("h2", { className: "wl-title" },
+                    React.createElement("i", { className: "fas fa-calendar-days", style: { color: '#06b6d4' } }), // Cyan color
+                    "Calendario de Vencimientos"
+                )
+            ),
+
+            // Lista Principal
+            React.createElement("div", { className: "max-w-5xl mx-auto p-6 space-y-3" },
+                allDeadlines.length === 0 
+                ? React.createElement("div", { className: "text-center text-gray-400 py-10" }, "No hay vencimientos pendientes.")
+                : allDeadlines.map((item, i) => (
+                    React.createElement("div", { 
+                        key: i, 
+                        className: "bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row gap-4 items-start md:items-center cursor-pointer",
+                        onClick: () => window.location.hash = `#/project/${item.projectId}`
+                    },
+                        // Fecha (Izquierda)
+                        React.createElement("div", { className: `shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-lg ${item.isOverdue ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-cyan-50 text-cyan-700 border border-cyan-100'}` },
+                            React.createElement("span", { className: "text-xs font-bold uppercase" }, 
+                                new Date(item.fechaLimite).toLocaleString('es-ES', { month: 'short' }).replace('.','')
+                            ),
+                            React.createElement("span", { className: "text-xl font-bold leading-none" }, 
+                                item.fechaLimite.split('-')[2]
+                            )
+                        ),
+                        
+                        // Info Central
+                        React.createElement("div", { className: "flex-1 min-w-0" },
+                            React.createElement("div", { className: "text-xs text-gray-500 font-bold uppercase tracking-wider mb-1" }, 
+                                item.client + " · " + item.projectTitle
+                            ),
+                            React.createElement("div", { className: "font-bold text-gray-800 text-lg truncate" }, item.tarea),
+                            React.createElement("div", { className: "text-sm text-gray-500 mt-1 flex items-center gap-3" },
+                                item.asignadoA && React.createElement("span", { className: "flex items-center gap-1" },
+                                    React.createElement("i", { className: "fas fa-user-circle text-gray-400" }), item.asignadoA
+                                ),
+                                item.isOverdue && React.createElement("span", { className: "text-red-600 font-bold text-xs bg-red-50 px-2 py-0.5 rounded-full" }, "VENCIDA")
+                            )
+                        ),
+
+                        // Flecha (Derecha)
+                        React.createElement("div", { className: "hidden md:block text-gray-300" },
+                            React.createElement("i", { className: "fas fa-chevron-right" })
+                        )
+                    )
+                ))
+            )
+        )
+    );
+};
+
 // --- APP PRINCIPAL ---
 const MainApp = () => {
     const [theme, setTheme] = React.useState(() => localStorage.getItem('gp_theme') || 'light');
@@ -2153,6 +2243,11 @@ const makeDraftProject = () => ({
     setView('alerts');
     return;
 }
+if (parts[0] === 'deadlines') {
+                setCurrentProject(null);
+                setView('deadlines');
+                return;
+            }
             if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
                 setCurrentProject(null);
                 setView('list');
@@ -2401,6 +2496,7 @@ const makeDraftProject = () => ({
         React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
         view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+        view === 'deadlines' && (React.createElement(DeadlinesView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
