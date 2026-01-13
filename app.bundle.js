@@ -879,18 +879,7 @@ React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal 
 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
-                                    React.createElement("div", { className: "flex flex-col gap-1" },
-                                        React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : ''),
-                                        (Array.isArray(row === null || row === void 0 ? void 0 : row.subtasks) && row.subtasks.length > 0) && (React.createElement("div", { className: "mt-1" },
-                                            React.createElement("div", { className: "text-[11px] font-semibold text-gray-500 uppercase tracking-wider" }, "Subtareas"),
-                                            React.createElement("ul", { className: "mt-1 ml-4 list-disc" },
-                                                row.subtasks
-                                                    .filter(s => String((s && s.text) || '').trim() !== '')
-                                                    .slice(0, 12)
-                                                    .map(s => (React.createElement("li", { key: s.id, className: `text-xs ${s && s.done ? 'line-through text-gray-400' : 'text-gray-600'}` },
-                                                    `${s && s.done ? '[x]' : '[ ]'} ${s.text}`))),
-                                                row.subtasks.length > 12 && React.createElement("li", { className: "text-xs text-gray-400" }, "(más...)"))
-                                        ))) ),
+                                    React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                                     React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))),
                                 React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
@@ -1224,7 +1213,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             tarea: 'Tarea',
             estado: 'Estado',
             detalles: 'Detalles',
-            subtasks: 'Subtareas',
             fechaInicio: 'Fecha inicio',
             fechaFin: 'Fecha fin',
             fechaLimite: 'Fecha límite',
@@ -1264,59 +1252,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         });
         setHasChanges(true);
     };
-
-    // --- SUBTAREAS ---
-    // Cada tarea puede tener un array "subtasks": [{ id, text, done }]
-    // Nota: se guarda dentro de la tarea, por lo que viaja con export/import y con la sincronización.
-    const ensureSubtasks = (task) => (Array.isArray(task === null || task === void 0 ? void 0 : task.subtasks) ? task.subtasks : []);
-    const computeSubtaskProgress = (task) => {
-        const subs = ensureSubtasks(task);
-        const total = subs.length;
-        const done = subs.filter(s => !!(s === null || s === void 0 ? void 0 : s.done)).length;
-        const pct = total ? Math.round((done * 100) / total) : 0;
-        return { total, done, pct };
-    };
-    const addSubtask = (taskId) => {
-        setData(prev => {
-            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
-            const nextTasks = prevTasks.map(t => {
-                if (t.id !== taskId) return t;
-                const subs = ensureSubtasks(t);
-                const newSub = { id: 'st_' + Date.now(), text: 'Nueva subtarea', done: false };
-                return { ...t, subtasks: [...subs, newSub] };
-            });
-            let nextProject = { ...prev, tasks: nextTasks };
-            nextProject = addActivityToProject(nextProject, `Subtarea añadida en tarea ${String(taskId)}`, 'task');
-            return nextProject;
-        });
-        setHasChanges(true);
-    };
-    const updateSubtask = (taskId, subId, field, value) => {
-        setData(prev => {
-            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
-            const nextTasks = prevTasks.map(t => {
-                if (t.id !== taskId) return t;
-                const subs = ensureSubtasks(t).map(s => (s.id === subId ? { ...s, [field]: value } : s));
-                return { ...t, subtasks: subs };
-            });
-            let nextProject = { ...prev, tasks: nextTasks };
-            nextProject = addActivityToProject(nextProject, `Subtarea actualizada en tarea ${String(taskId)}`, 'task');
-            return nextProject;
-        });
-        setHasChanges(true);
-    };
-    const deleteEmptySubtasks = (taskId) => {
-        // Limpieza opcional: si una subtarea se queda sin texto, la eliminamos.
-        setData(prev => {
-            const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
-            const nextTasks = prevTasks.map(t => {
-                if (t.id !== taskId) return t;
-                const subs = ensureSubtasks(t).filter(s => String((s === null || s === void 0 ? void 0 : s.text) || '').trim() !== '');
-                return { ...t, subtasks: subs };
-            });
-            return { ...prev, tasks: nextTasks };
-        });
-    };
     const addTask = () => {
         setData(prev => {
             const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
@@ -1326,7 +1261,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 tarea: 'Nueva tarea',
                 estado: 'Pendiente',
                 detalles: 'Descripción...',
-                subtasks: [],
                 fechaInicio: '',
                 fechaFin: '',
                 fechaLimite: '',
@@ -1352,6 +1286,50 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         });
         setHasChanges(true);
     };
+
+    // --- FUNCIONES NUEVAS PARA SUBTAREAS ---
+    const addSubtask = (taskId) => {
+        const text = prompt("Escribe la subtarea:");
+        if (!text) return;
+        setData(prev => {
+            const nextTasks = prev.tasks.map(t => {
+                if (t.id !== taskId) return t;
+                const subs = t.subtasks || [];
+                // Creamos la subtarea
+                return { ...t, subtasks: [...subs, { id: Date.now(), text, done: false }] };
+            });
+            return { ...prev, tasks: nextTasks };
+        });
+        setHasChanges(true);
+    };
+
+    const toggleSubtask = (taskId, subId) => {
+        setData(prev => {
+            const nextTasks = prev.tasks.map(t => {
+                if (t.id !== taskId) return t;
+                const subs = (t.subtasks || []).map(s => 
+                    s.id === subId ? { ...s, done: !s.done } : s
+                );
+                return { ...t, subtasks: subs };
+            });
+            return { ...prev, tasks: nextTasks };
+        });
+        setHasChanges(true);
+    };
+
+    const deleteSubtask = (taskId, subId) => {
+        if(!confirm("¿Borrar subtarea?")) return;
+        setData(prev => {
+            const nextTasks = prev.tasks.map(t => {
+                if (t.id !== taskId) return t;
+                const subs = (t.subtasks || []).filter(s => s.id !== subId);
+                return { ...t, subtasks: subs };
+            });
+            return { ...prev, tasks: nextTasks };
+        });
+        setHasChanges(true);
+    };
+    // ---------------------------------------
     // EXPORTACIONES
     const exportHTML = () => {
         const finalHTML = getClientTemplate(data);
@@ -1366,19 +1344,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setShowExportMenu(false);
     };
     const exportCSV = () => {
-        const headers = ["Area;Tarea;Estado;Detalles;Subtareas;Fecha Inicio;Fecha Limite"];
-        const renderSubtasks = (item) => {
-            const subs = Array.isArray(item === null || item === void 0 ? void 0 : item.subtasks) ? item.subtasks : [];
-            if (!subs.length)
-                return '';
-            // Formato legible en CSV: "[x] texto" por línea
-            return subs
-                .map(s => `${s && s.done ? '[x]' : '[ ]'} ${String((s && s.text) || '').replace(/\s+/g, ' ').trim()}`)
-                .filter(Boolean)
-                .join(' | ');
-        };
-        const esc = (v) => String(v ?? '').replace(/"/g, '""');
-        const rows = data.tasks.map(item => { var _a, _b; return `"${esc(item.area)}";"${esc(item.tarea)}";"${esc(item.estado)}";"${esc(item.detalles)}";"${esc(renderSubtasks(item))}";"${esc((_a = item.fechaInicio) !== null && _a !== void 0 ? _a : "")}";"${esc((_b = item.fechaLimite) !== null && _b !== void 0 ? _b : "")}"`; });
+        const headers = ["Area;Tarea;Estado;Detalles;Fecha Inicio;Fecha Limite"];
+        const rows = data.tasks.map(item => { var _a, _b; return `"${item.area}";"${item.tarea}";"${item.estado}";"${item.detalles}";"${(_a = item.fechaInicio) !== null && _a !== void 0 ? _a : ""}";"${(_b = item.fechaLimite) !== null && _b !== void 0 ? _b : ""}"`; });
         const csvContent = "\uFEFF" + [headers, ...rows].join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -1610,7 +1577,24 @@ React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowra
                                                 React.createElement("i", { className: "fas fa-lock" }),
                                                 " Bloqueada")))))),
                             React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-                                React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) })),
+        React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full font-medium", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) }),
+        
+        // ZONA DE SUBTAREAS
+        React.createElement("div", { className: "subtasks-container" },
+            (task.subtasks || []).map(sub => (
+                React.createElement("div", { key: sub.id, className: "subtask-item" },
+                    React.createElement("input", { type: "checkbox", className: "subtask-checkbox", checked: !!sub.done, onChange: () => toggleSubtask(task.id, sub.id) }),
+                    React.createElement("span", { className: `subtask-input ${sub.done ? 'done' : ''}` }, sub.text),
+                    React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "btn-del-subtask", title: "Borrar subtarea" },
+                        React.createElement("i", { className: "fas fa-times" })
+                    )
+                )
+            )),
+            React.createElement("button", { onClick: () => addSubtask(task.id), className: "btn-add-subtask" },
+                React.createElement("i", { className: "fas fa-plus-circle" }), " Subtarea"
+            )
+        )
+    ),
                             React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
                                 React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
@@ -1630,26 +1614,7 @@ React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowra
                                                         React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
                                 React.createElement("input", { type: "text", className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500", value: task.asignadoA || '', onChange: (e) => updateTask(task.id, 'asignadoA', e.target.value), placeholder: "Asignado..." })),
 React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-                                React.createElement("div", null,
-                                    React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "A\u00F1adir notas..." }),
-
-                                    // Subtareas (debajo de Detalles)
-                                    React.createElement("div", { className: "wl-subtask-container" },
-                                        React.createElement("div", { className: "wl-subtask-header" },
-                                            React.createElement("div", { className: "text-[11px] font-semibold text-gray-500 uppercase tracking-wider" }, "Subtareas"),
-                                            React.createElement("div", { className: "wl-subtask-progress-bg", title: (() => { const p = computeSubtaskProgress(task); return `${p.done}/${p.total}`; })() },
-                                                React.createElement("div", { className: "wl-subtask-progress-bar", style: { width: `${computeSubtaskProgress(task).pct}%` } }))),
-
-                                        React.createElement("div", { className: "wl-subtask-list" },
-                                            ensureSubtasks(task).map(st => (React.createElement("div", { key: st.id, className: "wl-subtask-row" },
-                                                React.createElement("input", { className: "wl-subtask-check", type: "checkbox", checked: !!st.done, onChange: (e) => updateSubtask(task.id, st.id, 'done', e.target.checked) }),
-                                                React.createElement("input", { className: `wl-subtask-input ${st.done ? 'done' : ''}`, type: "text", value: st.text || '', onChange: (e) => updateSubtask(task.id, st.id, 'text', e.target.value), onBlur: () => deleteEmptySubtasks(task.id) })) ))),
-
-                                        React.createElement("button", { type: "button", className: "wl-btn-add-sub", onClick: () => addSubtask(task.id) },
-                                            React.createElement("i", { className: "fas fa-plus" }),
-                                            "A\u00F1adir subtarea")
-                                    )
-                                )),
+                                React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "A\u00F1adir notas..." })),
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
                                 React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaInicio), onChange: (e) => updateTask(task.id, 'fechaInicio', e.target.value) })),
                             React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },

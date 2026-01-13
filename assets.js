@@ -56,31 +56,23 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
   const subtitle = escapeHtml(meta.subtitulo || "");
   const generatedAt = new Date().toLocaleString("es-ES");
 
-  const renderSubtasksHtml = (t) => {
-    const subs = Array.isArray(t && t.subtasks) ? t.subtasks : [];
-    if (!subs.length) return '';
-    const items = subs
-      .map(s => {
-        const txt = escapeHtml(String((s && s.text) || '').trim());
-        if (!txt) return '';
-        const mark = (s && s.done) ? '✓' : '•';
-        return `<li>${mark} ${txt}</li>`;
-      })
-      .filter(Boolean)
-      .join('');
-    if (!items) return '';
-    return `<div style="margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
-      <div style="font-size:11px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;">Subtareas</div>
-      <ul style="margin:0; padding-left:16px;">${items}</ul>
-    </div>`;
+  const renderSubtasks = (t) => {
+    if (!t.subtasks || !t.subtasks.length) return "";
+    return '<div style="margin-top:6px;border-top:1px solid #eee;padding-top:4px;">' + 
+      t.subtasks.map(s => {
+        const icon = s.done ? "☑" : "☐";
+        const st = s.done ? "text-decoration:line-through;color:#999;" : "";
+        return `<div style="font-size:11px;${st}">${icon} ${escapeHtml(s.text)}</div>`;
+      }).join("") + 
+    '</div>';
   };
-
+  
   const rowsHtml = tasksSorted.map((t) => `
     <tr>
       <td class="col-area">${escapeHtml(t.area)}</td>
       <td class="col-task">${escapeHtml(t.tarea)}</td>
       <td class="col-status"><span class="${statusClass(t.estado)}">${escapeHtml(t.estado)}</span></td>
-      <td class="col-details">${escapeHtml(t.detalles || "")}${renderSubtasksHtml(t)}</td>
+      <td class="col-details">${escapeHtml(t.detalles || "")}${renderSubtasks(t)}</td>
       <td class="col-date">${escapeHtml(formatFechaES(t.fechaInicio))}</td>
       <td class="col-date">${escapeHtml(formatFechaES(t.fechaLimite))}</td>
     </tr>`).join("");
