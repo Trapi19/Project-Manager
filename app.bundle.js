@@ -663,7 +663,8 @@ React.createElement("div", { className: "exec-grid" },
                                 React.createElement("i", { className: "fas fa-list-check" })))),
 
                     // 4. BLOQUEOS
-                    React.createElement("div", { className: "exec-card", onClick: showBlockDetails, title: "Ver detalles de alertas" },
+                
+                      React.createElement("div", { className: "exec-card cursor-pointer hover:ring-2 hover:ring-red-100 transition-all", onClick: () => window.location.hash = '#/alerts', title: "Abrir centro de alertas" },
                         React.createElement("div", { className: "exec-card-top" },
                             React.createElement("div", null,
                                 React.createElement("div", { className: "exec-label" }, "Bloqueos y Alertas"),
@@ -1695,7 +1696,7 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                     React.createElement("i", { className: "fas fa-times" }))))))))))))));
 };
 
-// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (DISEÑO NATIVO / SISTEMA) ---
+// --- COMPONENTE: DETALLE DE CARGA DE TRABAJO ---
 const WorkloadView = ({ projects, onBack }) => {
     
     // LÓGICA (Sin cambios, solo agrupación)
@@ -1822,6 +1823,171 @@ const WorkloadView = ({ projects, onBack }) => {
         )
     );
 };
+
+// --- COMPONENTE: VISTA DETALLADA DE ALERTAS (NUEVO) ---
+const AlertsView = ({ projects, onBack }) => {
+    
+    // Lógica de cálculo (similar al Resumen Ejecutivo pero detallada)
+    const alertsData = React.useMemo(() => {
+        const blockedProjects = [];
+        const redProjects = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const parseISO = (iso) => {
+            if (!iso) return null;
+            const t = String(iso).trim();
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
+            const [y, m, d] = t.split('-').map(n => parseInt(n, 10));
+            return new Date(y, (m || 1) - 1, d || 1);
+        };
+
+        projects.forEach(p => {
+            // Ignorar completados
+            const pState = (p.meta && p.meta.estado) ? p.meta.estado : 'En Ejecución';
+            if (String(pState).toLowerCase() === 'completado') return;
+
+            const tasks = p.tasks || [];
+            const idx = buildTaskIndex(tasks);
+            const blockedTasks = [];
+            let hasOverdue = false;
+            let pendingCount = 0;
+            
+            tasks.forEach(t => {
+                const est = effectiveEstado(t, idx);
+                
+                // 1. Detectar Bloqueos
+                if (est !== 'Completado' && isTaskBlocked(t, idx)) {
+                    // Buscar quién la bloquea
+                    let blockerName = "Desconocido";
+                    if(t.dependsOn) {
+                        const parent = idx.get(t.dependsOn);
+                        if(parent) blockerName = parent.tarea;
+                    }
+                    blockedTasks.push({ ...t, blockerName });
+                }
+
+                // 2. Datos para Alertas Rojas
+                if (est !== 'Completado') {
+                    pendingCount++;
+                    const lim = parseISO(t.fechaLimite);
+                    if (lim && lim < today) hasOverdue = true;
+                }
+            });
+
+            // Agrupar Bloqueos
+            if (blockedTasks.length > 0) {
+                blockedProjects.push({
+                    id: p.id,
+                    title: p.meta.titulo || 'Sin título',
+                    client: p.meta.cliente || 'Varios',
+                    items: blockedTasks
+                });
+            }
+
+            // Agrupar Alertas Rojas
+            const stats = computeProjectStats(tasks);
+            const tooMany = (stats.total >= 5 && (stats.pending / stats.total) >= 0.6 && stats.progress < 50);
+            
+            if (hasOverdue || tooMany) {
+                const reasons = [];
+                if (hasOverdue) reasons.push("Tareas vencidas");
+                if (tooMany) reasons.push("Exceso de pendientes (>60%)");
+                
+                redProjects.push({
+                    id: p.id,
+                    title: p.meta.titulo || 'Sin título',
+                    client: p.meta.cliente || 'Varios',
+                    reasons: reasons
+                });
+            }
+        });
+
+        return { blockedProjects, redProjects };
+    }, [projects]);
+
+    return (
+        React.createElement("div", { className: "wl-view-container" },
+            // Barra Superior Sticky
+            React.createElement("div", { className: "wl-header-sticky no-print" },
+                React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
+                    React.createElement("i", { className: "fas fa-arrow-left" }),
+                    "Volver"
+                ),
+                React.createElement("div", { style: { width: '1px', height: '24px', background: 'var(--border)' } }),
+                React.createElement("h2", { className: "wl-title" },
+                    React.createElement("i", { className: "fas fa-shield-halved", style: { color: '#ef4444' } }),
+                    "Centro de Alertas")
+            ),
+
+            // Contenido Principal
+            React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-8" },
+                
+                // SECCIÓN 1: PROYECTOS BLOQUEADOS
+                React.createElement("div", null,
+                    React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" },
+                        React.createElement("i", { className: "fas fa-lock text-orange-500" }),
+                        "Bloqueos por Dependencias",
+                        React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.blockedProjects.length)
+                    ),
+                    alertsData.blockedProjects.length === 0 
+                    ? React.createElement("div", { className: "p-8 text-center text-gray-400 bg-white rounded-xl border border-dashed" }, "No hay tareas bloqueadas.")
+                    : React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                        alertsData.blockedProjects.map(proj => (
+                            React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` },
+                                React.createElement("div", { className: "flex justify-between items-start mb-3" },
+                                    React.createElement("div", null,
+                                        React.createElement("div", { className: "font-bold text-gray-800" }, proj.title),
+                                        React.createElement("div", { className: "text-xs text-gray-500" }, proj.client)
+                                    ),
+                                    React.createElement("i", { className: "fas fa-chevron-right text-gray-300 text-xs" })
+                                ),
+                                React.createElement("div", { className: "space-y-2" },
+                                    proj.items.map(t => (
+                                        React.createElement("div", { key: t.id, className: "text-xs bg-orange-50 border border-orange-100 p-2 rounded-lg text-orange-800" },
+                                            React.createElement("div", { className: "font-bold mb-0.5" }, React.createElement("i", { className: "fas fa-lock mr-1" }), t.tarea),
+                                            React.createElement("div", { className: "opacity-80" }, "Esperando a: ", React.createElement("span", { className: "font-semibold" }, t.blockerName))
+                                        )
+                                    ))
+                                )
+                            )
+                        ))
+                    )
+                ),
+
+                // SECCIÓN 2: ALERTAS ROJAS
+                React.createElement("div", null,
+                    React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" },
+                        React.createElement("i", { className: "fas fa-bell text-red-500" }),
+                        "Alertas Críticas",
+                        React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.redProjects.length)
+                    ),
+                    alertsData.redProjects.length === 0 
+                    ? React.createElement("div", { className: "p-8 text-center text-gray-400 bg-white rounded-xl border border-dashed" }, "Todo en orden.")
+                    : React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+                        alertsData.redProjects.map(proj => (
+                            React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px', borderLeft: '4px solid #ef4444' }, onClick: () => window.location.hash = `#/project/${proj.id}` },
+                                React.createElement("div", { className: "flex justify-between items-start mb-2" },
+                                    React.createElement("div", null,
+                                        React.createElement("div", { className: "font-bold text-gray-800" }, proj.title),
+                                        React.createElement("div", { className: "text-xs text-gray-500" }, proj.client)
+                                    ),
+                                    React.createElement("i", { className: "fas fa-exclamation-circle text-red-500" })
+                                ),
+                                React.createElement("div", { className: "flex flex-wrap gap-2 mt-3" },
+                                    proj.reasons.map((r, i) => (
+                                        React.createElement("span", { key: i, className: "px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase tracking-wide" }, r)
+                                    ))
+                                )
+                            )
+                        ))
+                    )
+                )
+            )
+        )
+    );
+};
+
 // --- APP PRINCIPAL ---
 const MainApp = () => {
     const [theme, setTheme] = React.useState(() => localStorage.getItem('gp_theme') || 'light');
@@ -1953,6 +2119,13 @@ const makeDraftProject = () => ({
         try {
             const raw = String(window.location.hash || '').replace(/^#\/?/, '');
             const parts = raw.split('/').filter(Boolean);
+            
+            if (parts[0] === 'alerts') {
+                setCurrentProject(null);
+                setView('alerts');
+                return;
+            }
+          
             if (parts[0] === 'workload') {
                 setCurrentProject(null);
                 setView('workload'); // Definiremos este estado ahora
@@ -2205,6 +2378,7 @@ const makeDraftProject = () => ({
     return (React.createElement("div", null,
         React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
         view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+        view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
