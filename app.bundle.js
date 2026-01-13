@@ -1614,129 +1614,67 @@ React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowra
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"),
                                 React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))),
-                        React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, data.tasks.map((task, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` },
-                            React.createElement("td", { className: "px-6 py-4 min-w-[320px]" },
-                                React.createElement("div", { className: "flex flex-col gap-2" },
-                                    React.createElement("div", { className: "flex items-center gap-2" },
-                                        React.createElement("span", { draggable: true, onDragStart: (e) => handleTaskDragStart(e, task.id), onDragEnd: handleTaskDragEnd, className: "task-drag-handle inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:border-gray-300 cursor-grab active:cursor-grabbing", title: "Arrastra para reordenar" },
-                                            React.createElement("i", { className: "fas fa-grip-vertical" })),
-                                        React.createElement(IconPicker, { value: task.iconType, open: openIconPickerId === task.id, onToggle: () => setOpenIconPickerId(prev => prev === task.id ? null : task.id), onChange: (newId) => { updateTask(task.id, 'iconType', newId); setOpenIconPickerId(null); } }),
-                                        React.createElement("input", { type: "text", className: "flex-1 border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none font-medium", value: task.area, onChange: (e) => updateTask(task.id, 'area', e.target.value) }),
-                                        React.createElement("div", { className: "flex flex-wrap items-center gap-2 pl-12 min-w-0" },
-                                            React.createElement("div", { className: "text-[11px] text-gray-500 shrink-0" }, "Depende de"),
-                                            React.createElement("select", { className: "flex-1 min-w-[240px] border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[color:var(--brand)]", value: task.dependsOn || '', onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value ? Number(e.target.value) : null) },
-                                                React.createElement("option", { value: "" }, "(ninguna)"),
-                                                data.tasks
-                                                    .filter(t => t.id !== task.id)
-                                                    .map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))),
-                                            isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" },
-                                                React.createElement("i", { className: "fas fa-lock" }),
-                                                " Bloqueada")))))),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-                                React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) })),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
-                                React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                        : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                            : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => {
-                                        const newEstado = e.target.value;
-                                        const blocked = isTaskBlocked(task, taskIndex);
-                                        if (blocked && (newEstado === 'En Curso' || newEstado === 'Completado')) {
-                                            alert('Esta tarea depende de otra aún no completada. Marca la tarea previa como Completado para poder iniciarla.');
-                                            updateTask(task.id, 'estado', 'Pendiente');
-                                            return;
-                                        }
-                                        updateTask(task.id, 'estado', newEstado);
-                                    } },
-                                    React.createElement("option", { value: "Pendiente" }, "Pendiente"),
-                                    React.createElement("option", { value: "En Curso" }, "En Curso"),
-                                    React.createElement("option", { value: "Completado" }, "Completado"))),
-                                                        React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
-                                React.createElement("input", { type: "text", className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500", value: task.asignadoA || '', onChange: (e) => updateTask(task.id, 'asignadoA', e.target.value), placeholder: "Asignado..." })),
-                            // --- CELDA DE TAREA CON SUBTAREAS ---
-React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
-    // 1. Título principal (Textarea existente)
-    React.createElement("textarea", { 
-        rows: "1", 
-        className: "w-full border-none p-0 focus:ring-0 outline-none resize-none bg-transparent font-semibold text-gray-800 text-sm mb-1", // Estilo más "título"
-        value: task.tarea, 
-        onChange: (e) => updateTask(task.id, 'tarea', e.target.value),
-        placeholder: "Nombre de la tarea..."
-    }),
-
-    // 2. Contenedor de Subtareas (Sólo si tiene alguna o queremos añadir)
-    React.createElement("div", { className: "wl-subtask-container" },
-        
-        // Cabecera Mini (Progreso) - Solo visible si hay subtareas
-        (task.subtasks && task.subtasks.length > 0) && (() => {
-            const total = task.subtasks.length;
-            const done = task.subtasks.filter(s => s.done).length;
-            const pct = Math.round((done / total) * 100);
-            return React.createElement("div", { className: "wl-subtask-header" },
-                React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase" }, 
-                    `Subtareas ${done}/${total}`
-                ),
-                // Mini barra de progreso
-                React.createElement("div", { className: "wl-subtask-progress-bg" },
-                    React.createElement("div", { 
-                        className: "wl-subtask-progress-bar", 
-                        style: { width: `${pct}%`, backgroundColor: pct === 100 ? '#10b981' : 'var(--brand)' } 
-                    })
-                )
-            );
-        })(),
-
-        // Lista de Subtareas
-        React.createElement("div", { className: "wl-subtask-list" },
+                        React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, data.tasks.map((task, idx) => 
+                            (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` },
+                            /* INICIO BLOQUE CORREGIDO (TAREA + SUBTAREAS y DETALLES LIMPIOS) */
+data.tasks.map((task, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` },
+    
+    // 1. COLUMNA ICONO/AREA
+    React.createElement("td", { className: "px-6 py-4 min-w-[320px]" },
+        React.createElement("div", { className: "flex flex-col gap-2" },
+            React.createElement("div", { className: "flex items-center gap-2" },
+                React.createElement("span", { draggable: true, onDragStart: (e) => handleTaskDragStart(e, task.id), onDragEnd: handleTaskDragEnd, className: "task-drag-handle inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:border-gray-300 cursor-grab active:cursor-grabbing", title: "Arrastra para reordenar" },
+                    React.createElement("i", { className: "fas fa-grip-vertical" })),
+                React.createElement(IconPicker, { value: task.iconType, open: openIconPickerId === task.id, onToggle: () => setOpenIconPickerId(prev => prev === task.id ? null : task.id), onChange: (newId) => { updateTask(task.id, 'iconType', newId); setOpenIconPickerId(null); } }),
+                React.createElement("input", { type: "text", className: "flex-1 border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none font-medium", value: task.area, onChange: (e) => updateTask(task.id, 'area', e.target.value) }),
+                React.createElement("div", { className: "flex flex-wrap items-center gap-2 pl-12 min-w-0" },
+                    React.createElement("div", { className: "text-[11px] text-gray-500 shrink-0" }, "Depende de"),
+                    React.createElement("select", { className: "flex-1 min-w-[240px] border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[color:var(--brand)]", value: task.dependsOn || '', onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value ? Number(e.target.value) : null) },
+                        React.createElement("option", { value: "" }, "(ninguna)"),
+                        data.tasks.filter(t => t.id !== task.id).map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))),
+                    isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada" }, React.createElement("i", { className: "fas fa-lock" }), " Bloqueada")))))),
+    
+    // 2. COLUMNA TAREA (CON SUBTAREAS DEBAJO)
+    React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+        React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full font-semibold", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value), placeholder: "Nombre de la tarea..." }),
+        React.createElement("div", { className: "wl-subtask-container mt-2" },
             (task.subtasks || []).map(sub => (
-                React.createElement("div", { key: sub.id, className: "wl-subtask-row" },
-                    // Checkbox
-                    React.createElement("input", { 
-                        type: "checkbox", 
-                        className: "wl-subtask-check",
-                        checked: sub.done, 
-                        onChange: (e) => updateSubtask(task.id, sub.id, 'done', e.target.checked)
-                    }),
-                    // Input de texto subtarea
-                    React.createElement("input", { 
-                        type: "text", 
-                        className: `wl-subtask-input ${sub.done ? 'done' : ''}`, 
-                        value: sub.text, 
-                        onChange: (e) => updateSubtask(task.id, sub.id, 'text', e.target.value),
-                        placeholder: "Subtarea...",
-                        onKeyDown: (e) => {
-                            // Al pulsar Enter, crear otra subtarea automáticamente
-                            if(e.key === 'Enter') addSubtask(task.id);
-                            // Al pulsar Backspace en vacío, borrar
-                            if(e.key === 'Backspace' && sub.text === '') deleteSubtask(task.id, sub.id);
-                        }
-                    }),
-                    // Botón eliminar sutil (X)
-                    React.createElement("button", { 
-                        onClick: () => deleteSubtask(task.id, sub.id),
-                        className: "text-gray-300 hover:text-red-500 px-1",
-                        title: "Borrar subtarea"
-                    }, React.createElement("i", { className: "fas fa-times text-xs" }))
+                React.createElement("div", { key: sub.id, className: "wl-subtask-row flex items-center gap-2 mb-1" },
+                    React.createElement("input", { type: "checkbox", className: "wl-subtask-check cursor-pointer", checked: sub.done, onChange: (e) => updateSubtask(task.id, sub.id, 'done', e.target.checked) }),
+                    React.createElement("input", { type: "text", className: `wl-subtask-input flex-1 text-xs border-b border-transparent focus:border-gray-300 outline-none bg-transparent ${sub.done ? 'line-through text-gray-400' : 'text-gray-600'}`, value: sub.text, onChange: (e) => updateSubtask(task.id, sub.id, 'text', e.target.value), placeholder: "Subtarea...", onKeyDown: (e) => { if(e.key === 'Enter') addSubtask(task.id); if(e.key === 'Backspace' && sub.text === '') deleteSubtask(task.id, sub.id); } }),
+                    React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "text-gray-300 hover:text-red-500" }, React.createElement("i", { className: "fas fa-times text-xs" }))
                 )
-            ))
-        ),
-
-        // Botón "Añadir Subtarea"
-        React.createElement("button", { 
-            onClick: () => addSubtask(task.id), 
-            className: "wl-btn-add-sub"
-        },
-            React.createElement("i", { className: "fas fa-plus-circle" }),
-            (task.subtasks && task.subtasks.length > 0) ? "Añadir otra" : "Añadir subtarea"
+            )),
+            React.createElement("button", { onClick: () => addSubtask(task.id), className: "text-[10px] text-blue-600 hover:underline mt-1 flex items-center gap-1" }, React.createElement("i", { className: "fas fa-plus" }), (task.subtasks && task.subtasks.length > 0) ? "Añadir otra subtarea" : "Añadir subtarea")
         )
-    )
-),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
-                                React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaInicio), onChange: (e) => updateTask(task.id, 'fechaInicio', e.target.value) })),
-                            React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
-                                React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })),
-                            React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
-                                React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" },
-                                    React.createElement("i", { className: "fas fa-times" }))))))))))))));
+    ),
+
+    // 3. COLUMNA ESTADO
+    React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
+        React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => { const newEstado = e.target.value; const blocked = isTaskBlocked(task, taskIndex); if (blocked && (newEstado === 'En Curso' || newEstado === 'Completado')) { alert('Tarea bloqueada.'); updateTask(task.id, 'estado', 'Pendiente'); return; } updateTask(task.id, 'estado', newEstado); } },
+            React.createElement("option", { value: "Pendiente" }, "Pendiente"), React.createElement("option", { value: "En Curso" }, "En Curso"), React.createElement("option", { value: "Completado" }, "Completado"))),
+
+    // 4. COLUMNA ASIGNADO
+    React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
+        React.createElement("input", { type: "text", className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500", value: task.asignadoA || '', onChange: (e) => updateTask(task.id, 'asignadoA', e.target.value), placeholder: "Asignado..." })),
+
+    // 5. COLUMNA DETALLES (AHORA ESTÁ LIMPIA)
+    React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
+        React.createElement("textarea", { rows: "3", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent text-gray-600", value: task.detalles || '', onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "Descripción detallada, notas técnicas..." })
+    ),
+
+    // 6. COLUMNA INICIO
+    React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
+        React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaInicio), onChange: (e) => updateTask(task.id, 'fechaInicio', e.target.value) })),
+
+    // 7. COLUMNA LIMITE
+    React.createElement("td", { className: "px-6 py-4 min-w-[180px]" },
+        React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })),
+
+    // 8. COLUMNA BORRAR
+    React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
+        React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" }, React.createElement("i", { className: "fas fa-times" })))
+))))))))))))));
 };
 
 // --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (DISEÑO NATIVO / SISTEMA) ---
