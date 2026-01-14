@@ -110,20 +110,37 @@ const computeProjectStats = (tasks) => {
     const idx = buildTaskIndex(tasks);
     const total = tasks.length || 0;
     let completed = 0, inProgress = 0, pending = 0;
+    
+    // ACUMULADOR DE PUNTOS: Aquí sumaremos decimales (ej: 0.5) por subtareas
+    let totalPoints = 0;
+
     tasks.forEach(t => {
         const e = effectiveEstado(t, idx);
-        if (e === 'Completado')
+        
+        // 1. Contadores clásicos (para saber cuántas hay de cada tipo)
+        if (e === 'Completado') {
             completed++;
-        else if (e === 'En Curso')
-            inProgress++;
-        else if (e === 'Pendiente')
-            pending++;
-        else
-            pending++;
+            totalPoints += 1; // Tarea entera completada = 1 punto completo
+        } else {
+            if (e === 'En Curso') inProgress++;
+            else pending++; // 'Pendiente' u otros
+            
+            // 2. NUEVA LÓGICA: Sumar puntos parciales por subtareas
+            // Si la tarea tiene subtareas, calculamos qué fracción está hecha
+            if (t.subtasks && t.subtasks.length > 0) {
+                const subsDone = t.subtasks.filter(s => s.done).length;
+                const fraction = subsDone / t.subtasks.length; // Ej: 2 de 4 = 0.5
+                totalPoints += fraction;
+            }
+        }
     });
-    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    // El porcentaje final es la suma de puntos dividido por el total de tareas
+    const progress = total > 0 ? Math.round((totalPoints / total) * 100) : 0;
+    
     return { total, completed, inProgress, pending, progress };
 };
+
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() },
     React.createElement("button", { type: "button", onClick: onToggle, className: "w-10 h-10 rounded-xl border border-[color:var(--border)] bg-white/80 hover:bg-white flex items-center justify-center text-[color:var(--brand-dark)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]", title: "Cambiar icono" }, Icons[value] || Icons.monitor),
     open && (React.createElement("div", { className: "absolute z-50 mt-2 w-56 rounded-2xl border border-[color:var(--border)] bg-white shadow-2xl p-2" },
