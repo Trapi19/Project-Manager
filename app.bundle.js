@@ -1633,7 +1633,9 @@ const activeTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
                                                     style: { 
                                                         fontSize: '6px', 
                                                         marginTop: '6px', 
-                                                        color: String(t.estado).includes('Curso') ? '#f59e0b' : 'var(--muted)' 
+                                                        color: String(t.estado).includes('Curso')
+                                                        ? '#f59e0b'
+                                                        : '#ef4444'
                                                     } 
                                                 }),
                                                 React.createElement("div", { className: "wl-task-text" }, 
