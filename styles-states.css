@@ -16,3 +16,9 @@
   border-color: rgba(var(--color-pausa-rgb), 0.68) !important; /* Rojo */
   box-shadow: var(--shadow-elev-2), 0 0 0 1px rgba(var(--color-pausa-rgb), 0.18) inset, 0 0 22px rgba(var(--color-pausa-rgb), 0.08);
 }
+
+/* Punto de estado de tarea (Workload) */
+.task-dot { font-size: 6px; margin-top: 6px; }
+.task-dot--pending { color: #ef4444; }     /* rojo */
+.task-dot--inprogress { color: #f59e0b; }  /* amarillo */
+

@@ -1628,16 +1628,15 @@ const activeTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
                                     React.createElement("div", null,
                                         proj.tasks.map(t => (
                                             React.createElement("div", { key: t.id, className: "wl-task-row" },
-                                                React.createElement("i", { 
-                                                    className: "fas fa-circle", 
-                                                    style: { 
-                                                        fontSize: '6px', 
-                                                        marginTop: '6px', 
-                                                        color: String(t.estado).includes('Curso')
-                                                        ? '#f59e0b'
-                                                        : '#ef4444'
-                                                    } 
-                                                }),
+                                                (() => {
+  const est = (t.estado || '').toString().toLowerCase();
+  const dotClass = est.includes('curso')
+    ? 'task-dot task-dot--inprogress'   // En Curso
+    : 'task-dot task-dot--pending';     // Pendiente
+
+  return React.createElement("i", { className: `fas fa-circle ${dotClass}` });
+})(),
+
                                                 React.createElement("div", { className: "wl-task-text" }, 
                                                     t.tarea,
                                                     t.fechaLimite && React.createElement("span", { className: "wl-date-warn" }, 
