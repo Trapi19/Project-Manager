@@ -856,16 +856,29 @@ React.createElement("tbody", { className: "divide-y divide-gray-200" },
             // 4. Columna ESTADO
             React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                 React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)),
+            
+            // 5. Columna PRIORIDAD
+React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
+  React.createElement("span", {
+    className:
+      `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ` +
+      (
+        (row.prioridad || 'Media') === 'Urgente' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+        (row.prioridad || 'Media') === 'Alta'    ? 'bg-amber-50 text-amber-700 border-amber-200' :
+        (row.prioridad || 'Media') === 'Baja'    ? 'bg-slate-50 text-slate-700 border-slate-200' :
+                                                   'bg-blue-50 text-blue-700 border-blue-200'
+      )
+  }, (row.prioridad || 'Media'))),
 
-            // 5. Columna DETALLES (Limpia)
+            // 6. Columna DETALLES (Limpia)
             React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                 React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')),
 
-            // 6. Columna FECHA INICIO
+            // 7. Columna FECHA INICIO
             React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                 React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))),
 
-            // 7. Columna FECHA LÍMITE
+            // 8. Columna FECHA LÍMITE
             React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" },
                 React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaLimite)))
         ));
