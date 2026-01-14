@@ -914,114 +914,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
     };
-    const [showGantt, setShowGantt] = useState(false);
-    const [showAudit, setShowAudit] = useState(false);
-    const [ganttWarnings, setGanttWarnings] = useState([]);
-    const ganttRef = React.useRef(null);
-    const parseISODate = (s) => {
-        if (!s)
-            return null;
-        const t = String(s).trim();
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(t))
-            return null;
-        const d = new Date(t + "T00:00:00");
-        return isNaN(d.getTime()) ? null : d;
-    };
-    const fmtISO = (d) => {
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, "0");
-        const dd = String(d.getDate()).padStart(2, "0");
-        return `${yyyy}-${mm}-${dd}`;
-    };
-    // Formato de fecha ES: usa window.formatFechaES() global
-    const addDays = (d, n) => {
-        const x = new Date(d);
-        x.setDate(x.getDate() + n);
-        return x;
-    };
-    const makeGanttTasks = (projectData) => {
-        // Fuente única de verdad: projectData.tasks (lo mismo que pinta la tabla)
-        const tasks = ((projectData === null || projectData === void 0 ? void 0 : projectData.tasks) || []);
-        const idx = new Map(tasks.map(t => [t.id, t]));
-        const warnings = [];
-        const isCompleted = (t) => String((t === null || t === void 0 ? void 0 : t.estado) || "").toLowerCase().includes("complet");
-        const result = [];
-        for (const t of tasks) {
-            // Fechas reales (si existen). Si faltan, inferimos lo mínimo para que Gantt renderice.
-            let start = parseISODate(t.fechaInicio);
-            let end = parseISODate(t.fechaLimite);
-            if (!start && end)
-                start = addDays(end, -1);
-            if (!end && start)
-                end = addDays(start, 1);
-            if (!start && !end) {
-                // Sin fechas: lo situamos hoy+1 para que sea visible y avisamos.
-                const today = new Date();
-                start = today;
-                end = addDays(today, 1);
-                warnings.push(`La tarea "${t.tarea}" no tiene fechas (Inicio/Límite). Se muestra temporalmente en Hoy.`);
-            }
-            if (start && end && start > end) {
-                warnings.push(`Revisa fechas: "${t.tarea}" tiene Inicio (${fmtISO(start)}) posterior a Límite (${fmtISO(end)}).`);
-            }
-            // Estado -> progreso y color (mismo criterio que UI)
-            const estado = String(t.estado || "").toLowerCase();
-            let progress = estado.includes("complet") ? 100 : estado.includes("curso") ? 50 : 0;
-            let customClass = estado.includes("complet") ? "bar-completed"
-                : estado.includes("curso") ? "bar-in-progress"
-                    : (estado.includes("próximo") || estado.includes("proximo")) ? "bar-upcoming"
-                        : "bar-pending";
-            // Dependencias: si existe dependsOn y la tarea dependiente NO está completada, marcamos como bloqueada
-            // Nota: NO condicionamos a la fecha de fin (eso era lo que desincronizaba Gantt vs tabla).
-            let isBlocked = false;
-            if (t.dependsOn) {
-                const dep = idx.get(t.dependsOn);
-                if (!dep) {
-                    isBlocked = true;
-                    warnings.push(`La tarea "${t.tarea}" tiene una dependencia inexistente (ID ${t.dependsOn}).`);
-                }
-                else if (!isCompleted(dep)) {
-                    isBlocked = true;
-                    warnings.push(`La tarea "${t.tarea}" se muestra como Bloqueada por "${dep.area} - ${dep.tarea}" hasta que esté Completada.`);
-                }
-            }
-            // Si el propio estado contiene "bloque", también lo tratamos como bloqueada
-            if (estado.includes("bloque"))
-                isBlocked = true;
-            let name = `${t.area || ""} · ${t.tarea || ""}`.trim();
-            if (isBlocked) {
-                progress = 0;
-                customClass = "bar-blocked";
-                name = `🔒 ${name}`;
-            }
-            result.push({
-                id: String(t.id),
-                name,
-                start: fmtISO(start),
-                end: fmtISO(end),
-                progress,
-                dependencies: t.dependsOn ? String(t.dependsOn) : "",
-                custom_class: customClass
-            });
-        }
-        return { tasks: result, warnings };
-    };
-    useEffect(() => {
-        if (!showGantt)
-            return;
-        if (!ganttRef.current)
-            return;
-        ganttRef.current.innerHTML = "";
-        const built = makeGanttTasks(data);
-        const gt = built.tasks || [];
-        setGanttWarnings(built.warnings || []);
-        if (!gt.length)
-            return;
-        new Gantt(ganttRef.current, gt, {
-            view_mode: "Day",
-            language: "es"
-        });
-    }, [showGantt, data]);
+
     const toDateInputValue = (v) => {
         const s = (v !== null && v !== void 0 ? v : '').toString().trim();
         return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : '';
@@ -1331,25 +1224,6 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setTimeout(() => window.print(), 500);
     };
     return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 relative" },
-        showGantt && (React.createElement("div", { className: "fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 no-print", onClick: () => { setShowGantt(false); setGanttWarnings([]); } },
-            React.createElement("div", { className: "bg-white w-full max-w-6xl rounded-2xl shadow-2xl border border-gray-200 overflow-hidden", onClick: (e) => e.stopPropagation() },
-                React.createElement("div", { className: "px-5 py-4 border-b flex items-center justify-between" },
-                    React.createElement("div", { className: "min-w-0" },
-                        React.createElement("div", { className: "text-sm text-gray-500" }, "Gantt del proyecto"),
-                        React.createElement("div", { className: "font-semibold text-gray-900 truncate" }, ((_a = data === null || data === void 0 ? void 0 : data.meta) === null || _a === void 0 ? void 0 : _a.titulo) || "Sin título")),
-                    React.createElement("button", { onClick: () => { setShowGantt(false); setGanttWarnings([]); }, className: "px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm" }, "Cerrar")),
-                React.createElement("div", { className: "p-4" },
-                    ganttWarnings.length > 0 && (React.createElement("div", { className: "mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" },
-                        React.createElement("div", { className: "font-semibold mb-1" }, "Avisos de planificaci\u00F3n"),
-                        React.createElement("ul", { className: "list-disc pl-5 space-y-1" }, ganttWarnings.slice(0, 12).map((w, i) => (React.createElement("li", { key: i }, w)))),
-                        ganttWarnings.length > 12 && (React.createElement("div", { className: "mt-2 text-xs text-amber-800" }, "Se muestran 12 avisos. Corrige dependencias/fechas para eliminar el resto.")))),
-                    ((data === null || data === void 0 ? void 0 : data.tasks) || []).length === 0 ? (React.createElement("div", { className: "text-sm text-gray-500" }, "No hay tareas en este proyecto.")) : (React.createElement("div", { ref: ganttRef, className: "w-full overflow-auto" })),
-                    React.createElement("div", { className: "mt-3 text-xs text-gray-400" },
-                        "Nota: el Gantt se genera a partir de las mismas tareas que la tabla (",
-                        React.createElement("b", null, "fechaInicio"),
-                        " / ",
-                        React.createElement("b", null, "fechaLimite"),
-                        " y dependencias)."))))),
         showAudit && (React.createElement("div", { className: "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9998] no-print", onClick: () => setShowAudit(false) },
             React.createElement("div", { className: "bg-white w-[min(760px,calc(100vw-24px))] max-h-[80vh] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden", onClick: (e) => e.stopPropagation() },
                 React.createElement("div", { className: "px-5 py-4 border-b flex items-center justify-between" },
@@ -1408,9 +1282,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 React.createElement("button", { onClick: handleSave, disabled: isSaving, className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}` },
                     isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }),
                     React.createElement("span", { className: "hidden sm:inline" }, isSaving ? 'Guardando...' : 'Guardar Progreso')),
-                React.createElement("button", { onClick: () => setShowGantt(true), className: "px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm", title: "Ver Gantt del proyecto" },
-                    React.createElement("i", { className: "fas fa-diagram-project" }),
-                    React.createElement("span", { className: "hidden sm:inline" }, "Gantt")),
+
                 React.createElement("button", { onClick: () => setShowAudit(true), className: "px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" },
                         React.createElement("i", { className: "fas fa-history" }),
                         " ",
