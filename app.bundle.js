@@ -1486,7 +1486,7 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                     
                     // Botón borrar
                     React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "btn-del-subtask", title: "Borrar subtarea" },
-                        React.createElement("i", { className: "fas fa-times" })
+                        React.createElement("i", { className: "fas fa-trash" })
                     )
                 )
             )),
@@ -1521,7 +1521,7 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("input", { type: "date", className: "w-full border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none text-center", value: toDateInputValue(task.fechaLimite), onChange: (e) => updateTask(task.id, 'fechaLimite', e.target.value) })),
                             React.createElement("td", { className: "px-4 py-4 text-center align-middle" },
                                 React.createElement("button", { onClick: () => deleteTask(task.id), className: "text-gray-300 hover:text-red-500 p-2 rounded transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar" },
-                                    React.createElement("i", { className: "fas fa-times" }))))))))))))));
+                                    React.createElement("i", { className: "fas fa-trash" }))))))))))))));
 };
 
 // --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (CORREGIDO: SEPARA NOMBRES MULTIPLES) ---
