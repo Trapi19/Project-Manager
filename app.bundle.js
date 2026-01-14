@@ -109,35 +109,43 @@ const effectiveEstado = (task, taskIndex) => {
 const computeProjectStats = (tasks) => {
     const idx = buildTaskIndex(tasks);
     const total = tasks.length || 0;
+
+    // Contadores "clásicos" (para tus tarjetas/resumen): NO los cambiamos
     let completed = 0, inProgress = 0, pending = 0;
-    
-    // ACUMULADOR DE PUNTOS: Aquí sumaremos decimales (ej: 0.5) por subtareas
-    let totalPoints = 0;
+
+    // Nuevo: suma de progreso real (0..total), contando subtareas
+    let progressSum = 0;
 
     tasks.forEach(t => {
         const e = effectiveEstado(t, idx);
-        
-        // 1. Contadores clásicos (para saber cuántas hay de cada tipo)
+
+        // 1) Contadores por estado (como antes)
+        if (e === 'Completado') completed++;
+        else if (e === 'En Curso') inProgress++;
+        else pending++;
+
+        // 2) Progreso "real" (lo nuevo)
+        // - Si la tarea está completada -> 100%
         if (e === 'Completado') {
-            completed++;
-            totalPoints += 1; // Tarea entera completada = 1 punto completo
-        } else {
-            if (e === 'En Curso') inProgress++;
-            else pending++; // 'Pendiente' u otros
-            
-            // 2. NUEVA LÓGICA: Sumar puntos parciales por subtareas
-            // Si la tarea tiene subtareas, calculamos qué fracción está hecha
-            if (t.subtasks && t.subtasks.length > 0) {
-                const subsDone = t.subtasks.filter(s => s.done).length;
-                const fraction = subsDone / t.subtasks.length; // Ej: 2 de 4 = 0.5
-                totalPoints += fraction;
-            }
+            progressSum += 1;
+            return;
         }
+
+        // - Si tiene subtareas -> % según subtareas marcadas done
+        const subs = Array.isArray(t.subtasks) ? t.subtasks : [];
+        if (subs.length > 0) {
+            const done = subs.filter(s => !!s.done).length;
+            progressSum += (done / subs.length);
+            return;
+        }
+
+        // - Si no tiene subtareas: no suma progreso (0%)
+        //   (Si quisieras que "En Curso" valga 50% aunque no tenga subtareas,
+        //    dímelo y te dejo la variante exacta)
+        progressSum += 0;
     });
 
-    // El porcentaje final es la suma de puntos dividido por el total de tareas
-    const progress = total > 0 ? Math.round((totalPoints / total) * 100) : 0;
-    
+    const progress = total > 0 ? Math.round((progressSum / total) * 100) : 0;
     return { total, completed, inProgress, pending, progress };
 };
 
