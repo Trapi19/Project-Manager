@@ -143,7 +143,7 @@ const computeProjectStats = (tasks) => {
     });
 
     const progress = total > 0 ? Math.round((progressSum / total) * 100) : 0;
-    return { total, completed, inProgress, pending, progress };
+    return { total, completed, inProgress, pending, progress, progressSum };
 };
 
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() },
@@ -401,6 +401,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         let tasksTotal = 0;
         let tasksOpen = 0;
         let tasksCompleted = 0;
+        let progressSumAll = 0;
         let redProjects = 0;
         let blockedProjects = 0;
         let blockedTasks = 0;
@@ -412,6 +413,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         nonCompletedProjects.forEach(p => {
             const tasks = p.tasks || [];
             const stats = computeProjectStats(tasks);
+            progressSumAll += (stats.progressSum || 0);
             const pid = String(p.id || '');
             const title = (p.meta?.titulo) || 'Proyecto';
             const resp = (p.meta && p.meta.responsableProyecto) ? String(p.meta.responsableProyecto) : 'Sin asignar';
@@ -466,7 +468,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
 
         return {
             projectsActive: nonCompletedProjects.length,
-            progressAvg: tasksTotal > 0 ? Math.round((tasksCompleted / tasksTotal) * 100) : 0,
+            progressAvg: tasksTotal > 0 ? Math.round((progressSumAll / tasksTotal) * 100) : 0,
             tasksTotal,
             tasksOpen,
             redProjects,
