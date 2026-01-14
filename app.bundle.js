@@ -109,45 +109,21 @@ const effectiveEstado = (task, taskIndex) => {
 const computeProjectStats = (tasks) => {
     const idx = buildTaskIndex(tasks);
     const total = tasks.length || 0;
-
     let completed = 0, inProgress = 0, pending = 0;
-
-    // Nuevo: progreso acumulado contando subtareas
-    let progressSum = 0;
-
     tasks.forEach(t => {
         const e = effectiveEstado(t, idx);
-
-        // Contadores por estado (como antes)
-        if (e === 'Completado') completed++;
-        else if (e === 'En Curso') inProgress++;
-        else pending++;
-
-        // Progreso real:
-        // 1) tarea completada => 100%
-        if (e === 'Completado') {
-            progressSum += 1;
-            return;
-        }
-
-        // 2) subtareas => ratio done/total
-        const subs = Array.isArray(t.subtasks) ? t.subtasks : [];
-        if (subs.length > 0) {
-            const done = subs.filter(s => !!s.done).length;
-            progressSum += (done / subs.length);
-            return;
-        }
-
-        // 3) sin subtareas => 0%
-        progressSum += 0;
+        if (e === 'Completado')
+            completed++;
+        else if (e === 'En Curso')
+            inProgress++;
+        else if (e === 'Pendiente')
+            pending++;
+        else
+            pending++;
     });
-
-    const progress = total > 0 ? Math.round((progressSum / total) * 100) : 0;
+    const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { total, completed, inProgress, pending, progress };
 };
-
-    return { total, completed, inProgress, pending, progress };
-
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() },
     React.createElement("button", { type: "button", onClick: onToggle, className: "w-10 h-10 rounded-xl border border-[color:var(--border)] bg-white/80 hover:bg-white flex items-center justify-center text-[color:var(--brand-dark)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]", title: "Cambiar icono" }, Icons[value] || Icons.monitor),
     open && (React.createElement("div", { className: "absolute z-50 mt-2 w-56 rounded-2xl border border-[color:var(--border)] bg-white shadow-2xl p-2" },
@@ -709,33 +685,9 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
 
 // --- COMPONENTE: VISTA PREVIA (Read Only) ---
 const ProjectPreview = ({ data }) => {
-    const totalTasks = (data.tasks || []).length;
-
-// Progreso real: subtareas (done) suman % aunque la tarea esté "En Curso".
-const progress = (() => {
-  const tasks = Array.isArray(data.tasks) ? data.tasks : [];
-  if (!tasks.length) return 0;
-
-  let sum = 0;
-  tasks.forEach(t => {
-    // Si la tarea está completada, vale 100%
-    if (t && t.estado === 'Completado') { sum += 1; return; }
-
-    // Si tiene subtareas, vale (subtareas hechas / total subtareas)
-    const subs = (t && Array.isArray(t.subtasks)) ? t.subtasks : [];
-    if (subs.length > 0) {
-      const done = subs.filter(s => !!s.done).length;
-      sum += (done / subs.length);
-      return;
-    }
-
-    // Si no tiene subtareas y no está completada, vale 0%
-    sum += 0;
-  });
-
-  return Math.round((sum / tasks.length) * 100);
-})();
-
+    const totalTasks = data.tasks.length;
+    const completedTasks = data.tasks.filter(t => t.estado === 'Completado').length;
+    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
     const getStatusColor = (status) => {
         switch (status) {
             case 'Completado': return 'status-completed';
