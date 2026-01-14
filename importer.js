@@ -49,6 +49,7 @@
                 area: "Ingeniería", // Área por defecto
                 tarea: name,
                 estado: estado,
+                prioridad: "Media",
                 detalles: notes,
                 fechaInicio: start,
                 fechaLimite: finish,

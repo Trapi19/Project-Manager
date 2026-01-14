@@ -1105,6 +1105,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             area: 'Área',
             tarea: 'Tarea',
             estado: 'Estado',
+            prioridad: 'Prioridad',
             detalles: 'Detalles',
             fechaInicio: 'Fecha inicio',
             fechaFin: 'Fecha fin',
@@ -1153,6 +1154,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 area: 'General',
                 tarea: 'Nueva tarea',
                 estado: 'Pendiente',
+                prioridad: 'Media',
                 detalles: 'Descripción...',
                 fechaInicio: '',
                 fechaFin: '',
@@ -1441,7 +1443,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[320px]" }, "\u00C1REA / TIPO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "TAREA"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "ESTADO"),
-                                                                React.createElement("th", { className: "px-4 py-3 font-semibold whitespace-nowrap min-w-[200px] internal-only" }, "ASIGNADO A"),
+                                React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "PRIORIDAD"),
+                                React.createElement("th", { className: "px-4 py-3 font-semibold whitespace-nowrap min-w-[200px] internal-only" }, "ASIGNADO A"),
 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "DETALLES"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"),
                                 React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"),
@@ -1511,7 +1514,25 @@ React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                     React.createElement("option", { value: "Pendiente" }, "Pendiente"),
                                     React.createElement("option", { value: "En Curso" }, "En Curso"),
                                     React.createElement("option", { value: "Completado" }, "Completado"))),
-                                                        React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
+                                React.createElement("td", { className: "px-6 py-4 min-w-[160px]" },
+  React.createElement("select", {
+    className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${
+      (task.prioridad || 'Media') === 'Urgente' ? 'bg-rose-50 text-rose-700 border-rose-200'
+      : (task.prioridad || 'Media') === 'Alta' ? 'bg-amber-50 text-amber-700 border-amber-200'
+      : (task.prioridad || 'Media') === 'Baja' ? 'bg-slate-50 text-slate-700 border-slate-200'
+      : 'bg-blue-50 text-blue-700 border-blue-200'
+    }`,
+    value: (task.prioridad || 'Media'),
+    onChange: (e) => updateTask(task.id, 'prioridad', e.target.value)
+  },
+    React.createElement("option", { value: "Urgente" }, "Urgente"),
+    React.createElement("option", { value: "Alta" }, "Alta"),
+    React.createElement("option", { value: "Media" }, "Media"),
+    React.createElement("option", { value: "Baja" }, "Baja")
+  )
+),
+
+                                React.createElement("td", { className: "px-6 py-4 min-w-[200px] internal-only" },
                                 React.createElement("input", { type: "text", className: "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500", value: task.asignadoA || '', onChange: (e) => updateTask(task.id, 'asignadoA', e.target.value), placeholder: "Asignado..." })),
 React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
                                 React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-xs p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-y text-gray-600", value: task.detalles, onChange: (e) => updateTask(task.id, 'detalles', e.target.value), placeholder: "A\u00F1adir notas..." })),
@@ -1626,7 +1647,25 @@ const activeTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
                                         proj.client
                                     ),
                                     React.createElement("div", null,
-                                        proj.tasks.map(t => (
+                                        [...proj.tasks]
+  .sort((a, b) => {
+    const w = (x) => {
+      const p = (x?.prioridad || 'Media').toString().toLowerCase();
+      if (p === 'urgente') return 0;
+      if (p === 'alta') return 1;
+      if (p === 'media') return 2;
+      if (p === 'baja') return 3;
+      return 2;
+    };
+    const wa = w(a), wb = w(b);
+    if (wa !== wb) return wa - wb;
+
+    const da = a?.fechaLimite ? new Date(a.fechaLimite).getTime() : Number.POSITIVE_INFINITY;
+    const db = b?.fechaLimite ? new Date(b.fechaLimite).getTime() : Number.POSITIVE_INFINITY;
+    return da - db;
+  })
+  .map(t => (
+
                                             React.createElement("div", { key: t.id, className: "wl-task-row" },
                                                 (() => {
   const est = (t.estado || '').toString().toLowerCase();
@@ -1639,6 +1678,18 @@ const activeTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
 
                                                 React.createElement("div", { className: "wl-task-text" }, 
                                                     t.tarea,
+                                                    React.createElement("span", { 
+  style: { 
+    marginLeft: '8px',
+    fontSize: '11px',
+    fontWeight: 700,
+    padding: '2px 8px',
+    borderRadius: '999px',
+    border: '1px solid var(--border)',
+    opacity: 0.95
+  }
+}, (t.prioridad || 'Media')),
+
                                                     t.fechaLimite && React.createElement("span", { className: "wl-date-warn" }, 
                                                         window.formatFechaES(t.fechaLimite)
                                                     )
@@ -1735,7 +1786,21 @@ const AlertsView = ({ projects, onBack }) => {
             
             if (upcomingTasks.length > 0) {
                 // Ordenamos por fecha
-                upcomingTasks.sort((a,b) => (parseISO(a.fechaLimite) || 0) - (parseISO(b.fechaLimite) || 0));
+                upcomingTasks.sort((a, b) => {
+  const w = (x) => {
+    const p = (x?.prioridad || 'Media').toString().toLowerCase();
+    if (p === 'urgente') return 0;
+    if (p === 'alta') return 1;
+    if (p === 'media') return 2;
+    if (p === 'baja') return 3;
+    return 2;
+  };
+  const wa = w(a), wb = w(b);
+  if (wa !== wb) return wa - wb;
+
+  return (parseISO(a.fechaLimite) || 0) - (parseISO(b.fechaLimite) || 0);
+});
+
                 upcomingProjects.push({ id: p.id, title: p.meta.titulo, client: p.meta.cliente, items: upcomingTasks });
             }
 
