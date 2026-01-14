@@ -273,6 +273,58 @@ body {
 }
 
 
+/* =========================================
+   3. ESTILOS DEL GANTT (GRÁFICO) 
+   ========================================= */
+
+/* 1. TAREAS EN CURSO (Amarillo Moderno) */
+.gantt .bar-wrapper.bar-in-progress .bar,
+.gantt .bar-wrapper.bar-in-progress .bar-progress {
+    fill: #f59e0b !important; /* El mismo amarillo de tus píldoras */
+    rx: 4; /* Bordes redondeados en las barras */
+}
+
+/* 2. TAREAS COMPLETADAS (Verde Moderno) */
+.gantt .bar-wrapper.bar-completed .bar,
+.gantt .bar-wrapper.bar-completed .bar-progress {
+    fill: #10b981 !important; /* El mismo verde de tus píldoras */
+    rx: 4;
+}
+
+/* 3. TAREAS PENDIENTES (Rojo Moderno) */
+.gantt .bar-wrapper.bar-pending .bar,
+.gantt .bar-wrapper.bar-pending .bar-progress {
+    fill: #ef4444 !important; /* El mismo rojo de tus píldoras */
+    rx: 4;
+}
+
+/* Ajuste de los textos dentro del gráfico para que se lean mejor */
+.gantt .bar-label { 
+    fill: #111827 !important; 
+    font-weight: 600 !important;
+    font-size: 12px !important;
+}
+
+
+/* --- TEXTOS (Esto ya lo tenías bien, lo mantenemos) --- */
+/* Forzamos que TODOS los textos sean oscuros para que se lean sobre cualquier color */
+.gantt .bar-label { 
+    fill: #111827 !important; 
+    font-weight: 700 !important; 
+    font-size: 13px !important; 
+}
+
+/* Asegurar legibilidad incluso en barras oscuras */
+.gantt .bar-wrapper.bar-pending .bar-label,
+.gantt .bar-wrapper.bar-blocked .bar-label,
+.gantt .bar-group.bar-pending .bar-label,
+.gantt .bar-group.bar-blocked .bar-label { 
+    fill: #111827 !important; 
+}
+
+/* --- AJUSTES DE LÍNEAS --- */
+.gantt .bar { stroke: rgba(0,0,0,0.1) !important; stroke-width: 1px; }
+.gantt .today-line { stroke: #f59e0b; stroke-width: 2; }
 /* ===============================
    AJUSTE 'TAPIZ' EN DASHBOARD (En Ejecución)
    Solo cambia el fondo grisáceo del contenedor en modo oscuro
