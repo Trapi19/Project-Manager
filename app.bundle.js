@@ -110,28 +110,27 @@ const computeProjectStats = (tasks) => {
     const idx = buildTaskIndex(tasks);
     const total = tasks.length || 0;
 
-    // Contadores "clásicos" (para tus tarjetas/resumen): NO los cambiamos
     let completed = 0, inProgress = 0, pending = 0;
 
-    // Nuevo: suma de progreso real (0..total), contando subtareas
+    // Nuevo: progreso acumulado contando subtareas
     let progressSum = 0;
 
     tasks.forEach(t => {
         const e = effectiveEstado(t, idx);
 
-        // 1) Contadores por estado (como antes)
+        // Contadores por estado (como antes)
         if (e === 'Completado') completed++;
         else if (e === 'En Curso') inProgress++;
         else pending++;
 
-        // 2) Progreso "real" (lo nuevo)
-        // - Si la tarea está completada -> 100%
+        // Progreso real:
+        // 1) tarea completada => 100%
         if (e === 'Completado') {
             progressSum += 1;
             return;
         }
 
-        // - Si tiene subtareas -> % según subtareas marcadas done
+        // 2) subtareas => ratio done/total
         const subs = Array.isArray(t.subtasks) ? t.subtasks : [];
         if (subs.length > 0) {
             const done = subs.filter(s => !!s.done).length;
@@ -139,15 +138,15 @@ const computeProjectStats = (tasks) => {
             return;
         }
 
-        // - Si no tiene subtareas: no suma progreso (0%)
-        //   (Si quisieras que "En Curso" valga 50% aunque no tenga subtareas,
-        //    dímelo y te dejo la variante exacta)
+        // 3) sin subtareas => 0%
         progressSum += 0;
     });
 
     const progress = total > 0 ? Math.round((progressSum / total) * 100) : 0;
     return { total, completed, inProgress, pending, progress };
 };
+
+    return { total, completed, inProgress, pending, progress };
 
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() },
     React.createElement("button", { type: "button", onClick: onToggle, className: "w-10 h-10 rounded-xl border border-[color:var(--border)] bg-white/80 hover:bg-white flex items-center justify-center text-[color:var(--brand-dark)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]", title: "Cambiar icono" }, Icons[value] || Icons.monitor),
@@ -710,9 +709,33 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
 
 // --- COMPONENTE: VISTA PREVIA (Read Only) ---
 const ProjectPreview = ({ data }) => {
-    const totalTasks = data.tasks.length;
-    const completedTasks = data.tasks.filter(t => t.estado === 'Completado').length;
-    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    const totalTasks = (data.tasks || []).length;
+
+// Progreso real: subtareas (done) suman % aunque la tarea esté "En Curso".
+const progress = (() => {
+  const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+  if (!tasks.length) return 0;
+
+  let sum = 0;
+  tasks.forEach(t => {
+    // Si la tarea está completada, vale 100%
+    if (t && t.estado === 'Completado') { sum += 1; return; }
+
+    // Si tiene subtareas, vale (subtareas hechas / total subtareas)
+    const subs = (t && Array.isArray(t.subtasks)) ? t.subtasks : [];
+    if (subs.length > 0) {
+      const done = subs.filter(s => !!s.done).length;
+      sum += (done / subs.length);
+      return;
+    }
+
+    // Si no tiene subtareas y no está completada, vale 0%
+    sum += 0;
+  });
+
+  return Math.round((sum / tasks.length) * 100);
+})();
+
     const getStatusColor = (status) => {
         switch (status) {
             case 'Completado': return 'status-completed';
