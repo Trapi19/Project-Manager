@@ -1533,18 +1533,21 @@ const WorkloadView = ({ projects, onBack }) => {
         
         projects.forEach(p => {
             if (String(p.meta?.estado) === 'Completado') return;
-            const activeTasks = (p.tasks || []).filter(t => String(t.estado) !== 'Completado');
+            const tasks = (p.tasks || []);
+const idx = buildTaskIndex(tasks);
+const activeTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
+
 
             activeTasks.forEach(t => {
                 // 1. Obtenemos el texto crudo
                 let raw = (t.asignadoA || '').trim();
-                if (!raw) raw = "Sin Asignar";
+                if (!raw) raw = "Sin asignar";
 
                 // 2. MAGIA: Separamos por barras (/), comas (,) o " y "
                 const names = raw.split(/[\/,;&]|\s+y\s+/).map(s => s.trim()).filter(Boolean);
                 
                 // Si al separar no queda nada, volvemos a "Sin Asignar"
-                const finalNames = names.length > 0 ? names : ["Sin Asignar"];
+                const finalNames = names.length > 0 ? names : ["Sin asignar"];
 
                 // 3. Asignamos la tarea a CADA persona encontrada
                 finalNames.forEach(personName => {
