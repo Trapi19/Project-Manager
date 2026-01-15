@@ -708,6 +708,84 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
 };
 
 // --- COMPONENTE: VISTA PREVIA (Read Only) ---
+
+// --- COMPONENTE: GRÁFICO DONUT (Estado de tareas) ---
+const StatusDonutChart = ({ tasks }) => {
+  const canvasRef = React.useRef(null);
+  const chartRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!canvasRef.current) return;
+    if (typeof Chart === 'undefined') return;
+
+    const list = Array.isArray(tasks) ? tasks : [];
+    const count = (st) => list.filter(t => (t && t.estado) === st).length;
+
+    const pendiente = count('Pendiente');
+    const enCurso = count('En Curso');
+    const completado = count('Completado');
+
+    // Si no hay nada, evitamos errores y mostramos 1 “vacío”
+    const dataVals = (pendiente + enCurso + completado) > 0
+      ? [pendiente, enCurso, completado]
+      : [1, 0, 0];
+
+    const isDark = document.documentElement.classList.contains('theme-dark');
+    const textColor = isDark ? '#e5e7eb' : '#111827';
+
+    // Destruir el chart anterior si existe (muy importante en React)
+    if (chartRef.current) {
+      chartRef.current.destroy();
+      chartRef.current = null;
+    }
+
+    const ctx = canvasRef.current.getContext('2d');
+
+    chartRef.current = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Pendiente', 'En Curso', 'Completado'],
+        datasets: [{
+          data: dataVals,
+          backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], // rojo / ámbar / verde
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: textColor,
+              boxWidth: 10,
+              boxHeight: 10
+            }
+          },
+          tooltip: {
+            enabled: true
+          }
+        }
+      }
+    });
+
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+    };
+  }, [tasks]);
+
+  return React.createElement(
+    "div",
+    { className: "relative w-full", style: { height: '220px' } },
+    React.createElement("canvas", { ref: canvasRef })
+  );
+};
+
 const ProjectPreview = ({ data }) => {
     const totalTasks = (data.tasks || []).length;
 const completedTasks = (data.tasks || []).filter(t => t.estado === 'Completado').length;
@@ -790,6 +868,18 @@ const progress = (() => {
                             React.createElement("p", { className: "text-3xl font-bold text-orange-600 mt-2" }, totalTasks - completedTasks)),
                         React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-orange-50 rounded-full text-orange-600" },
                             React.createElement("i", { className: "fas fa-clock" }))))),
+                            React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
+  React.createElement("div", { className: "flex items-center justify-between mb-4" },
+    React.createElement("div", null,
+      React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Estado (Gráfico)"),
+      React.createElement("p", { className: "text-xs text-gray-400 mt-1" }, "Distribución de tareas por estado")
+    ),
+    React.createElement("div", { className: "w-10 h-10 flex items-center justify-center bg-slate-50 rounded-full text-slate-600" },
+      React.createElement("i", { className: "fas fa-chart-pie" })
+    )
+  ),
+  React.createElement(StatusDonutChart, { tasks: data.tasks || [] })
+),
             React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
                 React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" },
                     React.createElement("h2", { className: "text-lg font-semibold text-gray-800" }, "Detalle de Trabajos")),
