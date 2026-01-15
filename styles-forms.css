@@ -156,3 +156,45 @@ input:focus, textarea:focus, select:focus {
     background: none; border: none;
 }
 .btn-del-subtask:hover { opacity: 1; }
+
+/* --- PRIORIDAD: asegurar buen contraste en modo oscuro (tabla + selects) --- */
+.theme-dark .bg-rose-50 {
+  background-color: rgba(239, 68, 68, 0.20) !important;
+}
+.theme-dark .text-rose-700 {
+  color: #f87171 !important;
+}
+.theme-dark .border-rose-200 {
+  border-color: rgba(239, 68, 68, 0.40) !important;
+}
+
+.theme-dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.20) !important;
+}
+.theme-dark .text-amber-700 {
+  color: #fbbf24 !important;
+}
+.theme-dark .border-amber-200 {
+  border-color: rgba(245, 158, 11, 0.40) !important;
+}
+
+.theme-dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.18) !important;
+}
+.theme-dark .text-blue-700 {
+  color: #60a5fa !important;
+}
+.theme-dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.35) !important;
+}
+
+.theme-dark .bg-slate-50 {
+  background-color: rgba(148, 163, 184, 0.14) !important;
+}
+.theme-dark .text-slate-700 {
+  color: rgba(255, 255, 255, 0.78) !important;
+}
+.theme-dark .border-slate-200 {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+ 
