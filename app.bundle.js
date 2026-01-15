@@ -404,6 +404,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         let progressSumAll = 0;
         let redProjects = 0;
         let blockedProjects = 0;
+        let urgentTasks = 0;
         let blockedTasks = 0;
         const redProjectDetails = [];
         const blockedProjectDetails = [];
@@ -425,6 +426,10 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
             const idx = buildTaskIndex(tasks);
            tasks.forEach(t => {
                 const est = effectiveEstado(t, idx);
+                // Urgentes: prioridad = "Urgente" y NO completadas
+if (est !== 'Completado' && String(t?.prioridad || '').toLowerCase() === 'urgente') {
+  urgentTasks += 1;
+}
                 // Carga de trabajo por persona (ASIGNADO A): cuenta tareas abiertas (Pendiente/En curso).
                 if (est !== 'Completado') {
                     // LÓGICA DE SEPARACIÓN DE NOMBRES
@@ -475,6 +480,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
             redProjectDetails,
             blockedProjects,
             blockedTasks,
+            urgentTasks,
             blockedProjectDetails,
             workloadData: Object.entries(workloadMap).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 4),
             sortedDeadlines: upcomingDeadlines.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).slice(0, 3)
