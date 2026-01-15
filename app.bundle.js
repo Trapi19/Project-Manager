@@ -513,14 +513,6 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     React.createElement("i", { className: "fas fa-plus" }),
                     "Nuevo"),
                 React.createElement("div", { className: "actions-menu no-print", ref: actionsRef },
-                    React.createElement("button", {
-  onClick: () => setRoute('#/charts'),
-  className: "btn-apple no-print",
-  title: "Ver gráficos globales"
-},
-  React.createElement("i", { className: "fas fa-chart-column" }),
-  "Gráficos"
-),
                     React.createElement("button", { type: "button", className: "btn-apple-icon", title: "Acciones", "aria-label": "Acciones", onClick: () => setActionsOpen(o => !o) },
                         React.createElement("i", { className: "fas fa-ellipsis" })),
                     actionsOpen && (React.createElement("div", { className: "actions-popover", role: "menu", "aria-label": "Acciones" },
@@ -715,121 +707,6 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     } })))))))));
 };
 
-
-// --- COMPONENTE: GRÁFICO DONUT (Estado de tareas) ---
-const StatusDonutChart = ({ tasks }) => {
-  const canvasRef = React.useRef(null);
-  const chartRef = React.useRef(null);
-
-  React.useEffect(() => {
-    if (!canvasRef.current) return;
-    if (typeof Chart === 'undefined') return;
-
-    const list = Array.isArray(tasks) ? tasks : [];
-    const count = (st) => list.filter(t => (t && t.estado) === st).length;
-
-    const pendiente = count('Pendiente');
-    const enCurso = count('En Curso');
-    const completado = count('Completado');
-
-    // Si no hay nada, evitamos errores y mostramos 1 “vacío”
-    const dataVals = (pendiente + enCurso + completado) > 0
-      ? [pendiente, enCurso, completado]
-      : [1, 0, 0];
-
-    const isDark = document.documentElement.classList.contains('theme-dark');
-    const textColor = isDark ? '#e5e7eb' : '#111827';
-
-    // Destruir el chart anterior si existe (muy importante en React)
-    if (chartRef.current) {
-      chartRef.current.destroy();
-      chartRef.current = null;
-    }
-
-    const ctx = canvasRef.current.getContext('2d');
-
-    chartRef.current = new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Pendiente', 'En Curso', 'Completado'],
-        datasets: [{
-          data: dataVals,
-          backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], // rojo / ámbar / verde
-          borderWidth: 0
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '72%',
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              color: textColor,
-              boxWidth: 10,
-              boxHeight: 10
-            }
-          },
-          tooltip: {
-            enabled: true
-          }
-        }
-      }
-    });
-
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.destroy();
-        chartRef.current = null;
-      }
-    };
-  }, [tasks]);
-
-  return React.createElement(
-    "div",
-    { className: "relative w-full", style: { height: '220px' } },
-    React.createElement("canvas", { ref: canvasRef })
-  );
-};
-
-// --- COMPONENTE: VISTA GLOBAL D EGRAFICOS ---
-const GlobalCharts = ({ projects, onBack }) => {
-  const allTasks = (projects || []).flatMap(p => Array.isArray(p?.tasks) ? p.tasks : []);
-
-  return React.createElement("div", { className: "min-h-screen px-6 py-6" },
-    React.createElement("div", { className: "flex items-center justify-between mb-6" },
-      React.createElement("div", { className: "flex items-center gap-4" },
-        React.createElement("button", {
-          className: "btn-apple",
-          onClick: onBack,
-          title: "Volver al Dashboard"
-        }, React.createElement("i", { className: "fas fa-arrow-left" }), " Dashboard"),
-        React.createElement("div", null,
-          React.createElement("h1", { className: "text-2xl font-bold" }, "Gráficos"),
-          React.createElement("p", { className: "text-sm text-gray-500" }, "Resumen global (todos los proyectos)")
-        )
-      )
-    ),
-
-    React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
-      React.createElement("div", { className: "project-card p-6" },
-        React.createElement("div", { className: "flex items-center justify-between mb-4" },
-          React.createElement("div", null,
-            React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Estado (Global)"),
-            React.createElement("p", { className: "text-xs text-gray-400 mt-1" }, "Todas las tareas de todos los proyectos")
-          ),
-          React.createElement("div", { className: "btn-apple-icon", style: { pointerEvents: "none" } },
-            React.createElement("i", { className: "fas fa-chart-pie" })
-          )
-        ),
-        React.createElement(StatusDonutChart, { tasks: allTasks })
-      )
-    )
-  );
-};
-
-
 // --- COMPONENTE: VISTA PREVIA (Read Only) ---
 const ProjectPreview = ({ data }) => {
     const totalTasks = (data.tasks || []).length;
@@ -913,18 +790,6 @@ const progress = (() => {
                             React.createElement("p", { className: "text-3xl font-bold text-orange-600 mt-2" }, totalTasks - completedTasks)),
                         React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-orange-50 rounded-full text-orange-600" },
                             React.createElement("i", { className: "fas fa-clock" }))))),
-                            React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
-  React.createElement("div", { className: "flex items-center justify-between mb-4" },
-    React.createElement("div", null,
-      React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Estado (Gráfico)"),
-      React.createElement("p", { className: "text-xs text-gray-400 mt-1" }, "Distribución de tareas por estado")
-    ),
-    React.createElement("div", { className: "w-10 h-10 flex items-center justify-center bg-slate-50 rounded-full text-slate-600" },
-      React.createElement("i", { className: "fas fa-chart-pie" })
-    )
-  ),
-  React.createElement(StatusDonutChart, { tasks: data.tasks || [] })
-),
             React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
                 React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" },
                     React.createElement("h2", { className: "text-lg font-semibold text-gray-800" }, "Detalle de Trabajos")),
@@ -2211,13 +2076,6 @@ const makeDraftProject = () => ({
                 setView('workload'); // Definiremos este estado ahora
                 return;
             }
-
-            if (parts[0] === 'charts') {
-  setCurrentProject(null);
-  setView('charts');
-  return;
-}
-
             if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
                 setCurrentProject(null);
                 setView('list');
@@ -2468,11 +2326,6 @@ const makeDraftProject = () => ({
         view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
-        view === 'charts' && React.createElement(GlobalCharts, {
-  projects,
-  onBack: () => { setRoute('#/list'); setView('list'); }
-})
-,
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
             React.createElement("div", { className: "modal-card" },
                 React.createElement("div", { className: "modal-title" }, "Importar backup"),
