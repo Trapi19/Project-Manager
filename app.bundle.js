@@ -513,6 +513,14 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     React.createElement("i", { className: "fas fa-plus" }),
                     "Nuevo"),
                 React.createElement("div", { className: "actions-menu no-print", ref: actionsRef },
+                    React.createElement("button", {
+  onClick: () => setRoute('#/charts'),
+  className: "btn-apple no-print",
+  title: "Ver gráficos globales"
+},
+  React.createElement("i", { className: "fas fa-chart-column" }),
+  "Gráficos"
+),
                     React.createElement("button", { type: "button", className: "btn-apple-icon", title: "Acciones", "aria-label": "Acciones", onClick: () => setActionsOpen(o => !o) },
                         React.createElement("i", { className: "fas fa-ellipsis" })),
                     actionsOpen && (React.createElement("div", { className: "actions-popover", role: "menu", "aria-label": "Acciones" },
@@ -707,7 +715,6 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                     } })))))))));
 };
 
-// --- COMPONENTE: VISTA PREVIA (Read Only) ---
 
 // --- COMPONENTE: GRÁFICO DONUT (Estado de tareas) ---
 const StatusDonutChart = ({ tasks }) => {
@@ -786,6 +793,44 @@ const StatusDonutChart = ({ tasks }) => {
   );
 };
 
+// --- COMPONENTE: VISTA GLOBAL D EGRAFICOS ---
+const GlobalCharts = ({ projects, onBack }) => {
+  const allTasks = (projects || []).flatMap(p => Array.isArray(p?.tasks) ? p.tasks : []);
+
+  return React.createElement("div", { className: "min-h-screen px-6 py-6" },
+    React.createElement("div", { className: "flex items-center justify-between mb-6" },
+      React.createElement("div", { className: "flex items-center gap-4" },
+        React.createElement("button", {
+          className: "btn-apple",
+          onClick: onBack,
+          title: "Volver al Dashboard"
+        }, React.createElement("i", { className: "fas fa-arrow-left" }), " Dashboard"),
+        React.createElement("div", null,
+          React.createElement("h1", { className: "text-2xl font-bold" }, "Gráficos"),
+          React.createElement("p", { className: "text-sm text-gray-500" }, "Resumen global (todos los proyectos)")
+        )
+      )
+    ),
+
+    React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
+      React.createElement("div", { className: "project-card p-6" },
+        React.createElement("div", { className: "flex items-center justify-between mb-4" },
+          React.createElement("div", null,
+            React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Estado (Global)"),
+            React.createElement("p", { className: "text-xs text-gray-400 mt-1" }, "Todas las tareas de todos los proyectos")
+          ),
+          React.createElement("div", { className: "btn-apple-icon", style: { pointerEvents: "none" } },
+            React.createElement("i", { className: "fas fa-chart-pie" })
+          )
+        ),
+        React.createElement(StatusDonutChart, { tasks: allTasks })
+      )
+    )
+  );
+};
+
+
+// --- COMPONENTE: VISTA PREVIA (Read Only) ---
 const ProjectPreview = ({ data }) => {
     const totalTasks = (data.tasks || []).length;
 const completedTasks = (data.tasks || []).filter(t => t.estado === 'Completado').length;
@@ -2166,6 +2211,13 @@ const makeDraftProject = () => ({
                 setView('workload'); // Definiremos este estado ahora
                 return;
             }
+
+            if (parts[0] === 'charts') {
+  setCurrentProject(null);
+  setView('charts');
+  return;
+}
+
             if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
                 setCurrentProject(null);
                 setView('list');
@@ -2416,6 +2468,11 @@ const makeDraftProject = () => ({
         view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
+        view === 'charts' && React.createElement(GlobalCharts, {
+  projects,
+  onBack: () => { setRoute('#/list'); setView('list'); }
+})
+,
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
             React.createElement("div", { className: "modal-card" },
                 React.createElement("div", { className: "modal-title" }, "Importar backup"),
