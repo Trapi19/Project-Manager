@@ -1943,6 +1943,7 @@ const AlertsView = ({ projects, onBack }) => {
 
 // --- VISTA: GRÁFICOS (Charts) ---
 const ChartsView = ({ projects, onBack }) => {
+const [themeTick, setThemeTick] = React.useState(0);
   const donutRef = React.useRef(null);
   const byAreaRef = React.useRef(null);
   const byPriorityRef = React.useRef(null);
@@ -1971,6 +1972,16 @@ const ChartsView = ({ projects, onBack }) => {
     // orden por cantidad desc
     return Object.entries(map).sort((a,b) => b[1]-a[1]);
   };
+
+  React.useEffect(() => {
+  // Esto detecta cuando el <html> cambia de clase (por ejemplo: se añade o quita "theme-dark")
+  const el = document.documentElement;
+  const obs = new MutationObserver(() => {
+    setThemeTick(t => t + 1);
+  });
+  obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+  return () => obs.disconnect();
+}, []);
 
   React.useEffect(() => {
     // Limpia charts anteriores (si los hubiese)
@@ -2025,61 +2036,73 @@ const donutColors = donutLabels.map(estadoColor);
       return;
     }
 
-    const isDark = document.documentElement.classList.contains('theme-dark');
-    const axisText = isDark ? '#e5e7eb' : '#111827';
+const isDark = document.documentElement.classList.contains('theme-dark');
 
-    const commonOptions = {
+const theme = {
+  text: isDark ? '#e5e7eb' : '#111827',
+  grid: isDark ? 'rgba(148,163,184,0.22)' : 'rgba(148,163,184,0.35)',
+  tooltipBg: isDark ? 'rgba(15,23,42,0.92)' : 'rgba(255,255,255,0.96)',
+  border: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)'
+};
+
+
+const commonOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: theme.text } },
+    tooltip: {
+      backgroundColor: theme.tooltipBg,
+      titleColor: theme.text,
+      bodyColor: theme.text
+    }
+  },
+  scales: {
+    x: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+    y: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+  }
+};
+
+// Donut
+if (donutRef.current) {
+  const isDark = document.documentElement.classList.contains('theme-dark');
+  const textColor = isDark ? '#e5e7eb' : '#111827';
+  const borderColor = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)';
+
+  const ch = new ChartJS(donutRef.current, {
+    type: 'doughnut',
+    data: {
+      labels: donutLabels,
+      datasets: [{
+        data: donutData,
+        backgroundColor: donutColors,
+        borderColor: borderColor,
+        borderWidth: 2
+      }]
+    },
+    options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827') } },
-      },
-      scales: {
-        x: { ticks: { color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827') }, grid: { color: 'rgba(148,163,184,0.25)' } },
-        y: { ticks: { color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827') }, grid: { color: 'rgba(148,163,184,0.25)' } },
-      }
-    };
-
-    // Donut
-    if (donutRef.current) {
-const isDark = document.documentElement.classList.contains('theme-dark');
-const donutTextColor = isDark ? '#e5e7eb' : '#111827';
-
-const ch = new ChartJS(donutRef.current, {
-  type: 'doughnut',
-  data: {
-    labels: donutLabels,
-    datasets: [{
-      data: donutData,
-      backgroundColor: donutColors,
-      borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)',
-      borderWidth: 2
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          color: donutTextColor,
-          boxWidth: 14,
-          boxHeight: 10,
-          padding: 14
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: textColor,
+            boxWidth: 14,
+            boxHeight: 10,
+            padding: 14
+          }
+        },
+        tooltip: {
+          titleColor: textColor,
+          bodyColor: textColor
         }
-      },
-      tooltip: {
-        titleColor: donutTextColor,
-        bodyColor: donutTextColor
       }
     }
-  }
-});
+  });
 
-      chartsRef.current.push(ch);
-    }
-
+  chartsRef.current.push(ch);
+}
     // Área
     if (byAreaRef.current) {
       const ch = new ChartJS(byAreaRef.current, {
@@ -2134,7 +2157,7 @@ const ch = new ChartJS(donutRef.current, {
       }
       chartsRef.current = [];
     };
-  }, [projects]);
+  }, [projects, themeTick]);
 
   const total = flattenTasks().length;
 
