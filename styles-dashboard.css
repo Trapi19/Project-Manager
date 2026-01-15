@@ -823,3 +823,36 @@
     border-radius: 6px;
 }
 .wl-btn-add-sub:hover { background-color: var(--brand-soft); }
+
+/* ==============================
+   FIX: Chips "Eje" y "Pausa" en modo oscuro
+   (Resumen ejecutivo - primera tarjeta)
+   ============================== */
+
+.exec-chips{
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Base para modo oscuro: más contraste */
+.theme-dark .exec-chips span{
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.88) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 10px 24px rgba(0,0,0,0.25);
+}
+
+/* 1ª píldora: Eje (azul) */
+.theme-dark .exec-chips span:nth-child(1){
+  background: rgba(59,130,246,0.18) !important;
+  border-color: rgba(59,130,246,0.42) !important;
+  color: #93c5fd !important;
+}
+
+/* 2ª píldora: Pausa (rojo) */
+.theme-dark .exec-chips span:nth-child(2){
+  background: rgba(239,68,68,0.18) !important;
+  border-color: rgba(239,68,68,0.42) !important;
+  color: #fca5a5 !important;
+}
