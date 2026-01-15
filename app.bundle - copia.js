@@ -557,12 +557,9 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                                 React.createElement("div", { className: "exec-value" }, executiveSummary.projectsActive)),
                             React.createElement("div", { className: "exec-card-icon" },
                                 React.createElement("i", { className: "fas fa-layer-group" }))),
-React.createElement("div", { className: "exec-chips" },
-  React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.3)] text-blue-700 bg-blue-50/50 text-[10px] font-bold" }, "Eje: ", activeProjects.length),
-  React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.3)] text-red-700 bg-red-50/50 text-[10px] font-bold" }, "Pausa: ", pausedProjects.length),
-  React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(139,92,246,0.3)] text-violet-700 bg-violet-50/50 text-[10px] font-bold" }, "Rev: ", reviewProjects.length)
-)
-                    ),
+                        React.createElement("div", { className: "exec-chips" },
+                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.3)] text-blue-700 bg-blue-50/50 text-[10px] font-bold" }, "Eje: ", activeProjects.length),
+                            React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.3)] text-red-700 bg-red-50/50 text-[10px] font-bold" }, "Pausa: ", pausedProjects.length))),
 
                     // 2. AVANCE
                     React.createElement("div", { className: "exec-card" },
