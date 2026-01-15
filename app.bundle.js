@@ -1997,17 +1997,6 @@ const estadoColor = (label) => {
 const donutColors = donutLabels.map(estadoColor);
 
 
-// Colores por estado (fijos)
-const estadoColor = (label) => {
-  const low = String(label || '').toLowerCase();
-  if (low === 'pendiente') return '#ef4444';   // rojo
-  if (low === 'en curso' || low === 'en-curso') return '#f59e0b'; // amarillo
-  if (low === 'completado') return '#10b981';  // verde
-  return '#64748b'; // gris fallback
-};
-const donutColors = donutLabels.map(estadoColor);
-
-
     // 2) Barras por Área
     const byArea = countBy(tasks, t => t.area, "Sin área");
     const areaLabels = byArea.slice(0, 15).map(x => x[0]);   // top 15 para que no se sature
