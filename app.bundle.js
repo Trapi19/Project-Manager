@@ -512,6 +512,14 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                 React.createElement("button", { onClick: onCreate, className: "btn-apple-primary no-print", title: "Crear nuevo proyecto" },
                     React.createElement("i", { className: "fas fa-plus" }),
                     "Nuevo"),
+                    React.createElement("button", {
+  onClick: () => window.location.hash = '#/charts',
+  className: "btn-apple no-print",
+  title: "Ver gráficos"
+},
+  React.createElement("i", { className: "fas fa-chart-bar" }),
+  "Gráficos"
+),
                 React.createElement("div", { className: "actions-menu no-print", ref: actionsRef },
                     React.createElement("button", { type: "button", className: "btn-apple-icon", title: "Acciones", "aria-label": "Acciones", onClick: () => setActionsOpen(o => !o) },
                         React.createElement("i", { className: "fas fa-ellipsis" })),
@@ -1933,6 +1941,226 @@ const AlertsView = ({ projects, onBack }) => {
     );
 };
 
+// --- VISTA: GRÁFICOS (Charts) ---
+const ChartsView = ({ projects, onBack }) => {
+  const donutRef = React.useRef(null);
+  const byAreaRef = React.useRef(null);
+  const byPriorityRef = React.useRef(null);
+  const byAssigneeRef = React.useRef(null);
+
+  // Guardamos instancias para destruirlas al salir de la vista
+  const chartsRef = React.useRef([]);
+
+  const flattenTasks = () => {
+    const list = Array.isArray(projects) ? projects : [];
+    const all = [];
+    for (const p of list) {
+      const tasks = (p && Array.isArray(p.tasks)) ? p.tasks : [];
+      for (const t of tasks) all.push(t);
+    }
+    return all;
+  };
+
+  const countBy = (items, getter, fallbackLabel) => {
+    const map = {};
+    for (const it of items) {
+      const kRaw = getter(it);
+      const k = (kRaw == null || String(kRaw).trim() === "") ? fallbackLabel : String(kRaw).trim();
+      map[k] = (map[k] || 0) + 1;
+    }
+    // orden por cantidad desc
+    return Object.entries(map).sort((a,b) => b[1]-a[1]);
+  };
+
+  React.useEffect(() => {
+    // Limpia charts anteriores (si los hubiese)
+    for (const ch of chartsRef.current) {
+      try { ch.destroy(); } catch(e) {}
+    }
+    chartsRef.current = [];
+
+    const tasks = flattenTasks();
+
+    // 1) Donut por Estado
+    const byEstado = countBy(tasks, t => t.estado, "Pendiente");
+    const donutLabels = byEstado.map(x => x[0]);
+    const donutData = byEstado.map(x => x[1]);
+
+    // 2) Barras por Área
+    const byArea = countBy(tasks, t => t.area, "Sin área");
+    const areaLabels = byArea.slice(0, 15).map(x => x[0]);   // top 15 para que no se sature
+    const areaData   = byArea.slice(0, 15).map(x => x[1]);
+
+    // 3) Barras por Prioridad
+    // Orden lógico: Urgente, Alta, Media, Baja
+    const prioOrder = ["Urgente", "Alta", "Media", "Baja"];
+    const prioMap = {};
+    for (const t of tasks) {
+      const p = (t.prioridad || "Media");
+      prioMap[p] = (prioMap[p] || 0) + 1;
+    }
+    const prioLabels = prioOrder.filter(p => prioMap[p] != null);
+    const prioData = prioLabels.map(p => prioMap[p] || 0);
+
+    // 4) Barras por Asignado
+    const byAssignee = countBy(tasks, t => t.asignadoA, "Sin asignar");
+    const assLabels = byAssignee.slice(0, 20).map(x => x[0]); // top 20
+    const assData   = byAssignee.slice(0, 20).map(x => x[1]);
+
+    // Chart.js (UMD) disponible como window.Chart
+    const ChartJS = (window && window.Chart) ? window.Chart : null;
+    if (!ChartJS) {
+      console.error("Chart.js no está cargado. Revisa el PASO 1 (index.html).");
+      return;
+    }
+
+    const commonOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827') } },
+      },
+      scales: {
+        x: { ticks: { color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827') }, grid: { color: 'rgba(148,163,184,0.25)' } },
+        y: { ticks: { color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827') }, grid: { color: 'rgba(148,163,184,0.25)' } },
+      }
+    };
+
+    // Donut
+    if (donutRef.current) {
+      const ch = new ChartJS(donutRef.current, {
+        type: 'doughnut',
+        data: {
+          labels: donutLabels,
+          datasets: [{ data: donutData }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom' },
+            title: { display: false }
+          }
+        }
+      });
+      chartsRef.current.push(ch);
+    }
+
+    // Área
+    if (byAreaRef.current) {
+      const ch = new ChartJS(byAreaRef.current, {
+        type: 'bar',
+        data: {
+          labels: areaLabels,
+          datasets: [{ label: 'Tareas', data: areaData }]
+        },
+        options: {
+          ...commonOptions,
+          plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+      });
+      chartsRef.current.push(ch);
+    }
+
+    // Prioridad
+    if (byPriorityRef.current) {
+      const ch = new ChartJS(byPriorityRef.current, {
+        type: 'bar',
+        data: {
+          labels: prioLabels,
+          datasets: [{ label: 'Tareas', data: prioData }]
+        },
+        options: {
+          ...commonOptions,
+          plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+      });
+      chartsRef.current.push(ch);
+    }
+
+    // Asignado
+    if (byAssigneeRef.current) {
+      const ch = new ChartJS(byAssigneeRef.current, {
+        type: 'bar',
+        data: {
+          labels: assLabels,
+          datasets: [{ label: 'Tareas', data: assData }]
+        },
+        options: {
+          ...commonOptions,
+          plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+      });
+      chartsRef.current.push(ch);
+    }
+
+    return () => {
+      for (const ch of chartsRef.current) {
+        try { ch.destroy(); } catch(e) {}
+      }
+      chartsRef.current = [];
+    };
+  }, [projects]);
+
+  const total = flattenTasks().length;
+
+  return React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" },
+    React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } },
+      React.createElement("div", { className: "max-w-7xl mx-auto px-6 py-4 flex items-center justify-between" },
+        React.createElement("div", { className: "flex items-center gap-3" },
+          React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
+            React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"
+          ),
+          React.createElement("div", null,
+            React.createElement("div", { className: "text-xl font-extrabold" }, "Gráficos"),
+            React.createElement("div", { className: "text-xs opacity-70" }, `Resumen global · ${total} tareas`)
+          )
+        )
+      )
+    ),
+
+    React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-6" },
+      React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6" },
+
+        // Donut
+        React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
+          React.createElement("div", { className: "font-bold mb-3" }, "Estado"),
+          React.createElement("div", { style: { height: '260px' } },
+            React.createElement("canvas", { ref: donutRef })
+          )
+        ),
+
+        // Área
+        React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border lg:col-span-2" },
+          React.createElement("div", { className: "font-bold mb-3" }, "Áreas (Top 15)"),
+          React.createElement("div", { style: { height: '260px' } },
+            React.createElement("canvas", { ref: byAreaRef })
+          )
+        )
+      ),
+
+      React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
+
+        // Prioridad
+        React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
+          React.createElement("div", { className: "font-bold mb-3" }, "Prioridad"),
+          React.createElement("div", { style: { height: '260px' } },
+            React.createElement("canvas", { ref: byPriorityRef })
+          )
+        ),
+
+        // Asignado
+        React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
+          React.createElement("div", { className: "font-bold mb-3" }, "Miembros (Top 20)"),
+          React.createElement("div", { style: { height: '260px' } },
+            React.createElement("canvas", { ref: byAssigneeRef })
+          )
+        )
+      )
+    )
+  );
+};
+
 // --- APP PRINCIPAL ---
 const MainApp = () => {
     const [theme, setTheme] = React.useState(() => localStorage.getItem('gp_theme') || 'light');
@@ -2076,6 +2304,11 @@ const makeDraftProject = () => ({
                 setView('workload'); // Definiremos este estado ahora
                 return;
             }
+            if (parts[0] === 'charts') {
+  setCurrentProject(null);
+  setView('charts');
+  return;
+}
             if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
                 setCurrentProject(null);
                 setView('list');
@@ -2324,6 +2557,7 @@ const makeDraftProject = () => ({
         React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
         view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+        view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
