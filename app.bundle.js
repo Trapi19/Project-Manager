@@ -1986,6 +1986,28 @@ const ChartsView = ({ projects, onBack }) => {
     const donutLabels = byEstado.map(x => x[0]);
     const donutData = byEstado.map(x => x[1]);
 
+    // Colores por estado (fijos)
+const estadoColor = (label) => {
+  const low = String(label || '').toLowerCase();
+  if (low === 'pendiente') return '#ef4444';   // rojo
+  if (low === 'en curso' || low === 'en-curso') return '#f59e0b'; // amarillo
+  if (low === 'completado') return '#10b981';  // verde
+  return '#64748b'; // gris fallback
+};
+const donutColors = donutLabels.map(estadoColor);
+
+
+// Colores por estado (fijos)
+const estadoColor = (label) => {
+  const low = String(label || '').toLowerCase();
+  if (low === 'pendiente') return '#ef4444';   // rojo
+  if (low === 'en curso' || low === 'en-curso') return '#f59e0b'; // amarillo
+  if (low === 'completado') return '#10b981';  // verde
+  return '#64748b'; // gris fallback
+};
+const donutColors = donutLabels.map(estadoColor);
+
+
     // 2) Barras por Área
     const byArea = countBy(tasks, t => t.area, "Sin área");
     const areaLabels = byArea.slice(0, 15).map(x => x[0]);   // top 15 para que no se sature
@@ -2014,6 +2036,9 @@ const ChartsView = ({ projects, onBack }) => {
       return;
     }
 
+    const isDark = document.documentElement.classList.contains('theme-dark');
+    const axisText = isDark ? '#e5e7eb' : '#111827';
+
     const commonOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -2028,21 +2053,41 @@ const ChartsView = ({ projects, onBack }) => {
 
     // Donut
     if (donutRef.current) {
-      const ch = new ChartJS(donutRef.current, {
-        type: 'doughnut',
-        data: {
-          labels: donutLabels,
-          datasets: [{ data: donutData }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'bottom' },
-            title: { display: false }
-          }
+const isDark = document.documentElement.classList.contains('theme-dark');
+const donutTextColor = isDark ? '#e5e7eb' : '#111827';
+
+const ch = new ChartJS(donutRef.current, {
+  type: 'doughnut',
+  data: {
+    labels: donutLabels,
+    datasets: [{
+      data: donutData,
+      backgroundColor: donutColors,
+      borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: donutTextColor,
+          boxWidth: 14,
+          boxHeight: 10,
+          padding: 14
         }
-      });
+      },
+      tooltip: {
+        titleColor: donutTextColor,
+        bodyColor: donutTextColor
+      }
+    }
+  }
+});
+
       chartsRef.current.push(ch);
     }
 
