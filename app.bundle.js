@@ -586,36 +586,52 @@ React.createElement("div", { className: "exec-chips" },
                             React.createElement("div", { className: "exec-card-icon" },
                                 React.createElement("i", { className: "fas fa-list-check" })))),
 
-                    // 4. INCIDENCIAS (BLOQUEOS + ALERTAS) - LINKADO A LA NUEVA VISTA
-                    React.createElement("div", { 
-                        className: "exec-card cursor-pointer hover:ring-2 hover:ring-red-100 transition-all", 
-                        onClick: () => window.location.hash = '#/alerts', 
-                        title: "Abrir centro de alertas" 
-                    },
-                        React.createElement("div", { className: "exec-card-top" },
-                            React.createElement("div", null,
-                                React.createElement("div", { className: "exec-label" }, "Incidencias"),
-                                React.createElement("div", { className: "exec-value", style: { color: (executiveSummary.blockedTasks + executiveSummary.redProjects) > 0 ? '#ef4444' : 'inherit' } }, 
-                                    (executiveSummary.blockedTasks + executiveSummary.redProjects)
-                                ),
-                                React.createElement("div", { className: "exec-note" }, 
-                                    (executiveSummary.blockedTasks + executiveSummary.redProjects) > 0 ? "Requiere atención" : "Sin incidencias"
-                                )
-                            ),
-                            React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" },
-                                React.createElement("i", { className: "fas fa-shield-halved" }))
-                        ),
-                        React.createElement("div", { className: "mt-4 flex flex-col gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-tight" },
-                            React.createElement("div", { className: "flex items-center gap-2" },
-                                React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-orange-400' : 'bg-gray-200'}` }),
-                                React.createElement("span", null, executiveSummary.blockedTasks, " Tareas Bloqueadas")
-                            ),
-                            React.createElement("div", { className: "flex items-center gap-2" },
-                                React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.redProjects > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-200'}` }),
-                                React.createElement("span", null, executiveSummary.redProjects, " Alertas Críticas")
-                            )
-                        )
-                    ),
+// 4. INCIDENCIAS (BLOQUEOS + ALERTAS) - LINKADO A LA NUEVA VISTA
+React.createElement("div", { 
+  className: "exec-card cursor-pointer hover:ring-2 hover:ring-red-100 transition-all", 
+  onClick: () => window.location.hash = '#/alerts', 
+  title: "Abrir centro de alertas" 
+},
+  React.createElement("div", { className: "exec-card-top" },
+    React.createElement("div", null,
+      React.createElement("div", { className: "exec-label" }, "Incidencias"),
+      React.createElement(
+        "div",
+        { 
+          className: "exec-value",
+          style: { 
+            color: (executiveSummary.blockedTasks + executiveSummary.redProjects + executiveSummary.urgentTasks) > 0
+              ? "#ef4444"
+              : "inherit"
+          }
+        },
+        (executiveSummary.blockedTasks + executiveSummary.redProjects + executiveSummary.urgentTasks)
+      ),
+      React.createElement("div", { className: "exec-note" }, 
+        (executiveSummary.blockedTasks + executiveSummary.redProjects + executiveSummary.urgentTasks) > 0
+          ? "Requiere atención"
+          : "Sin incidencias"
+      )
+    ),
+    React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" },
+      React.createElement("i", { className: "fas fa-shield-halved" }))
+  ),
+  React.createElement("div", { className: "mt-4 flex flex-col gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-tight" },
+    React.createElement("div", { className: "flex items-center gap-2" },
+      React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-orange-400' : 'bg-gray-200'}` }),
+      React.createElement("span", null, executiveSummary.blockedTasks, " Tareas Bloqueadas")
+    ),
+    React.createElement("div", { className: "flex items-center gap-2" },
+      React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.redProjects > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-200'}` }),
+      React.createElement("span", null, executiveSummary.redProjects, " Alertas Críticas")
+    ),
+    React.createElement("div", { className: "flex items-center gap-2" },
+      React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.urgentTasks > 0 ? 'bg-amber-500 animate-pulse' : 'bg-gray-200'}` }),
+      React.createElement("span", null, executiveSummary.urgentTasks, " Tareas Urgentes")
+    )
+  )
+),
+
 
                     // 5. CARGA POR RESPONSABLE (DOBLE)
                     React.createElement("div", { 
