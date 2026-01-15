@@ -2173,14 +2173,39 @@ if (donutRef.current) {
           labels: assLabels,
           datasets: [{ label: 'Tareas', data: assData }]
         },
-        options: {
-          ...commonOptions,
-          animation: anim,
-          scales: {
-  x: { ticks: { maxRotation: 35, minRotation: 35 } }
-},
-          plugins: { ...commonOptions.plugins, legend: { display: false } }
-        }
+options: {
+  ...commonOptions,
+  animation: anim,
+
+  // ✅ Más aire para las etiquetas y mejor legibilidad
+  layout: { padding: { bottom: 12 } },
+
+  scales: {
+    ...commonOptions.scales,
+    x: {
+      ...commonOptions.scales.x,
+      ticks: {
+        ...commonOptions.scales.x.ticks,
+        color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827'),
+        font: { size: 11, weight: '600' },
+        maxRotation: 35,
+        minRotation: 35,
+        padding: 8
+      }
+    },
+    y: {
+      ...commonOptions.scales.y,
+      ticks: {
+        ...commonOptions.scales.y.ticks,
+        color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827'),
+        font: { size: 11 }
+      }
+    }
+  },
+
+  plugins: { ...commonOptions.plugins, legend: { display: false } }
+}
+
       });
       chartsRef.current.push(ch);
     }
