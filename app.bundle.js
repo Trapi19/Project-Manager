@@ -2073,22 +2073,44 @@ const theme = {
 };
 
 
+const isDark = document.documentElement.classList.contains('theme-dark');
+
+const theme = {
+  text: isDark ? '#e5e7eb' : '#111827',
+  grid: isDark ? 'rgba(148,163,184,0.22)' : 'rgba(148,163,184,0.35)',
+  tooltipBg: isDark ? 'rgba(15,23,42,0.92)' : 'rgba(255,255,255,0.96)',
+  border: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)',
+  bar: isDark ? 'rgba(56,189,248,0.45)' : 'rgba(56,189,248,0.35)',
+};
+
 const commonOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  layout: { padding: { top: 6, right: 10, bottom: 6, left: 6 } },
+  animation: anim,
   plugins: {
     legend: { labels: { color: theme.text } },
     tooltip: {
       backgroundColor: theme.tooltipBg,
       titleColor: theme.text,
-      bodyColor: theme.text
+      bodyColor: theme.text,
+      borderColor: theme.border,
+      borderWidth: 1
     }
   },
   scales: {
-    x: { ticks: { color: theme.text }, grid: { color: theme.grid } },
-    y: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+    x: {
+      grid: { color: theme.grid },
+      ticks: { color: theme.text, font: { size: 11, weight: '600' } }
+    },
+    y: {
+      grid: { color: theme.grid },
+      ticks: { color: theme.text, font: { size: 11 } },
+      beginAtZero: true
+    }
   }
 };
+
 
 // Donut
 if (donutRef.current) {
@@ -2137,7 +2159,7 @@ if (donutRef.current) {
         type: 'bar',
         data: {
           labels: areaLabels,
-          datasets: [{ label: 'Tareas', data: areaData }]
+          datasets: [{ label: 'Tareas', data: areaData, backgroundColor: theme.bar, borderColor: theme.border, borderWidth: 1 }]
         },
         options: {
           ...commonOptions,
@@ -2154,7 +2176,7 @@ if (donutRef.current) {
         type: 'bar',
         data: {
           labels: prioLabels,
-          datasets: [{ label: 'Tareas', data: prioData }]
+          datasets: [{ label: 'Tareas', data: prioData, backgroundColor: theme.bar, borderColor: theme.border, borderWidth: 1 }]
         },
         options: {
           ...commonOptions,
@@ -2165,51 +2187,40 @@ if (donutRef.current) {
       chartsRef.current.push(ch);
     }
 
-    // Asignado
-    if (byAssigneeRef.current) {
-      const ch = new ChartJS(byAssigneeRef.current, {
-        type: 'bar',
-        data: {
-          labels: assLabels,
-          datasets: [{ label: 'Tareas', data: assData }]
-        },
-options: {
-  ...commonOptions,
-  animation: anim,
-
-  // ✅ Más aire para las etiquetas y mejor legibilidad
-  layout: { padding: { bottom: 12 } },
-
-  scales: {
-    ...commonOptions.scales,
-    x: {
-      ...commonOptions.scales.x,
-      ticks: {
-        ...commonOptions.scales.x.ticks,
-        color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827'),
-        font: { size: 11, weight: '600' },
-        maxRotation: 35,
-        minRotation: 35,
-        padding: 8
-      }
+// Asignado
+if (byAssigneeRef.current) {
+  const ch = new ChartJS(byAssigneeRef.current, {
+    type: 'bar',
+    data: {
+      labels: assLabels,
+      datasets: [{
+        label: 'Tareas',
+        data: assData,
+        backgroundColor: theme.bar,
+        borderColor: theme.border,
+        borderWidth: 1
+      }]
     },
-    y: {
-      ...commonOptions.scales.y,
-      ticks: {
-        ...commonOptions.scales.y.ticks,
-        color: (document.documentElement.classList.contains('theme-dark') ? '#e5e7eb' : '#111827'),
-        font: { size: 11 }
+    options: {
+      ...commonOptions,
+      plugins: { ...commonOptions.plugins, legend: { display: false } },
+      scales: {
+        ...commonOptions.scales,
+        x: {
+          ...commonOptions.scales.x,
+          ticks: {
+            ...commonOptions.scales.x.ticks,
+            maxRotation: 35,
+            minRotation: 35,
+            padding: 8
+          }
+        }
       }
     }
-  },
+  });
 
-  plugins: { ...commonOptions.plugins, legend: { display: false } }
+  chartsRef.current.push(ch);
 }
-
-      });
-      chartsRef.current.push(ch);
-    }
-
     didAnimateRef.current = true;
 
     return () => {
