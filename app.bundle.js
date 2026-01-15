@@ -1943,6 +1943,7 @@ const AlertsView = ({ projects, onBack }) => {
 
 // --- VISTA: GRÁFICOS (Charts) ---
 const ChartsView = ({ projects, onBack }) => {
+const didAnimateRef = React.useRef(false);
 const [themeTick, setThemeTick] = React.useState(0);
   const donutRef = React.useRef(null);
   const byAreaRef = React.useRef(null);
@@ -2083,6 +2084,7 @@ if (donutRef.current) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: anim,
       plugins: {
         legend: {
           position: 'bottom',
@@ -2113,6 +2115,7 @@ if (donutRef.current) {
         },
         options: {
           ...commonOptions,
+          animation: anim,
           plugins: { ...commonOptions.plugins, legend: { display: false } }
         }
       });
@@ -2129,6 +2132,7 @@ if (donutRef.current) {
         },
         options: {
           ...commonOptions,
+          animation: anim,
           plugins: { ...commonOptions.plugins, legend: { display: false } }
         }
       });
@@ -2145,17 +2149,22 @@ if (donutRef.current) {
         },
         options: {
           ...commonOptions,
+          animation: anim,
           plugins: { ...commonOptions.plugins, legend: { display: false } }
         }
       });
       chartsRef.current.push(ch);
     }
 
+    didAnimateRef.current = true;
+
     return () => {
       for (const ch of chartsRef.current) {
         try { ch.destroy(); } catch(e) {}
       }
       chartsRef.current = [];
+      // Solo animar la primera vez que entro en la pantalla de gráficos
+const anim = didAnimateRef.current ? false : { duration: 650 };
     };
   }, [projects, themeTick]);
 
