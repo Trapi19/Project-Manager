@@ -795,7 +795,6 @@ const progress = (() => {
                     React.createElement("h2", { className: "text-lg font-semibold text-gray-800" }, "Detalle de Trabajos")),
                 React.createElement("div", { className: "w-full overflow-x-auto" },
                     React.createElement("table", { className: "w-full min-w-[1100px] table-fixed text-left border-collapse text-sm" },
-React.createElement("table", { className: "w-full min-w-[1100px] table-fixed text-left border-collapse text-sm" },
                         React.createElement("thead", null,
                             React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider" },
                                 React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/5" }, "\u00C1rea"),
