@@ -2028,33 +2028,10 @@ const donutColors = donutLabels.map(estadoColor);
     const prioLabels = prioOrder.filter(p => prioMap[p] != null);
     const prioData = prioLabels.map(p => prioMap[p] || 0);
 
-// 4) Barras por Asignado (soporta múltiples personas en una misma tarea)
-const assigneeCounts = {};
-const splitAssignees = (value) => {
-  const raw = (value == null) ? "" : String(value).trim();
-  if (!raw) return ["Sin asignar"];
-
-  // Separadores soportados: / , ; & + y " y "
-  const parts = raw
-    .replace(/\s+y\s+/gi, "/")      // "Juan y Pedro" -> "Juan/Pedro"
-    .split(/[\/,;&+]+/g)            // divide por / , ; & +
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  return parts.length ? parts : ["Sin asignar"];
-};
-
-for (const t of tasks) {
-  const people = splitAssignees(t.asignadoA);
-  for (const p of people) {
-    assigneeCounts[p] = (assigneeCounts[p] || 0) + 1;
-  }
-}
-
-const byAssignee = Object.entries(assigneeCounts).sort((a,b) => b[1]-a[1]);
-const assLabels = byAssignee.slice(0, 20).map(x => x[0]);
-const assData   = byAssignee.slice(0, 20).map(x => x[1]);
-
+    // 4) Barras por Asignado
+    const byAssignee = countBy(tasks, t => t.asignadoA, "Sin asignar");
+    const assLabels = byAssignee.slice(0, 20).map(x => x[0]); // top 20
+    const assData   = byAssignee.slice(0, 20).map(x => x[1]);
 
     // Chart.js (UMD) disponible como window.Chart
     const ChartJS = (window && window.Chart) ? window.Chart : null;
@@ -2073,44 +2050,22 @@ const theme = {
 };
 
 
-const isDark = document.documentElement.classList.contains('theme-dark');
-
-const theme = {
-  text: isDark ? '#e5e7eb' : '#111827',
-  grid: isDark ? 'rgba(148,163,184,0.22)' : 'rgba(148,163,184,0.35)',
-  tooltipBg: isDark ? 'rgba(15,23,42,0.92)' : 'rgba(255,255,255,0.96)',
-  border: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)',
-  bar: isDark ? 'rgba(56,189,248,0.45)' : 'rgba(56,189,248,0.35)',
-};
-
 const commonOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  layout: { padding: { top: 6, right: 10, bottom: 6, left: 6 } },
-  animation: anim,
   plugins: {
     legend: { labels: { color: theme.text } },
     tooltip: {
       backgroundColor: theme.tooltipBg,
       titleColor: theme.text,
-      bodyColor: theme.text,
-      borderColor: theme.border,
-      borderWidth: 1
+      bodyColor: theme.text
     }
   },
   scales: {
-    x: {
-      grid: { color: theme.grid },
-      ticks: { color: theme.text, font: { size: 11, weight: '600' } }
-    },
-    y: {
-      grid: { color: theme.grid },
-      ticks: { color: theme.text, font: { size: 11 } },
-      beginAtZero: true
-    }
+    x: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+    y: { ticks: { color: theme.text }, grid: { color: theme.grid } },
   }
 };
-
 
 // Donut
 if (donutRef.current) {
@@ -2159,7 +2114,7 @@ if (donutRef.current) {
         type: 'bar',
         data: {
           labels: areaLabels,
-          datasets: [{ label: 'Tareas', data: areaData, backgroundColor: theme.bar, borderColor: theme.border, borderWidth: 1 }]
+          datasets: [{ label: 'Tareas', data: areaData }]
         },
         options: {
           ...commonOptions,
@@ -2176,7 +2131,7 @@ if (donutRef.current) {
         type: 'bar',
         data: {
           labels: prioLabels,
-          datasets: [{ label: 'Tareas', data: prioData, backgroundColor: theme.bar, borderColor: theme.border, borderWidth: 1 }]
+          datasets: [{ label: 'Tareas', data: prioData }]
         },
         options: {
           ...commonOptions,
@@ -2187,40 +2142,23 @@ if (donutRef.current) {
       chartsRef.current.push(ch);
     }
 
-// Asignado
-if (byAssigneeRef.current) {
-  const ch = new ChartJS(byAssigneeRef.current, {
-    type: 'bar',
-    data: {
-      labels: assLabels,
-      datasets: [{
-        label: 'Tareas',
-        data: assData,
-        backgroundColor: theme.bar,
-        borderColor: theme.border,
-        borderWidth: 1
-      }]
-    },
-    options: {
-      ...commonOptions,
-      plugins: { ...commonOptions.plugins, legend: { display: false } },
-      scales: {
-        ...commonOptions.scales,
-        x: {
-          ...commonOptions.scales.x,
-          ticks: {
-            ...commonOptions.scales.x.ticks,
-            maxRotation: 35,
-            minRotation: 35,
-            padding: 8
-          }
+    // Asignado
+    if (byAssigneeRef.current) {
+      const ch = new ChartJS(byAssigneeRef.current, {
+        type: 'bar',
+        data: {
+          labels: assLabels,
+          datasets: [{ label: 'Tareas', data: assData }]
+        },
+        options: {
+          ...commonOptions,
+          animation: anim,
+          plugins: { ...commonOptions.plugins, legend: { display: false } }
         }
-      }
+      });
+      chartsRef.current.push(ch);
     }
-  });
 
-  chartsRef.current.push(ch);
-}
     didAnimateRef.current = true;
 
     return () => {
