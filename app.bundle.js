@@ -2028,10 +2028,33 @@ const donutColors = donutLabels.map(estadoColor);
     const prioLabels = prioOrder.filter(p => prioMap[p] != null);
     const prioData = prioLabels.map(p => prioMap[p] || 0);
 
-    // 4) Barras por Asignado
-    const byAssignee = countBy(tasks, t => t.asignadoA, "Sin asignar");
-    const assLabels = byAssignee.slice(0, 20).map(x => x[0]); // top 20
-    const assData   = byAssignee.slice(0, 20).map(x => x[1]);
+// 4) Barras por Asignado (soporta múltiples personas en una misma tarea)
+const assigneeCounts = {};
+const splitAssignees = (value) => {
+  const raw = (value == null) ? "" : String(value).trim();
+  if (!raw) return ["Sin asignar"];
+
+  // Separadores soportados: / , ; & + y " y "
+  const parts = raw
+    .replace(/\s+y\s+/gi, "/")      // "Juan y Pedro" -> "Juan/Pedro"
+    .split(/[\/,;&+]+/g)            // divide por / , ; & +
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  return parts.length ? parts : ["Sin asignar"];
+};
+
+for (const t of tasks) {
+  const people = splitAssignees(t.asignadoA);
+  for (const p of people) {
+    assigneeCounts[p] = (assigneeCounts[p] || 0) + 1;
+  }
+}
+
+const byAssignee = Object.entries(assigneeCounts).sort((a,b) => b[1]-a[1]);
+const assLabels = byAssignee.slice(0, 20).map(x => x[0]);
+const assData   = byAssignee.slice(0, 20).map(x => x[1]);
+
 
     // Chart.js (UMD) disponible como window.Chart
     const ChartJS = (window && window.Chart) ? window.Chart : null;
@@ -2153,6 +2176,9 @@ if (donutRef.current) {
         options: {
           ...commonOptions,
           animation: anim,
+          scales: {
+  x: { ticks: { maxRotation: 35, minRotation: 35 } }
+},
           plugins: { ...commonOptions.plugins, legend: { display: false } }
         }
       });
