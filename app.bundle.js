@@ -2278,7 +2278,7 @@ if (donutRef.current) {
 
         // Asignado
         React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
-          React.createElement("div", { className: "font-bold mb-3" }, "Miembros (Top 20)"),
+          React.createElement("div", { className: "font-bold mb-3" }, "Tareas por Persona"),
           React.createElement("div", { style: { height: '260px' } },
             React.createElement("canvas", { ref: byAssigneeRef })
           )
