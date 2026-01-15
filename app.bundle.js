@@ -1990,6 +1990,9 @@ const [themeTick, setThemeTick] = React.useState(0);
       try { ch.destroy(); } catch(e) {}
     }
     chartsRef.current = [];
+    // Solo animar la primera vez que entras en Gráficos
+const anim = didAnimateRef.current ? false : { duration: 650 };
+
 
     const tasks = flattenTasks();
 
@@ -2163,8 +2166,6 @@ if (donutRef.current) {
         try { ch.destroy(); } catch(e) {}
       }
       chartsRef.current = [];
-      // Solo animar la primera vez que entro en la pantalla de gráficos
-const anim = didAnimateRef.current ? false : { duration: 650 };
     };
   }, [projects, themeTick]);
 
