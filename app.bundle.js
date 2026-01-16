@@ -2311,6 +2311,7 @@ const MainApp = () => {
     const [importCandidate, setImportCandidate] = useState(null);
     const [importConfirmOpen, setImportConfirmOpen] = useState(false);
     const importFileInputRef = React.useRef(null);
+    const openedProjectVersionRef = React.useRef(null);
 
     // --- LOGICA DE SINCRONIZACIÓN Y AUTH ---
     const PENDING_KEY = 'unitecnic_projects_pending';
@@ -2599,9 +2600,14 @@ const makeDraftProject = () => ({
         setView('editor');
         setRoute('#/new');
     };
-    const selectProject = (p) => {
-  // Guardamos qué versión tenía el proyecto cuando lo abriste
-  openedProjectVersionRef.current = (p && typeof p.version === 'number') ? p.version : (p && p.version ? Number(p.version) : 0);
+const selectProject = (p) => {
+  // Guardamos la versión que estabas viendo al abrir
+  try {
+    openedProjectVersionRef.current =
+      (p && typeof p.version !== 'undefined') ? Number(p.version) : 0;
+  } catch (e) {
+    openedProjectVersionRef.current = 0;
+  }
 
   setCurrentProject(p);
   setView('editor');
