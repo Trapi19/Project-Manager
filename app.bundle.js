@@ -2311,7 +2311,6 @@ const MainApp = () => {
     const [importCandidate, setImportCandidate] = useState(null);
     const [importConfirmOpen, setImportConfirmOpen] = useState(false);
     const importFileInputRef = React.useRef(null);
-    const openedProjectVersionRef = React.useRef(null);
 
     // --- LOGICA DE SINCRONIZACIÓN Y AUTH ---
     const PENDING_KEY = 'unitecnic_projects_pending';
@@ -2363,15 +2362,8 @@ const MainApp = () => {
             if (!res.ok) throw new Error(`Error AWS: ${res.status}`);
             const data = await res.json();
             const list = Array.isArray(data) ? data : (data.projects || data.Items || []);
-                        // FASE 1: saneo para datos antiguos (sin version)
-            const normalized = (list || []).map(p => {
-              if (!p || typeof p !== 'object') return p;
-              const v = (typeof p.version !== 'undefined') ? Number(p.version) : 1;
-              const ua = p.updatedAt || new Date().toISOString();
-              return { ...p, version: isNaN(v) ? 1 : v, updatedAt: ua };
-            });
-            localStorage.setItem('unitecnic_projects', JSON.stringify(normalized));
-return normalized;
+            localStorage.setItem('unitecnic_projects', JSON.stringify(list));
+            return list;
         } catch (err) {
             console.error('Error cargando desde AWS, usando local:', err);
             const saved = localStorage.getItem('unitecnic_projects');
@@ -2407,26 +2399,21 @@ return normalized;
     const setRoute = (hash) => { try { if (window.location.hash !== hash) window.location.hash = hash; } catch (e) { } };
     
 const makeDraftProject = () => ({
-  id: 'draft_' + Date.now(),
-  __isDraft: true,
-
-  // NUEVO: control de versiones (Fase 1)
-  version: 1,
-  updatedAt: new Date().toISOString(),
-
-  meta: { 
-    titulo: "Nuevo Proyecto",
-    subtitulo: "Informe de Inicio",
-    cliente: "Sin cliente",
-    clientLogoData: "",
-    empresa: "UNITECNIC",
-    estado: "En Ejecución",
-    responsableProyecto: "",
-    pep: "",
-    sharepointUrl: ""
-  },
-  tasks: []
-});
+        id: 'draft_' + Date.now(),
+        __isDraft: true,
+        meta: { 
+            titulo: "Nuevo Proyecto", 
+            subtitulo: "Informe de Inicio", 
+            cliente: "Sin cliente", 
+            clientLogoData: "", 
+            empresa: "UNITECNIC", 
+            estado: "En Ejecución", 
+            responsableProyecto: "", 
+            pep: "",
+            sharepointUrl: "" // <--- Nuevo campo
+        },
+        tasks: []
+    });
 
     const applyRouteFromHash = (list) => {
         try {
@@ -2600,57 +2587,15 @@ const makeDraftProject = () => ({
         setView('editor');
         setRoute('#/new');
     };
-const selectProject = (p) => {
-  // Guardamos la versión que estabas viendo al abrir
-  try {
-    openedProjectVersionRef.current =
-      (p && typeof p.version !== 'undefined') ? Number(p.version) : 0;
-  } catch (e) {
-    openedProjectVersionRef.current = 0;
-  }
-
-  setCurrentProject(p);
-  setView('editor');
-  setRoute(`#/project/${encodeURIComponent(String(p.id || ''))}`);
-};
-
+    const selectProject = (p) => {
+        setCurrentProject(p);
+        setView('editor');
+        setRoute(`#/project/${encodeURIComponent(String(p.id || ''))}`);
+    };
     const saveProject = async (updatedData) => {
         setIsSaving(true);
         try {
-                // ===========================
-    // FASE 1: Anti-pisadas (optimistic lock simple)
-    // ===========================
-    // Si NO es un proyecto nuevo, comprobamos si alguien lo cambió en AWS
-    const isProbablyNew = String((updatedData?.id) || '').startsWith('draft_');
-
-    if (!isProbablyNew) {
-      const latestList = await loadProjectsLocal(); // trae lo último de AWS
-      const remote = (latestList || []).find(x => String(x.id) === String(updatedData?.id));
-
-      const remoteVer = remote && typeof remote.version !== 'undefined' ? Number(remote.version) : 0;
-      const openedVer = typeof openedProjectVersionRef.current === 'number' ? openedProjectVersionRef.current : 0;
-
-      if (remote && remoteVer !== openedVer) {
-        // Alguien guardó antes que tú: NO guardamos para no pisar
-        alert(
-          "⚠️ Conflicto: este proyecto ha sido modificado por otra persona.\n\n" +
-          "Se cargará la versión más reciente para que revises los cambios.\n" +
-          "Vuelve a guardar después de revisar."
-        );
-
-        // Cargamos lo último en tu app
-        setProjects(latestList);
-        setCurrentProject(remote);
-        openedProjectVersionRef.current = remoteVer;
-        setRoute(`#/project/${encodeURIComponent(String(remote.id || ''))}`);
-
-        return { created: false, project: remote, conflict: true };
-      }
-    }
             const clean = { ...updatedData };
-                // NUEVO: al guardar, incrementamos versión y ponemos updatedAt
-    clean.version = (typeof clean.version === 'number' ? clean.version : Number(clean.version || 0)) + 1;
-    clean.updatedAt = new Date().toISOString();
             if (clean.__isDraft)
                 delete clean.__isDraft;
             const isNew = String((updatedData === null || updatedData === void 0 ? void 0 : updatedData.id) || '').startsWith('draft_') || !projects.some(p => p.id === updatedData.id);
@@ -2671,7 +2616,6 @@ const selectProject = (p) => {
                 const updatedList = projects.map(p => p.id === clean.id ? clean : p);
                 await saveProjectsLocal(updatedList);
                 setCurrentProject(clean);
-                openedProjectVersionRef.current = clean.version;
                 setRoute(`#/project/${encodeURIComponent(String(clean.id || ''))}`);
                 await new Promise(r => setTimeout(r, 450)); // UX
                 return { created: false, project: clean };
