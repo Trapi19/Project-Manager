@@ -91,7 +91,8 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
   .card { max-width: 1100px; margin: 0 auto; background: #fff; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.08); overflow: hidden; border: 1px solid var(--border); }
   
   /* CABECERA PROFESIONAL */
-  .header { display: flex; justify-content: space-between; align-items: center; padding: 40px; background: #fff; border-bottom: 1px solid #f1f5f9; }
+  .header { display: flex; justify-content: space-between; align-items: center; padding: 40px; background: linear-gradient(180deg, rgba(8,136,200,0.08), rgba(255,255,255,1) 70%);
+ border-bottom: 1px solid #f1f5f9; position: relative; }
   .header-left { display: flex; align-items: center; gap: 30px; }
   .logo-client { height: 65px; max-width: 200px; object-fit: contain; }
   .logo-unitecnic { height: 45px; }
@@ -115,7 +116,7 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
 
   /* PANEL DE ESTADÍSTICAS (KPIs) */
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 30px 40px; background: #f8fafc; border-bottom: 1px solid var(--border); }
-  .kpi-card { background: #fff; padding: 20px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+  .kpi-card { background: #fff; padding: 20px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.02); border-top: 3px solid rgba(8,136,200,0.45); }
   .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .kpi-value { font-size: 28px; font-weight: 800; margin-top: 8px; color: var(--brand); }
 
@@ -132,10 +133,19 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
   tr:last-child td { border-bottom: none; }
   
   /* ESTADOS (PÍLDORAS) */
-  .st { display: inline-flex; align-items: center; justify-content: center; min-width: 110px; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; border: 1px solid; }
+  .st { display: inline-flex; align-items: center; justify-content: center; min-width: 110px; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; border: 1px solid; gap: 8px; border-radius: 999px; letter-spacing: 0.06em; }
   .st-completed { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
   .st-inprogress { background: #fffbeb; color: #92400e; border-color: #fef08a; }
   .st-pending   { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .st::before{
+  content:"";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.85;
+}
+
 
   @media print {
     body { background: #fff; padding: 0; }
@@ -183,6 +193,23 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
       </div>
     </div>
 
+    /* Tabla: lectura más cómoda */
+tbody tr:nth-child(even) td{
+  background: #fbfdff;
+}
+tbody tr:hover td{
+  background: rgba(8,136,200,0.06);
+}
+
+/* En pantalla: cabecera fija (no afecta a impresión) */
+@media screen {
+  thead th{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+  }
+}
     <table>
       <thead>
         <tr>
