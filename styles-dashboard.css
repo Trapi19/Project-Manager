@@ -679,7 +679,7 @@
     border: 1px solid transparent;
 }
 .wl-load-badge.high { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.2); }
-.wl-load-badge.normal { background: rgba(16,185,129,0.1); color: #10b981; border-color: rgba(16,185,129,0.2); }
+.wl-load-badge.normal { background: rgba(4, 240, 95, 0.1); color: #2ff52f; border-color: rgba(9, 237, 59, 0.2); }
 
 /* --- ESTILOS ADICIONALES PARA ALERTS VIEW (Hereda de wl-*) --- */
 
@@ -694,7 +694,7 @@
 }
 
 .wl-alert-icon.red { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-.wl-alert-icon.orange { background-color: rgba(252, 207, 6, 0.1); color: #f7eb04; border: 1px solid rgba(245, 158, 11, 0.2); }
+.wl-alert-icon.orange { background-color: rgba(252, 207, 6, 0.1); color: #f5e90b; border: 1px solid rgba(245, 158, 11, 0.2); }
 
 /* Etiquetas de tipo de problema */
 .wl-tag-issue {
