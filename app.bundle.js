@@ -219,7 +219,7 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
     React.createElement("i", { className: "fas fa-hard-hat text-[10px]" }),
     React.createElement("span", { className: "font-semibold mr-1" }, "Ejec:"),
     p.meta.ejecutorProyecto)),
-                p.meta.pep && (React.createElement("span", { className: "apple-chip apple-chip--muted" },
+                p.meta.pep && (React.createElement("span", { className: "apple-chip apple-chip--muted internal-only" },
                     React.createElement("i", { className: "fas fa-hashtag text-[10px]" }),
                     React.createElement("span", { className: "font-semibold mr-1" }, "PEP:"),
                     p.meta.pep)))),
@@ -1440,7 +1440,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         placeholder: "Quién ejecuta la obra..." 
     })
 ),
-                        React.createElement("div", null,
+                        React.createElement("div", { className: "internal-only" },
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "PEP"),
                             React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.pep || '', onChange: (e) => updateMeta('pep', e.target.value), placeholder: "Ej: PEP-2026-001" })),
                         React.createElement("div", null,

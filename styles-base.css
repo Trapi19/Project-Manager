@@ -723,3 +723,10 @@ table td {
     background-color: rgba(8, 136, 200, 0.2) !important;
     border-color: #38bdf8 !important;
 }
+
+/* =========================
+   Vista Cliente (HTML): oculta elementos internos
+   ========================= */
+.client-view .internal-only {
+  display: none !important;
+}

@@ -68,3 +68,25 @@ window.formatFechaES = function (iso) {
   window.addEventListener('online', refreshFromState);
   window.addEventListener('offline', function () { apply('offline'); });
 })();
+
+/* =========================
+   Vista Cliente (HTML)
+   - Guarda un modo en localStorage: gp_view = "client" o "internal"
+   - Aplica clase "client-view" en <html>
+   ========================= */
+(function () {
+  function applyClientViewClass() {
+    try {
+      var mode = localStorage.getItem('gp_view') || 'internal';
+      if (mode === 'client') document.documentElement.classList.add('client-view');
+      else document.documentElement.classList.remove('client-view');
+    } catch (e) {}
+  }
+
+  // Exponemos un toggle simple para usarlo desde consola si hace falta:
+  // localStorage.setItem('gp_view','client'); location.reload();
+  // localStorage.setItem('gp_view','internal'); location.reload();
+  window.gpApplyClientView = applyClientViewClass;
+
+  document.addEventListener('DOMContentLoaded', applyClientViewClass);
+})();

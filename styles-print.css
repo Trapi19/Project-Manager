@@ -259,3 +259,32 @@
     print-color-adjust: exact !important;
   }
 }
+
+/* =========================
+   PDF CLIENTE: SOLO PORTADA + TABLA
+   - Oculta KPIs / bloques intermedios
+   - Deja print-header (portada) y la tabla
+   ========================= */
+@media print {
+
+  /* 1) Ocultar la "grid" de KPIs que aparece debajo de la cabecera en el PDF Oficial */
+  .print-container .grid {
+    display: none !important;
+  }
+
+  /* 2) Asegurar que la tabla siga viéndose (por si algún contenedor también es grid) */
+  table, thead, tbody, tr, th, td {
+    display: revert !important;
+  }
+
+  /* 3) Repetir cabecera de tabla en cada página (muy profesional en PDFs largos) */
+  thead { display: table-header-group !important; }
+  tfoot { display: table-footer-group !important; }
+
+  /* 4) Evitar que la cabecera del documento se parta */
+  #header-container,
+  .print-header {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
