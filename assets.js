@@ -155,6 +155,23 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
     .prog-container { padding: 0 0 20px; background: #fff; }
     th { border-bottom: 1px solid #000; color: #000; }
   }
+    /* Tabla: lectura más cómoda */
+tbody tr:nth-child(even) td{
+  background: #fbfdff;
+}
+tbody tr:hover td{
+  background: rgba(8,136,200,0.06);
+}
+
+/* En pantalla: cabecera fija (no afecta a impresión) */
+@media screen {
+  thead th{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+  }
+}
 </style>
 </head>
 <body>
@@ -193,23 +210,6 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
       </div>
     </div>
 
-    /* Tabla: lectura más cómoda */
-tbody tr:nth-child(even) td{
-  background: #fbfdff;
-}
-tbody tr:hover td{
-  background: rgba(8,136,200,0.06);
-}
-
-/* En pantalla: cabecera fija (no afecta a impresión) */
-@media screen {
-  thead th{
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: #fff;
-  }
-}
     <table>
       <thead>
         <tr>
