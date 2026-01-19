@@ -873,6 +873,8 @@
   background: rgba(255,255,255,0.10);
   color: var(--text);
   opacity: 0.95;
+  margin-left: 10px;
+  vertical-align: middle;
 }
 
 :root:not(.theme-dark) .wl-prio-pill{
