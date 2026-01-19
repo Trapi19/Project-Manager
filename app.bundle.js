@@ -786,10 +786,28 @@ const progress = (() => {
         React.createElement("div", { className: "max-w-7xl mx-auto space-y-6" },
             React.createElement("div", { id: "header-container", className: "print-header flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-xl shadow-sm border border-gray-200" },
                 React.createElement("div", { className: "header-left-part flex items-center w-full md:w-2/3 gap-4 md:gap-6" },
-                    data.meta.clientLogoData && React.createElement("img", { src: normalizeDataImage(data.meta.clientLogoData), alt: "Logo Cliente", className: "h-14 w-auto object-contain shrink-0 logo-print" }),
-                    React.createElement("div", null,
-                        React.createElement("h1", { className: "text-3xl font-bold text-gray-900 leading-tight tracking-tight" }, data.meta.titulo),
-                        React.createElement("p", { className: "text-gray-500 mt-2 text-lg" }, data.meta.subtitulo))),
+  data.meta.clientLogoData && React.createElement("img", { src: normalizeDataImage(data.meta.clientLogoData), alt: "Logo Cliente", className: "h-14 w-auto object-contain shrink-0 logo-print" }),
+  React.createElement("div", null,
+    React.createElement("h1", { className: "text-3xl font-bold text-gray-900 leading-tight tracking-tight" }, data.meta.titulo),
+    React.createElement("p", { className: "text-gray-500 mt-2 text-lg" }, data.meta.subtitulo),
+
+    React.createElement("div", { className: "mt-3 text-xs text-gray-700 leading-snug" },
+      data.meta.responsableProyecto && React.createElement("div", null,
+        React.createElement("span", { className: "font-semibold" }, "Responsable: "),
+        data.meta.responsableProyecto
+      ),
+      data.meta.ejecutorProyecto && React.createElement("div", null,
+        React.createElement("span", { className: "font-semibold" }, "Ejecutor: "),
+        data.meta.ejecutorProyecto
+      ),
+      React.createElement("div", { className: "text-xs text-gray-500 mt-1" },
+        "Fecha de emisión: ",
+        new Date().toLocaleDateString("es-ES")
+      )
+    )
+  )
+),
+
                 React.createElement("div", { className: "header-right-part mt-4 md:mt-0 flex items-center gap-6 self-start md:self-center" },
                     React.createElement("div", { className: "hidden md:block w-px h-12 bg-gray-200 no-print" }),
                     React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "h-10 md:h-12 object-contain logo-print" }))),
