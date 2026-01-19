@@ -909,3 +909,50 @@
   color: #2ff52f;
 }
 
+/* ==========================
+   Alerts: Urgentes (uniforme en dark/light)
+   ========================== */
+
+.alert-count-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+}
+
+:root:not(.theme-dark) .alert-count-badge{
+  background: rgba(0,0,0,0.04);
+}
+
+.alert-urgent-card{
+  border-left: 4px solid #f59e0b; /* ámbar */
+}
+
+.alert-urgent-item{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  background: rgba(245,158,11,0.10);
+  border: 1px solid rgba(245,158,11,0.22);
+  color: var(--text);
+
+  /* para que no parezca "barra marrón" */
+  font-weight: 700;
+}
+
+.alert-urgent-item i{
+  color: #f59e0b;
+  opacity: 0.95;
+}

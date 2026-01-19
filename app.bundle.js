@@ -1947,25 +1947,49 @@ const AlertsView = ({ projects, onBack }) => {
 // 3. TAREAS URGENTES (NUEVA SECCIÓN)
 React.createElement("div", null,
   React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" },
-    React.createElement("i", { className: "fas fa-triangle-exclamation text-amber-500" }), " Tareas Urgentes",
-    React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.urgentProjects.length)
+    React.createElement("i", { className: "fas fa-triangle-exclamation text-amber-500" }),
+    " Tareas Urgentes",
+    React.createElement("span", { className: "alert-count-badge" }, alertsData.urgentProjects.length)
   ),
+
   alertsData.urgentProjects.length === 0
-    ? React.createElement("div", { className: "p-6 text-center text-gray-400 bg-white rounded-xl border border-dashed text-sm" }, "No hay tareas urgentes.")
-    : React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
-        alertsData.urgentProjects.map(proj => (
-          React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px', borderLeft: '4px solid #f59e0b' }, onClick: () => window.location.hash = `#/project/${proj.id}` },
+    ? React.createElement(
+        "div",
+        { className: "p-6 text-center text-gray-400 bg-white rounded-xl border border-dashed text-sm" },
+        "No hay tareas urgentes."
+      )
+    : React.createElement(
+        "div",
+        { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
+        alertsData.urgentProjects.map(proj =>
+          React.createElement(
+            "div",
+            {
+              key: proj.id,
+              className: "wl-person-card alert-urgent-card",
+              style: { padding: '16px' },
+              onClick: () => window.location.hash = `#/project/${proj.id}`
+            },
             React.createElement("div", { className: "font-bold text-gray-800" }, proj.title),
             React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client),
-            React.createElement("div", { className: "space-y-1" },
-              proj.items.map(t => React.createElement("div", { key: t.id, className: "text-xs bg-amber-50 text-amber-800 p-1.5 rounded" },
-                React.createElement("i", { className: "fas fa-bolt mr-1" }), t.tarea
-              ))
+
+            React.createElement(
+              "div",
+              { className: "space-y-1" },
+              (proj.items || []).map(t =>
+                React.createElement(
+                  "div",
+                  { key: t.id, className: "alert-urgent-item" },
+                  React.createElement("i", { className: "fas fa-bolt" }),
+                  t.tarea
+                )
+              )
             )
           )
-        ))
+        )
       )
 ),
+
 
                 // 4. PRÓXIMOS VENCIMIENTOS (NUEVA SECCIÓN)
                 React.createElement("div", null,
