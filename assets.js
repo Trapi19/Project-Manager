@@ -119,6 +119,14 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
   .kpi-card { background: #fff; padding: 20px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.02); border-top: 3px solid rgba(8,136,200,0.45); }
   .kpi-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .kpi-value { font-size: 28px; font-weight: 800; margin-top: 8px; color: var(--brand); }
+  .kpi-ok .kpi-value{ color:#16a34a; }
+.kpi-inprogress .kpi-value{ color:#f59e0b; }
+.kpi-pending .kpi-value{ color:#ef4444; }
+
+.kpi-ok{ border-top-color: rgba(22,163,74,0.45) !important; }
+.kpi-inprogress{ border-top-color: rgba(245,158,11,0.45) !important; }
+.kpi-pending{ border-top-color: rgba(239,68,68,0.45) !important; }
+
 
   /* BARRA DE PROGRESO */
   .prog-container { padding: 0 40px 30px; background: #f8fafc; }
@@ -195,12 +203,16 @@ tbody tr:hover td{
       <img class="logo-unitecnic" src="${UNITECNIC_LOGO_BASE64}" />
     </div>
 
-    <div class="stats-grid">
-      <div class="kpi-card"><div class="kpi-label">Estado General</div><div class="kpi-value">${pct}%</div></div>
-      <div class="kpi-card"><div class="kpi-label">Tareas OK</div><div class="kpi-value">${completed}</div></div>
-      <div class="kpi-card"><div class="kpi-label">En Curso</div><div class="kpi-value">${inProgress}</div></div>
-      <div class="kpi-card"><div class="kpi-label">Pendientes</div><div class="kpi-value">${pending}</div></div>
-    </div>
+<div class="stats-grid">
+  <div class="kpi-card"><div class="kpi-label">Estado General</div><div class="kpi-value">${pct}%</div></div>
+
+  <div class="kpi-card kpi-ok"><div class="kpi-label">Tareas OK</div><div class="kpi-value">${completed}</div></div>
+
+  <div class="kpi-card kpi-inprogress"><div class="kpi-label">En Curso</div><div class="kpi-value">${inProgress}</div></div>
+
+  <div class="kpi-card kpi-pending"><div class="kpi-label">Pendientes</div><div class="kpi-value">${pending}</div></div>
+</div>
+
 
     <div class="prog-container">
       <div class="prog-bar"><div class="prog-fill"></div></div>
