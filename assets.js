@@ -55,6 +55,9 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
   const title = escapeHtml(meta.titulo || "Informe de Proyecto");
   const subtitle = escapeHtml(meta.subtitulo || "");
   const generatedAt = new Date().toLocaleString("es-ES");
+  const responsable = escapeHtml(meta.responsableProyecto || "");
+  const ejecutor = escapeHtml(meta.ejecutorProyecto || "");
+
 
   const renderSubtasks = (t) => {
     if (!t.subtasks || !t.subtasks.length) return "";
@@ -95,6 +98,20 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
   h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.03em; color: #111; }
   .subtitle { color: var(--muted); font-size: 16px; margin-top: 4px; font-weight: 500; }
   .gen-date { color: #94a3b8; font-size: 12px; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* --- Responsable / Ejecutor en portada --- */
+.meta-line{
+  margin-top: 10px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.meta-line b{
+  font-weight: 800;
+}
 
   /* PANEL DE ESTADÍSTICAS (KPIs) */
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 30px 40px; background: #f8fafc; border-bottom: 1px solid var(--border); }
@@ -139,6 +156,13 @@ const clientLogo = normalizeDataImage(meta.clientLogoData);
           <h1>${title}</h1>
           ${subtitle ? `<div class="subtitle">${subtitle}</div>` : ''}
           <div class="gen-date">Informe de Seguimiento · ${generatedAt}</div>
+          ${(responsable || ejecutor) ? `
+  <div class="meta-line">
+    ${responsable ? `<span><b>Responsable:</b> ${responsable}</span>` : ``}
+    ${ejecutor ? `<span><b>Ejecutor:</b> ${ejecutor}</span>` : ``}
+  </div>
+` : ``}
+
         </div>
       </div>
       <img class="logo-unitecnic" src="${UNITECNIC_LOGO_BASE64}" />
