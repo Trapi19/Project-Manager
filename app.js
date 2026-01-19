@@ -69,24 +69,4 @@ window.formatFechaES = function (iso) {
   window.addEventListener('offline', function () { apply('offline'); });
 })();
 
-/* =========================
-   Vista Cliente (HTML)
-   - Guarda modo en localStorage: gp_view = "client" | "internal"
-   - Aplica clase "client-view" en <html>
-   ========================= */
-(function () {
-  function applyClientViewClass() {
-    try {
-      var mode = localStorage.getItem('gp_view') || 'internal';
-      if (mode === 'client') document.documentElement.classList.add('client-view');
-      else document.documentElement.classList.remove('client-view');
-    } catch (e) {}
-  }
 
-  // Helper manual desde consola:
-  // localStorage.setItem('gp_view','client'); location.reload();
-  // localStorage.setItem('gp_view','internal'); location.reload();
-  window.gpApplyClientView = applyClientViewClass;
-
-  document.addEventListener('DOMContentLoaded', applyClientViewClass);
-})();
