@@ -881,26 +881,31 @@
   background: rgba(0,0,0,0.04);
 }
 
+/* Urgente = ROJO */
 .wl-prio-pill--urgente{
+  border-color: rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.14);
+  color: #ef4444;
+}
+
+/* Alta = NARANJA/AMBAR */
+.wl-prio-pill--alta{
   border-color: rgba(245,158,11,0.30);
   background: rgba(245,158,11,0.14);
   color: #f59e0b;
 }
 
-.wl-prio-pill--alta{
-  border-color: rgba(239,68,68,0.30);
-  background: rgba(239,68,68,0.12);
-  color: #ef4444;
-}
-
+/* Media = AZUL */
 .wl-prio-pill--media{
   border-color: rgba(56,189,248,0.30);
   background: rgba(56,189,248,0.12);
   color: #38bdf8;
 }
 
+/* Baja = GRIS */
 .wl-prio-pill--baja{
-  border-color: rgba(148,163,184,0.30);
-  background: rgba(148,163,184,0.12);
-  color: #94a3b8;
+  border-color: rgba(4, 247, 69, 0.429);
+  background: rgba(9, 243, 95, 0.12);
+  color: #2ff52f;
 }
+
