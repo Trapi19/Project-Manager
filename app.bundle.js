@@ -1930,15 +1930,24 @@ const AlertsView = ({ projects, onBack }) => {
                 alertsData.redProjects.length > 0 && React.createElement("div", null,
                     React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" },
                         React.createElement("i", { className: "fas fa-bell text-red-500" }), " Alertas Críticas",
-                        React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.redProjects.length)
+                        React.createElement("span", { className: "alert-count-badge" }, alertsData.redProjects.length)
                     ),
                     React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" },
                         alertsData.redProjects.map(proj => (
-                            React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px', borderLeft: '4px solid #ef4444' }, onClick: () => window.location.hash = `#/project/${proj.id}` },
+                            React.createElement("div", { key: proj.id, className: "wl-person-card alert-critical-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` },
                                 React.createElement("div", { className: "font-bold text-gray-800" }, proj.title),
                                 React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client),
-                                React.createElement("div", { className: "flex flex-wrap gap-2" },
-                                    proj.reasons.map((r, i) => React.createElement("span", { key: i, className: "px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold uppercase" }, r)))
+                                React.createElement("div", { className: "space-y-1" },
+  (proj.reasons || []).map((r, i) =>
+    React.createElement(
+      "div",
+      { key: i, className: "alert-critical-item" },
+      React.createElement("i", { className: "fas fa-circle-exclamation" }),
+      String(r || '').toUpperCase()
+    )
+  )
+)
+
                             )
                         ))
                     )

@@ -956,3 +956,32 @@
   color: #f59e0b;
   opacity: 0.95;
 }
+
+/* ==========================
+   Alerts: Críticas (uniforme)
+   ========================== */
+
+.alert-critical-card{
+  border-left: 4px solid #ef4444; /* rojo */
+}
+
+.alert-critical-item{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+
+  padding: 10px 12px;
+  border-radius: 12px;
+
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.22);
+  color: var(--text);
+
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.alert-critical-item i{
+  color: #ef4444;
+  opacity: 0.95;
+}
