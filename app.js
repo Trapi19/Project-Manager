@@ -71,7 +71,7 @@ window.formatFechaES = function (iso) {
 
 /* =========================
    Vista Cliente (HTML)
-   - Guarda un modo en localStorage: gp_view = "client" o "internal"
+   - Guarda modo en localStorage: gp_view = "client" | "internal"
    - Aplica clase "client-view" en <html>
    ========================= */
 (function () {
@@ -83,7 +83,7 @@ window.formatFechaES = function (iso) {
     } catch (e) {}
   }
 
-  // Exponemos un toggle simple para usarlo desde consola si hace falta:
+  // Helper manual desde consola:
   // localStorage.setItem('gp_view','client'); location.reload();
   // localStorage.setItem('gp_view','internal'); location.reload();
   window.gpApplyClientView = applyClientViewClass;

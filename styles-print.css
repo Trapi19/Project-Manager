@@ -266,22 +266,16 @@
    - Deja print-header (portada) y la tabla
    ========================= */
 @media print {
-
-  /* 1) Ocultar la "grid" de KPIs que aparece debajo de la cabecera en el PDF Oficial */
-  .print-container .grid {
+  /* Ocultar la "grid" de KPIs del PDF Oficial */
+  .print-container > .max-w-7xl > .grid {
     display: none !important;
   }
 
-  /* 2) Asegurar que la tabla siga viéndose (por si algún contenedor también es grid) */
-  table, thead, tbody, tr, th, td {
-    display: revert !important;
-  }
-
-  /* 3) Repetir cabecera de tabla en cada página (muy profesional en PDFs largos) */
+  /* Repetir cabecera de tabla en cada pagina */
   thead { display: table-header-group !important; }
   tfoot { display: table-footer-group !important; }
 
-  /* 4) Evitar que la cabecera del documento se parta */
+  /* Evitar cortes raros en portada */
   #header-container,
   .print-header {
     break-inside: avoid !important;
