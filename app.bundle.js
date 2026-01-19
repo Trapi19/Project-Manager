@@ -2120,9 +2120,32 @@ const donutColors = donutLabels.map(estadoColor);
     const prioData = prioLabels.map(p => prioMap[p] || 0);
 
     // 4) Barras por Asignado
-    const byAssignee = countBy(tasks, t => t.asignadoA, "Sin asignar");
-    const assLabels = byAssignee.slice(0, 20).map(x => x[0]); // top 20
-    const assData   = byAssignee.slice(0, 20).map(x => x[1]);
+    // 4) Barras por Asignado (CORREGIDO: separa múltiples nombres)
+const byAssignee = (() => {
+  const map = {};
+  for (const t of tasks) {
+    let raw = (t.asignadoA || '').trim();
+    if (!raw) raw = "Sin asignar";
+
+    // Separa por: / , ; &  o por " y " (con espacios)
+    const names = raw
+      .split(/[\/,;&]|\s+y\s+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const finalNames = names.length ? names : ["Sin asignar"];
+
+    // Cuenta 1 tarea para cada persona
+    for (const n of finalNames) {
+      map[n] = (map[n] || 0) + 1;
+    }
+  }
+  return Object.entries(map).sort((a, b) => b[1] - a[1]);
+})();
+
+const assLabels = byAssignee.slice(0, 20).map(x => x[0]); // top 20
+const assData   = byAssignee.slice(0, 20).map(x => x[1]);
+
 
     // Chart.js (UMD) disponible como window.Chart
     const ChartJS = (window && window.Chart) ? window.Chart : null;
