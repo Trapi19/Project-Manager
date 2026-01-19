@@ -1725,17 +1725,15 @@ const activeTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
 
                                                 React.createElement("div", { className: "wl-task-text" }, 
                                                     t.tarea,
-                                                    React.createElement("span", { 
-  style: { 
-    marginLeft: '8px',
-    fontSize: '11px',
-    fontWeight: 700,
-    padding: '2px 8px',
-    borderRadius: '999px',
-    border: '1px solid var(--border)',
-    opacity: 0.95
-  }
-}, (t.prioridad || 'Media')),
+                                                   (() => {
+  const pr = (t.prioridad || 'Media').toString().toLowerCase();
+  const cls = pr === 'urgente' ? 'wl-prio-pill wl-prio-pill--urgente'
+            : pr === 'alta'    ? 'wl-prio-pill wl-prio-pill--alta'
+            : pr === 'baja'    ? 'wl-prio-pill wl-prio-pill--baja'
+            :                   'wl-prio-pill wl-prio-pill--media';
+  return React.createElement("span", { className: cls }, (t.prioridad || 'Media'));
+})(),
+
 
                                                     t.fechaLimite && React.createElement("span", { className: "wl-date-warn" }, 
                                                         window.formatFechaES(t.fechaLimite)

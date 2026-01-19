@@ -856,3 +856,49 @@
   border-color: rgba(239,68,68,0.42) !important;
   color: #fca5a5 !important;
 }
+
+/* ==========================
+   Píldoras de prioridad (Alerts / Workload)
+   ========================== */
+.wl-prio-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--hairline);
+  background: rgba(255,255,255,0.10);
+  color: var(--text);
+  opacity: 0.95;
+}
+
+:root:not(.theme-dark) .wl-prio-pill{
+  background: rgba(0,0,0,0.04);
+}
+
+.wl-prio-pill--urgente{
+  border-color: rgba(245,158,11,0.30);
+  background: rgba(245,158,11,0.14);
+  color: #f59e0b;
+}
+
+.wl-prio-pill--alta{
+  border-color: rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+}
+
+.wl-prio-pill--media{
+  border-color: rgba(56,189,248,0.30);
+  background: rgba(56,189,248,0.12);
+  color: #38bdf8;
+}
+
+.wl-prio-pill--baja{
+  border-color: rgba(148,163,184,0.30);
+  background: rgba(148,163,184,0.12);
+  color: #94a3b8;
+}
