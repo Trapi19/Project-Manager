@@ -961,6 +961,141 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             return '';
         }
     };
+
+    // --- VISTA: WIKI DE PROYECTO ---
+const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
+  const [content, setContent] = React.useState(
+    (project && project.wiki && typeof project.wiki.content === 'string') ? project.wiki.content : ""
+  );
+  const [hasChanges, setHasChanges] = React.useState(false);
+
+  // Si cambias de proyecto, recarga el contenido
+  React.useEffect(() => {
+    setContent((project && project.wiki && typeof project.wiki.content === 'string') ? project.wiki.content : "");
+    setHasChanges(false);
+  }, [project && project.id]);
+
+  const handleSave = async () => {
+    const updated = {
+      ...project,
+      wiki: { ...(project.wiki || {}), content: content }
+    };
+    await onSave(updated);
+    setHasChanges(false);
+  };
+
+  const applyWrap = (before, after, fallback) => {
+    const ta = document.getElementById('wiki-editor');
+    if (!ta) return;
+    const start = ta.selectionStart || 0;
+    const end = ta.selectionEnd || 0;
+    const v = content || "";
+    const sel = v.slice(start, end) || fallback;
+    const next = v.slice(0, start) + before + sel + after + v.slice(end);
+    setContent(next);
+    setHasChanges(true);
+    setTimeout(() => {
+      ta.focus();
+      ta.selectionStart = start + before.length;
+      ta.selectionEnd = start + before.length + sel.length;
+    }, 0);
+  };
+
+  const appendLine = (prefix) => {
+    const ta = document.getElementById('wiki-editor');
+    const v = content || "";
+    const sep = (v.length === 0 || v.endsWith("\n")) ? "" : "\n";
+    const next = v + sep + prefix;
+    setContent(next);
+    setHasChanges(true);
+    setTimeout(() => { if (ta) ta.focus(); }, 0);
+  };
+
+  const renderHtml = () => {
+    const md = content || "";
+    if (!window.marked || !window.DOMPurify) {
+      return "<em>No se han cargado las librerías de Wiki (marked/DOMPurify).</em>";
+    }
+    return window.DOMPurify.sanitize(window.marked.parse(md));
+  };
+
+  return (
+    React.createElement("div", null,
+
+      // Barra superior (similar al editor)
+      React.createElement("div", { className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-3 flex justify-between items-center shadow-sm no-print" },
+        React.createElement("div", { className: "flex items-center gap-4" },
+          React.createElement("button", { onClick: onBack, className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium" },
+            React.createElement("i", { className: "fas fa-arrow-left" }),
+            React.createElement("span", { className: "hidden sm:inline" }, "Volver al proyecto")
+          ),
+          React.createElement("div", { className: "h-6 w-px bg-gray-200" }),
+          React.createElement("div", null,
+            React.createElement("div", { className: "font-semibold text-gray-800" }, "Wiki"),
+            React.createElement("div", { className: "text-xs text-gray-500" }, (project?.meta?.titulo || "Proyecto"))
+          )
+        ),
+
+        React.createElement("button", {
+          onClick: handleSave,
+          disabled: isSaving || !hasChanges,
+          className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
+            hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`
+        },
+          isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }),
+          React.createElement("span", { className: "hidden sm:inline" }, isSaving ? "Guardando..." : "Guardar Wiki")
+        )
+      ),
+
+      // Contenido
+      React.createElement("div", { className: "max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-6" },
+
+        // Editor
+        React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
+          React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" },
+            React.createElement("div", { className: "font-semibold text-gray-800" }, "Edición"),
+            React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, "Negrita y listas con botones.")
+          ),
+          React.createElement("div", { className: "p-6 space-y-4" },
+            React.createElement("div", { className: "flex flex-wrap gap-2" },
+              React.createElement("button", { type: "button", className: "btn-apple", style: { height: "34px", fontSize: "13px" }, onClick: () => applyWrap("**", "**", "texto") },
+                React.createElement("i", { className: "fas fa-bold" }), " Negrita"
+              ),
+              React.createElement("button", { type: "button", className: "btn-apple", style: { height: "34px", fontSize: "13px" }, onClick: () => appendLine("- ") },
+                React.createElement("i", { className: "fas fa-list-ul" }), " Lista"
+              ),
+              React.createElement("button", { type: "button", className: "btn-apple", style: { height: "34px", fontSize: "13px" }, onClick: () => appendLine("1. ") },
+                React.createElement("i", { className: "fas fa-list-ol" }), " Numerada"
+              )
+            ),
+
+            React.createElement("textarea", {
+              id: "wiki-editor",
+              rows: 18,
+              className: "w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm",
+              value: content,
+              onChange: (e) => { setContent(e.target.value); setHasChanges(true); },
+              placeholder: "Escribe la wiki del proyecto aquí...\n\nEjemplo:\n- Punto 1\n- Punto 2\n\n**Negrita**"
+            })
+          )
+        ),
+
+        // Vista previa
+        React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
+          React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" },
+            React.createElement("div", { className: "font-semibold text-gray-800" }, "Vista previa")
+          ),
+          React.createElement("div", {
+            className: "p-6 prose max-w-none text-sm",
+            dangerouslySetInnerHTML: { __html: renderHtml() }
+          })
+        )
+      )
+    )
+  );
+};
+
     const reorderTasks = (dragId, beforeId) => {
         setData(prev => {
             const tasks = [...(prev.tasks || [])];
@@ -1399,6 +1534,16 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                         React.createElement("i", { className: "fas fa-history" }),
                         " ",
                         React.createElement("span", { className: "hidden sm:inline" }, "Historial")),
+                        React.createElement("button", {
+  type: "button",
+  onClick: () => { window.location.hash = `#/wiki/${encodeURIComponent(String((data && data.id) || ''))}`; },
+  className: "px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm"
+},
+  React.createElement("i", { className: "fas fa-book" }),
+  " ",
+  React.createElement("span", { className: "hidden sm:inline" }, "Wiki")
+),
+
                 React.createElement("div", { className: "relative" },
                     React.createElement("button", { onClick: () => setShowExportMenu(!showExportMenu), className: "px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" },
                         React.createElement("i", { className: "fas fa-share-square" }),
@@ -2484,6 +2629,7 @@ const makeDraftProject = () => ({
             pep: "",
             sharepointUrl: "" // <--- Nuevo campo
         },
+        wiki: { content: "" },
         tasks: []
     });
 
@@ -2525,6 +2671,13 @@ const makeDraftProject = () => ({
                 else { setCurrentProject(null); setView('list'); }
                 return;
             }
+            if (parts[0] === 'wiki' && parts[1]) {
+  const id = decodeURIComponent(parts[1]);
+  const p = (list || []).find(x => String(x.id) === String(id));
+  if (p) { setCurrentProject(p); setView('wiki'); }
+  else { setCurrentProject(null); setView('list'); }
+  return;
+}
             setView('list');
         } catch (e) { setView('list'); }
     };
@@ -2536,10 +2689,19 @@ const makeDraftProject = () => ({
             // Si hay algo pendiente localmente y no hay internet, lo usamos, si no, lo de la nube
             const pendingStr = localStorage.getItem(PENDING_KEY);
             const effectiveList = (pendingStr && !navigator.onLine) ? JSON.parse(pendingStr) : list;
+
+            // --- Paso 6.3: asegurar wiki en proyectos antiguos ---
+const normalized = (effectiveList || []).map(p => {
+  if (!p) return p;
+  if (!p.wiki) return { ...p, wiki: { content: "" } };
+  if (typeof p.wiki.content !== "string") return { ...p, wiki: { ...(p.wiki || {}), content: "" } };
+  return p;
+});
+
             
-            setProjects(effectiveList);
+            setProjects(normalized);
             if (!window.location.hash) setRoute('#/list');
-            applyRouteFromHash(effectiveList);
+            applyRouteFromHash(normalized);
             
             if (navigator.onLine) await flushPendingToAWS();
         };
@@ -2759,6 +2921,15 @@ const makeDraftProject = () => ({
         view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
+        view === 'wiki' && currentProject && (
+  React.createElement(ProjectWiki, {
+    project: currentProject,
+    onSave: saveProject,
+    onBack: () => { setView('editor'); setRoute(`#/project/${currentProject.id}`); },
+    isSaving: isSaving
+  })
+),
+
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
             React.createElement("div", { className: "modal-card" },
                 React.createElement("div", { className: "modal-title" }, "Importar backup"),
