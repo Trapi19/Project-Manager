@@ -2373,28 +2373,31 @@ if (donutRef.current) {
   );
 };
 
-// --- VISTA: WIKI DE PROYECTO (EDITOR TIPO "WORD") ---
+// --- VISTA: WIKI DE PROYECTO (VER / EDITAR como ProjectEditor) ---
 const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
-  // Guardamos HTML (lo que ves es lo que se guarda)
-  const initialHtml =
-    (project && project.wiki && typeof project.wiki.content === "string")
-      ? project.wiki.content
-      : "";
-
+  // "view" = solo lectura, "edit" = editable
+  const [mode, setMode] = React.useState('view');
   const [hasChanges, setHasChanges] = React.useState(false);
 
-  // Referencias para Quill
+  // Referencias a Quill
   const editorHostRef = React.useRef(null);
   const quillRef = React.useRef(null);
+
+  // Helper: obtener HTML guardado
+  const getStoredHtml = () => {
+    const html = (project && project.wiki && typeof project.wiki.content === "string")
+      ? project.wiki.content
+      : "";
+    return html || "";
+  };
 
   // Inicializar Quill una sola vez
   React.useEffect(() => {
     if (!editorHostRef.current) return;
     if (quillRef.current) return;
 
-    // Si no está cargado el script, lo avisamos
     if (!window.Quill) {
-      console.error("Quill no está cargado. Revisa index.html (Paso 1).");
+      console.error("Quill no está cargado. Revisa index.html (las líneas de Quill).");
       return;
     }
 
@@ -2410,26 +2413,41 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
       }
     });
 
-    // Cargar contenido guardado
-    quillRef.current.root.innerHTML = initialHtml || "";
+    // Cargar contenido y dejar en modo lectura al inicio
+    quillRef.current.root.innerHTML = getStoredHtml();
+    quillRef.current.enable(false); // <- importante: empieza BLOQUEADO (modo view)
 
-    // Marcar cambios al escribir
+    // Detectar cambios
     quillRef.current.on("text-change", () => {
       setHasChanges(true);
     });
   }, []);
 
-  // Si cambias de proyecto, recarga el contenido en el editor
+  // Si cambias de proyecto, recarga contenido y vuelve a modo vista
   React.useEffect(() => {
+    setMode('view');
     setHasChanges(false);
     if (quillRef.current) {
-      const html =
-        (project && project.wiki && typeof project.wiki.content === "string")
-          ? project.wiki.content
-          : "";
-      quillRef.current.root.innerHTML = html || "";
+      quillRef.current.root.innerHTML = getStoredHtml();
+      quillRef.current.enable(false);
     }
   }, [project && project.id]);
+
+  const handleEdit = () => {
+    setMode('edit');
+    setHasChanges(false);
+    if (quillRef.current) quillRef.current.enable(true);
+  };
+
+  const handleCancelEdit = () => {
+    // Descarta cambios y vuelve a lo guardado
+    setMode('view');
+    setHasChanges(false);
+    if (quillRef.current) {
+      quillRef.current.root.innerHTML = getStoredHtml();
+      quillRef.current.enable(false);
+    }
+  };
 
   const handleSave = async () => {
     const html = quillRef.current ? quillRef.current.root.innerHTML : "";
@@ -2438,13 +2456,23 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
       wiki: { ...(project.wiki || {}), content: html }
     };
     await onSave(updated);
+
+    // Tras guardar: modo vista
+    setMode('view');
     setHasChanges(false);
+    if (quillRef.current) quillRef.current.enable(false);
   };
 
+  // En modo "view" ocultamos toolbar con estilo inline (sin tocar CSS)
+  const toolbarStyle = (mode === 'view')
+    ? { display: 'none' }
+    : {};
+
+  // Render principal
   return (
     React.createElement("div", null,
 
-      // Barra superior
+      // Barra superior (misma filosofía que ProjectEditor)
       React.createElement("div", {
         className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-3 flex justify-between items-center shadow-sm no-print"
       },
@@ -2464,33 +2492,76 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
           )
         ),
 
-        React.createElement("button", {
-          type: "button",
-          onClick: handleSave,
-          disabled: isSaving || !hasChanges,
-          className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
-            hasChanges ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`
-        },
-          isSaving
-            ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" })
-            : React.createElement("i", { className: "fas fa-save" }),
-          React.createElement("span", { className: "hidden sm:inline" }, isSaving ? "Guardando..." : "Guardar Wiki")
+        React.createElement("div", { className: "flex items-center gap-2" },
+
+          // Botón Editar / Ver (como el de ProjectEditor)
+          (mode === 'view')
+            ? React.createElement("button", {
+                type: "button",
+                onClick: handleEdit,
+                className: "px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-2 shadow-sm"
+              },
+                React.createElement("i", { className: "fas fa-pen" }),
+                React.createElement("span", { className: "hidden sm:inline" }, "Editar")
+              )
+            : React.createElement("button", {
+                type: "button",
+                onClick: handleCancelEdit,
+                className: "px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2 shadow-sm"
+              },
+                React.createElement("i", { className: "fas fa-eye" }),
+                React.createElement("span", { className: "hidden sm:inline" }, "Ver")
+              ),
+
+          // Guardar: solo en modo edit
+          (mode === 'edit') && React.createElement("button", {
+            type: "button",
+            onClick: handleSave,
+            disabled: isSaving || !hasChanges,
+            className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
+              hasChanges ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`
+          },
+            isSaving
+              ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" })
+              : React.createElement("i", { className: "fas fa-save" }),
+            React.createElement("span", { className: "hidden sm:inline" }, isSaving ? "Guardando..." : "Guardar")
+          )
         )
       ),
 
-      // Contenido: SOLO editor (sin vista previa)
+      // Contenido
       React.createElement("div", { className: "max-w-5xl mx-auto p-6" },
         React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
           React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" },
-            React.createElement("div", { className: "font-semibold text-gray-800" }, "Escribe aquí (tipo Word)"),
-            React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, "Negrita, listas, títulos desde la barra de herramientas.")
+            React.createElement("div", { className: "font-semibold text-gray-800" }, mode === 'view' ? "Vista" : "Edición"),
+            React.createElement("div", { className: "text-xs text-gray-500 mt-1" },
+              mode === 'view'
+                ? "Pulsa “Editar” para modificar."
+                : "Usa la barra para negrita, listas y títulos."
+            )
           ),
 
-          // Aquí Quill se monta
+          // Zona Quill
           React.createElement("div", { className: "p-4" },
+            // Truco: cuando está en view, escondemos la toolbar que Quill crea (ql-toolbar)
             React.createElement("div", {
-              ref: editorHostRef,
+              style: {},
+              ref: (el) => {
+                // editorHostRef se usa para montar Quill; el toolbar lo crea Quill como hermano previo
+                editorHostRef.current = el;
+                // Ocultar toolbar si existe
+                setTimeout(() => {
+                  try {
+                    const host = el;
+                    if (!host) return;
+                    const toolbar = host.parentElement ? host.parentElement.querySelector('.ql-toolbar') : null;
+                    if (toolbar) toolbar.style.display = (mode === 'view') ? 'none' : '';
+                  } catch(e) {}
+                }, 0);
+              },
+              // En modo view, cursor normal. En modo edit, cursor texto.
+              className: (mode === 'view') ? "cursor-default" : "cursor-text",
               style: { minHeight: "420px" }
             })
           )
@@ -2499,6 +2570,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
     )
   );
 };
+
 
 
 const MainApp = () => {
