@@ -219,3 +219,25 @@ input:focus, textarea:focus, select:focus {
 .ql-container .ql-editor {
   padding: 12px !important;
 }
+/* --- WIKI (Quill): evitar “caja” rara dentro del editor --- */
+
+/* El área editable debe ser un lienzo, no un input */
+.ql-editor {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 12px !important;
+  min-height: 420px !important;
+}
+
+/* En modo oscuro, asegurar texto visible */
+.theme-dark .ql-editor {
+  color: #ffffff !important;
+}
+
+/* A veces Quill mete un <p><br></p> que puede “parecer” una caja si hereda estilos */
+.ql-editor p {
+  margin: 0 0 8px 0 !important;
+}
