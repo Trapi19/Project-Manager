@@ -75,7 +75,6 @@
               responsableProyecto: "",
               pep: ""
             },
-            wiki: { content: "" },
             tasks: newTasks,
             audit: { activity: [], comments: [] }
           };
