@@ -241,3 +241,7 @@ input:focus, textarea:focus, select:focus {
 .ql-editor p {
   margin: 0 0 8px 0 !important;
 }
+/* --- WIKI (Quill): ocultar la caja/tooltip flotante (enlaces) --- */
+.ql-tooltip {
+  display: none !important;
+}
