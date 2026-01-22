@@ -1098,6 +1098,24 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             pep: 'PEP',
             sharepointUrl: 'Carpeta SharePoint'
         };
+
+        const updateWiki = (newContent) => {
+  setData(prev => {
+    const prevWiki = (prev && prev.wiki) ? prev.wiki : { content: "" };
+    const fromVal = prevWiki.content || "";
+    if (fromVal === newContent) return prev;
+
+    const nextProject = { ...prev, wiki: { ...prevWiki, content: newContent } };
+
+    return addActivityToProject(
+      nextProject,
+      `Wiki actualizada`,
+      'wiki'
+    );
+  });
+  setHasChanges(true);
+};
+
         setData(prev => {
             const prevMeta = prev.meta || {};
             const fromVal = prevMeta[field];
@@ -1497,6 +1515,83 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                     React.createElement("div", { className: "space-y-4" }))),
             React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
                 React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center" },
+                    React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" },
+  React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" },
+    React.createElement("h2", { className: "font-semibold text-gray-800" }, "Wiki del proyecto"),
+    React.createElement("p", { className: "text-xs text-gray-500 mt-1" }, "Notas internas: negrita, listas y enlaces.")
+  ),
+
+  React.createElement("div", { className: "p-6 space-y-4" },
+
+    // Barra de botones (negrita y listas)
+    React.createElement("div", { className: "flex flex-wrap gap-2" },
+      React.createElement("button", {
+        type: "button",
+        className: "px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200",
+        onClick: () => {
+          // Inserta ** ** alrededor del texto seleccionado (simple)
+          const ta = document.getElementById('wiki-editor');
+          if (!ta) return;
+          const start = ta.selectionStart || 0;
+          const end = ta.selectionEnd || 0;
+          const v = ta.value || "";
+          const sel = v.slice(start, end) || "texto";
+          const next = v.slice(0, start) + "**" + sel + "**" + v.slice(end);
+          updateWiki(next);
+          setTimeout(() => { ta.focus(); ta.selectionStart = start + 2; ta.selectionEnd = start + 2 + sel.length; }, 0);
+        }
+      }, "Negrita"),
+
+      React.createElement("button", {
+        type: "button",
+        className: "px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200",
+        onClick: () => {
+          const ta = document.getElementById('wiki-editor');
+          if (!ta) return;
+          const v = ta.value || "";
+          updateWiki(v + (v.endsWith("\n") || v.length === 0 ? "" : "\n") + "- ");
+          setTimeout(() => { ta.focus(); }, 0);
+        }
+      }, "Lista"),
+
+      React.createElement("button", {
+        type: "button",
+        className: "px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200",
+        onClick: () => {
+          const ta = document.getElementById('wiki-editor');
+          if (!ta) return;
+          const v = ta.value || "";
+          updateWiki(v + (v.endsWith("\n") || v.length === 0 ? "" : "\n") + "1. ");
+          setTimeout(() => { ta.focus(); }, 0);
+        }
+      }, "Lista numerada")
+    ),
+
+    // Editor
+    React.createElement("textarea", {
+      id: "wiki-editor",
+      rows: 10,
+      className: "w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm",
+      value: ((data && data.wiki && data.wiki.content) ? data.wiki.content : ""),
+      onChange: (e) => updateWiki(e.target.value),
+      placeholder: "Escribe aquí la wiki del proyecto...\n\nEjemplo:\n- Punto 1\n- Punto 2\n\n**Negrita**"
+    }),
+
+    // Vista previa
+    React.createElement("div", { className: "border border-gray-200 rounded-lg p-4 bg-gray-50" },
+      React.createElement("div", { className: "text-xs font-semibold text-gray-600 uppercase mb-2" }, "Vista previa"),
+      React.createElement("div", {
+        className: "text-sm text-gray-800",
+        dangerouslySetInnerHTML: {
+          __html: (window.DOMPurify && window.marked)
+            ? window.DOMPurify.sanitize(window.marked.parse(((data && data.wiki && data.wiki.content) ? data.wiki.content : "")))
+            : "<em>Cargando editor…</em>"
+        }
+      })
+    )
+  )
+),
+
                     React.createElement("h2", { className: "font-semibold text-gray-800" }, "Plan de Trabajo"),
                     React.createElement("button", { onClick: addTask, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm" },
                         React.createElement("i", { className: "fas fa-plus" }),
@@ -2482,8 +2577,9 @@ const makeDraftProject = () => ({
             estado: "En Ejecución", 
             responsableProyecto: "", 
             pep: "",
-            sharepointUrl: "" // <--- Nuevo campo
+            sharepointUrl: "" 
         },
+        wiki: { content: "" },
         tasks: []
     });
 
