@@ -2382,6 +2382,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
   // Referencias a Quill
   const editorHostRef = React.useRef(null);
   const quillRef = React.useRef(null);
+  const lastRangeRef = React.useRef(null);
 
   // Helper: obtener HTML guardado
   const getStoredHtml = () => {
@@ -2412,6 +2413,33 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         ]
       }
     });
+    // 1) Recordar la última selección válida
+quillRef.current.on("selection-change", (range) => {
+  if (range) lastRangeRef.current = range;
+});
+
+// 2) Evitar que la barra de herramientas robe el foco (y se pierda la selección)
+const toolbar = quillRef.current.getModule("toolbar")?.container;
+if (toolbar) {
+  toolbar.addEventListener("mousedown", (e) => {
+    // Evita que el click quite el foco al editor
+    e.preventDefault();
+
+    // Y restaura la selección si existe
+    if (lastRangeRef.current) {
+      quillRef.current.setSelection(lastRangeRef.current);
+    }
+  });
+}
+// Si el editor pierde foco, guardamos el último rango igualmente
+quillRef.current.root.addEventListener("keyup", () => {
+  const r = quillRef.current.getSelection();
+  if (r) lastRangeRef.current = r;
+});
+quillRef.current.root.addEventListener("mouseup", () => {
+  const r = quillRef.current.getSelection();
+  if (r) lastRangeRef.current = r;
+});
 
     // Cargar contenido y dejar en modo lectura al inicio
     quillRef.current.root.innerHTML = getStoredHtml();
