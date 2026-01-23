@@ -2485,82 +2485,6 @@ quillRef.current.root.addEventListener("mouseup", () => {
     };
     await onSave(updated);
 
-    const getWikiTemplateHtml = () => {
-  const title = (project?.meta?.titulo || "Proyecto");
-  const client = (project?.meta?.cliente || "");
-  const sp = (project?.meta?.sharepointUrl || "");
-
-  return `
-    <h2>Wiki – ${title}</h2>
-    ${client ? `<p><strong>Cliente:</strong> ${client}</p>` : ``}
-    ${sp ? `<p><strong>SharePoint:</strong> <a href="${sp}" target="_blank" rel="noopener noreferrer">${sp}</a></p>` : ``}
-
-    <h3>1. Objetivo</h3>
-    <p></p>
-
-    <h3>2. Alcance</h3>
-    <ul>
-      <li></li>
-    </ul>
-
-    <h3>3. Contactos</h3>
-    <ul>
-      <li><strong>Cliente:</strong> </li>
-      <li><strong>Interno:</strong> </li>
-      <li><strong>Fabricante:</strong> </li>
-    </ul>
-
-    <h3>4. Decisiones</h3>
-    <ul>
-      <li><strong>Fecha:</strong> — <strong>Decisión:</strong> </li>
-    </ul>
-
-    <h3>5. Problemas / Incidencias</h3>
-    <ul>
-      <li><strong>Síntoma:</strong> — <strong>Causa:</strong> — <strong>Solución:</strong> </li>
-    </ul>
-
-    <h3>6. Pendientes</h3>
-    <ul>
-      <li></li>
-    </ul>
-
-    <h3>7. Enlaces útiles</h3>
-    <ul>
-      <li></li>
-    </ul>
-  `;
-};
-
-const insertTemplate = () => {
-  if (!quillRef.current) return;
-
-  const currentHtml = quillRef.current.root.innerHTML || "";
-  const isEmpty = currentHtml.replace(/<(.|\n)*?>/g, '').trim().length === 0;
-
-  const templateHtml = getWikiTemplateHtml();
-
-  if (isEmpty) {
-    quillRef.current.root.innerHTML = templateHtml;
-    setHasChanges(true);
-    return;
-  }
-
-  // Si ya hay contenido, preguntamos qué hacer
-  const choice = window.prompt(
-    "La wiki ya tiene contenido.\n\nEscribe:\n1 = Reemplazar todo\n2 = Añadir al final\n\n(Escribe 1 o 2 y pulsa OK)"
-  );
-
-  if (choice === "1") {
-    quillRef.current.root.innerHTML = templateHtml;
-    setHasChanges(true);
-  } else if (choice === "2") {
-    quillRef.current.root.innerHTML = currentHtml + `<hr/>` + templateHtml;
-    setHasChanges(true);
-  }
-};
-
-
     // Tras guardar: modo vista
     setMode('view');
     setHasChanges(false);
@@ -2616,18 +2540,6 @@ const insertTemplate = () => {
                 React.createElement("i", { className: "fas fa-eye" }),
                 React.createElement("span", { className: "hidden sm:inline" }, "Ver")
               ),
-
-              
-           // Plantilla: solo en modo edit
-(mode === 'edit') && React.createElement("button", {
-  type: "button",
-  onClick: insertTemplate,
-  className: "px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2 shadow-sm"
-},
-  React.createElement("i", { className: "fas fa-file-alt" }),
-  React.createElement("span", { className: "hidden sm:inline" }, "Plantilla")
-),
-   
 
           // Guardar: solo en modo edit
           (mode === 'edit') && React.createElement("button", {
