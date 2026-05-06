@@ -1130,3 +1130,360 @@
     }
   }
 }
+
+/* ==========================================================
+   26. BOTÓN DÍA / NOCHE — REDISEÑO PREMIUM
+   ========================================================== */
+@media screen {
+  /* Base: pill ancho con icono + etiqueta */
+  .theme-fab {
+    width: auto !important;
+    min-width: unset !important;
+    height: 46px !important;
+    padding: 0 16px 0 13px !important;
+    border-radius: var(--v4-r-pill) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    position: fixed !important;
+    bottom: 22px !important;
+    right: 22px !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+    backdrop-filter: blur(18px) saturate(1.25) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.25) !important;
+    transition: transform var(--v4-t-spring), box-shadow var(--v4-t-base) !important;
+    cursor: pointer !important;
+  }
+
+  /* Etiqueta textual via pseudo-elemento */
+  .theme-fab::after {
+    font-family: 'Inter', system-ui, sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: .01em !important;
+    position: relative !important;
+    z-index: 2 !important;
+    transition: opacity var(--v4-t-base) !important;
+  }
+  .theme-fab.day::after   { content: "Día" !important; }
+  .theme-fab.night::after { content: "Noche" !important; }
+
+  /* Icono */
+  .theme-fab i {
+    position: relative !important;
+    z-index: 2 !important;
+    transition: transform var(--v4-t-spring), filter var(--v4-t-base) !important;
+  }
+
+  /* ── MODO DÍA ── */
+  .theme-fab.day {
+    background: linear-gradient(135deg,
+      rgba(255,251,235,.97) 0%,
+      rgba(255,255,255,.94) 45%,
+      rgba(254,243,199,.93) 100%) !important;
+    border: 1px solid rgba(251,191,36,.22) !important;
+    color: #92400e !important;
+    box-shadow:
+      0 4px 18px rgba(245,158,11,.18),
+      0 1px 4px rgba(0,0,0,.05),
+      inset 0 1px 0 rgba(255,255,255,.88) !important;
+  }
+
+  .theme-fab.day i {
+    font-size: 17px !important;
+    color: #d97706 !important;
+    filter: drop-shadow(0 0 5px rgba(251,191,36,.60)) !important;
+    animation: v4SunSpin 22s linear infinite !important;
+    animation-play-state: paused !important;
+  }
+
+  /* El sol gira despacio al hacer hover */
+  .theme-fab.day:hover i {
+    animation-play-state: running !important;
+    filter: drop-shadow(0 0 9px rgba(251,191,36,.90)) !important;
+  }
+
+  @keyframes v4SunSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  /* Resplandor cálido de fondo */
+  .theme-fab.day::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    border-radius: inherit !important;
+    background: radial-gradient(circle at 28% 50%,
+      rgba(251,191,36,.18) 0%, transparent 68%) !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+  }
+
+  /* ── MODO NOCHE ── */
+  .theme-fab.night {
+    background: linear-gradient(135deg,
+      rgba(2,6,23,.96) 0%,
+      rgba(15,23,42,.92) 45%,
+      rgba(30,27,75,.92) 100%) !important;
+    border: 1px solid rgba(139,92,246,.24) !important;
+    color: #c4b5fd !important;
+    box-shadow:
+      0 4px 18px rgba(99,102,241,.25),
+      0 1px 4px rgba(0,0,0,.35),
+      inset 0 1px 0 rgba(255,255,255,.07) !important;
+  }
+
+  .theme-fab.night i {
+    font-size: 16px !important;
+    color: #ddd6fe !important;
+    filter: drop-shadow(0 0 6px rgba(196,181,253,.70)) !important;
+    transform: rotate(-22deg) !important;
+  }
+
+  .theme-fab.night:hover i {
+    filter: drop-shadow(0 0 10px rgba(196,181,253,.95)) !important;
+    transform: rotate(-22deg) scale(1.12) !important;
+  }
+
+  /* Estrellas decorativas en noche */
+  .theme-fab.night::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    border-radius: inherit !important;
+    background:
+      radial-gradient(1px 1px at 74% 24%, rgba(255,255,255,.85), transparent),
+      radial-gradient(1px 1px at 84% 60%, rgba(255,255,255,.62), transparent),
+      radial-gradient(1.5px 1.5px at 89% 40%, rgba(255,255,255,.50), transparent),
+      radial-gradient(1px 1px at 68% 75%, rgba(196,181,253,.80), transparent) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+  }
+
+  /* ── HOVER / ACTIVE ── */
+  .theme-fab:hover {
+    transform: translateY(-4px) scale(1.05) !important;
+  }
+
+  .theme-fab.day:hover {
+    box-shadow:
+      0 8px 28px rgba(245,158,11,.28),
+      0 2px 6px rgba(0,0,0,.06),
+      inset 0 1px 0 rgba(255,255,255,.90) !important;
+  }
+
+  .theme-fab.night:hover {
+    box-shadow:
+      0 8px 28px rgba(99,102,241,.38),
+      0 2px 6px rgba(0,0,0,.32),
+      inset 0 1px 0 rgba(255,255,255,.07) !important;
+  }
+
+  .theme-fab:active {
+    transform: translateY(-1px) scale(.96) !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .theme-fab.day i { animation: none !important; }
+  }
+}
+
+/* ==========================================================
+   27. RESUMEN EJECUTIVO — MEJORAS DE IMPACTO
+   ========================================================== */
+@media screen {
+
+  /* Cabecera del resumen: más dramática */
+  .exec-summary {
+    padding: 28px !important;
+  }
+
+  .exec-header {
+    padding-bottom: 20px !important;
+    border-bottom: 1px solid var(--v4-b0) !important;
+    margin-bottom: 20px !important;
+  }
+
+  /* Título con gradiente de texto */
+  .exec-title-text {
+    background: linear-gradient(135deg, var(--v4-brand) 0%, var(--v4-accent) 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+  }
+
+  /* Icono del título más grande y con color de marca */
+  .exec-title-icon {
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 16px !important;
+    background: linear-gradient(145deg, rgba(8,136,200,.14), rgba(99,102,241,.10)) !important;
+    border: 1px solid rgba(8,136,200,.20) !important;
+    color: var(--v4-brand) !important;
+  }
+
+  .theme-dark .exec-title-icon {
+    background: linear-gradient(145deg, rgba(56,189,248,.14), rgba(129,140,248,.10)) !important;
+    border-color: rgba(56,189,248,.22) !important;
+    color: var(--v4-brand-light) !important;
+  }
+
+  /* Números extra-grandes con color por tarjeta */
+  .exec-value {
+    font-size: 48px !important;
+    line-height: .95 !important;
+  }
+
+  @media (max-width:1024px) { .exec-value { font-size: 38px !important; } }
+  @media (max-width:640px)  { .exec-value { font-size: 30px !important; } }
+
+  /* Card 1: Proyectos — azul */
+  .exec-grid .exec-card:nth-child(1) {
+    border-top: 3px solid rgba(59,130,246,.65) !important;
+    border-left: 1px solid var(--v4-b1) !important;
+    background: linear-gradient(160deg,
+      rgba(59,130,246,.07) 0%, var(--v4-s1) 55%) !important;
+  }
+  .exec-grid .exec-card:nth-child(1) .exec-value { color: #1d4ed8 !important; }
+  .exec-grid .exec-card:nth-child(1) .exec-card-icon {
+    background: rgba(59,130,246,.12) !important;
+    border-color: rgba(59,130,246,.20) !important;
+    color: #3b82f6 !important;
+  }
+
+  /* Card 2: Avance — verde */
+  .exec-grid .exec-card:nth-child(2) {
+    border-top: 3px solid rgba(16,185,129,.65) !important;
+    border-left: 1px solid var(--v4-b1) !important;
+    background: linear-gradient(160deg,
+      rgba(16,185,129,.07) 0%, var(--v4-s1) 55%) !important;
+  }
+  .exec-grid .exec-card:nth-child(2) .exec-value { color: #059669 !important; }
+  .exec-grid .exec-card:nth-child(2) .exec-card-icon {
+    background: rgba(16,185,129,.12) !important;
+    border-color: rgba(16,185,129,.20) !important;
+    color: #10b981 !important;
+  }
+  .exec-grid .exec-card:nth-child(2) .exec-progress-fill {
+    background: linear-gradient(90deg, #10b981, #34d399) !important;
+  }
+
+  /* Card 3: Tareas — naranja */
+  .exec-grid .exec-card:nth-child(3) {
+    border-top: 3px solid rgba(245,158,11,.65) !important;
+    border-left: 1px solid var(--v4-b1) !important;
+    background: linear-gradient(160deg,
+      rgba(245,158,11,.07) 0%, var(--v4-s1) 55%) !important;
+  }
+  .exec-grid .exec-card:nth-child(3) .exec-value { color: #d97706 !important; }
+  .exec-grid .exec-card:nth-child(3) .exec-card-icon {
+    background: rgba(245,158,11,.12) !important;
+    border-color: rgba(245,158,11,.20) !important;
+    color: #f59e0b !important;
+  }
+
+  /* Card 4: Incidencias — rojo */
+  .exec-grid .exec-card:nth-child(4) {
+    border-top: 3px solid rgba(239,68,68,.65) !important;
+    border-left: 1px solid var(--v4-b1) !important;
+    background: linear-gradient(160deg,
+      rgba(239,68,68,.07) 0%, var(--v4-s1) 55%) !important;
+  }
+  .exec-grid .exec-card:nth-child(4) .exec-value { color: #dc2626 !important; }
+
+  /* Card 5: Workload — índigo */
+  .exec-grid .exec-card:nth-child(5) {
+    border-top: 3px solid rgba(99,102,241,.65) !important;
+    border-left: 1px solid var(--v4-b1) !important;
+    background: linear-gradient(160deg,
+      rgba(99,102,241,.06) 0%, var(--v4-s1) 55%) !important;
+  }
+  .exec-grid .exec-card:nth-child(5) .exec-card-icon {
+    background: rgba(99,102,241,.12) !important;
+    border-color: rgba(99,102,241,.20) !important;
+    color: #6366f1 !important;
+  }
+
+  /* Card 6: Vencimientos — cian */
+  .exec-grid .exec-card:nth-child(6) {
+    border-top: 3px solid rgba(6,182,212,.65) !important;
+    border-left: 1px solid var(--v4-b1) !important;
+    background: linear-gradient(160deg,
+      rgba(6,182,212,.06) 0%, var(--v4-s1) 55%) !important;
+  }
+  .exec-grid .exec-card:nth-child(6) .exec-card-icon {
+    background: rgba(6,182,212,.12) !important;
+    border-color: rgba(6,182,212,.20) !important;
+    color: #06b6d4 !important;
+  }
+
+  /* Modo oscuro: invertir gradientes de texto para legibilidad */
+  .theme-dark .exec-grid .exec-card:nth-child(1) .exec-value { color: #60a5fa !important; }
+  .theme-dark .exec-grid .exec-card:nth-child(2) .exec-value { color: #34d399 !important; }
+  .theme-dark .exec-grid .exec-card:nth-child(3) .exec-value { color: #fbbf24 !important; }
+  .theme-dark .exec-grid .exec-card:nth-child(4) .exec-value { color: #f87171 !important; }
+
+  /* Hover: borde del color de la tarjeta */
+  .exec-grid .exec-card:nth-child(1):hover { border-color: rgba(59,130,246,.30) !important; }
+  .exec-grid .exec-card:nth-child(2):hover { border-color: rgba(16,185,129,.30) !important; }
+  .exec-grid .exec-card:nth-child(3):hover { border-color: rgba(245,158,11,.30) !important; }
+  .exec-grid .exec-card:nth-child(4):hover { border-color: rgba(239,68,68,.30)  !important; }
+  .exec-grid .exec-card:nth-child(5):hover { border-color: rgba(99,102,241,.30) !important; }
+  .exec-grid .exec-card:nth-child(6):hover { border-color: rgba(6,182,212,.30)  !important; }
+
+  /* Exec pill más estilizada */
+  .exec-pill {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: .03em !important;
+    padding: 6px 12px !important;
+    background: linear-gradient(135deg,
+      rgba(8,136,200,.10), rgba(99,102,241,.08)) !important;
+    border: 1px solid rgba(8,136,200,.18) !important;
+    color: var(--v4-brand) !important;
+  }
+
+  .theme-dark .exec-pill {
+    background: linear-gradient(135deg,
+      rgba(56,189,248,.12), rgba(129,140,248,.10)) !important;
+    border-color: rgba(56,189,248,.22) !important;
+    color: var(--v4-brand-light) !important;
+  }
+}
+
+/* ==========================================================
+   28. VISTA DE GRÁFICOS — CONTENEDORES Y CANVAS
+   ========================================================== */
+@media screen {
+  /* Paneles de gráfico */
+  .section-tapiz.p-6.rounded-2xl.border {
+    padding: 24px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Título del gráfico */
+  .section-tapiz > .font-bold.mb-3 {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    letter-spacing: -.02em !important;
+    color: var(--v4-t0) !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Canvas: ajustamos el contenedor para dar aire */
+  .section-tapiz > div[style*="height"] {
+    flex: 1 !important;
+    min-height: 240px !important;
+  }
+
+  /* Cabecera de la vista de gráficos */
+  .wl-header-sticky .text-xl.font-extrabold {
+    font-size: 1.3rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -.03em !important;
+    color: var(--v4-t0) !important;
+  }
+}

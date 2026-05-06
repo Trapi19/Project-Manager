@@ -259,3 +259,217 @@
   /* ── Exponer para uso manual desde la app ── */
   window.gpToast = createToast;
 })();
+
+/* =========================================================
+   CHART.JS V4 — CONFIGURACIÓN PREMIUM
+   ---------------------------------------------------------
+   Se ejecuta después de que Chart.js y app.bundle.js carguen.
+   No modifica el bundle: usa defaults globales y un plugin
+   registrado que se aplica a todos los gráficos.
+   ========================================================= */
+(function () {
+  'use strict';
+
+  function applyChartDefaults() {
+    var C = window.Chart;
+    if (!C || !C.defaults) return;
+
+    var isDark = document.documentElement.classList.contains('theme-dark');
+
+    /* ── Colores reactivos al tema ── */
+    var textColor  = isDark ? '#94a3b8' : '#64748b';
+    var gridColor  = isDark ? 'rgba(148,163,184,.10)' : 'rgba(148,163,184,.18)';
+    var tooltipBg  = isDark ? 'rgba(6,12,26,.95)'    : 'rgba(255,255,255,.97)';
+    var tooltipTxt = isDark ? '#e2e8f0'               : '#1e293b';
+    var tooltipSub = isDark ? '#64748b'               : '#94a3b8';
+
+    /* ── Tipografía ── */
+    C.defaults.font.family  = "'Inter', system-ui, -apple-system, sans-serif";
+    C.defaults.font.size    = 12;
+    C.defaults.font.weight  = '500';
+
+    /* ── Color global de texto / grid ── */
+    C.defaults.color       = textColor;
+    C.defaults.borderColor = gridColor;
+
+    /* ── Animación suave ── */
+    C.defaults.animation.duration = 700;
+    C.defaults.animation.easing   = 'easeOutQuart';
+
+    /* ── Barras: esquinas redondeadas por defecto ── */
+    if (C.defaults.elements && C.defaults.elements.bar) {
+      C.defaults.elements.bar.borderRadius   = 8;
+      C.defaults.elements.bar.borderSkipped  = false;
+    }
+
+    /* ── Donut: corte más fino (más elegante) ── */
+    if (C.defaults.datasets && C.defaults.datasets.doughnut) {
+      C.defaults.datasets.doughnut.cutout = '74%';
+    }
+
+    /* ── Tooltips premium ── */
+    var tp = C.defaults.plugins.tooltip;
+    tp.backgroundColor  = tooltipBg;
+    tp.titleColor       = tooltipTxt;
+    tp.bodyColor        = tooltipSub;
+    tp.borderColor      = isDark ? 'rgba(255,255,255,.10)' : 'rgba(15,23,42,.08)';
+    tp.borderWidth      = 1;
+    tp.cornerRadius     = 12;
+    tp.padding          = { top:10, bottom:10, left:12, right:12 };
+    tp.boxPadding       = 5;
+    tp.caretSize        = 5;
+    tp.titleFont        = { family: "'Inter', sans-serif", size: 12, weight: '700' };
+    tp.bodyFont         = { family: "'Inter', sans-serif", size: 12, weight: '500' };
+    tp.callbacks        = tp.callbacks || {};
+
+    /* ── Leyenda ── */
+    var lbl = C.defaults.plugins.legend.labels;
+    lbl.boxWidth    = 10;
+    lbl.boxHeight   = 10;
+    lbl.padding     = 16;
+    lbl.font        = { family: "'Inter', sans-serif", size: 11.5, weight: '600' };
+    lbl.color       = textColor;
+    lbl.usePointStyle = true;
+    lbl.pointStyle  = 'circle';
+
+    /* ── Ejes ── */
+    var scales = C.defaults.scales;
+    if (scales) {
+      ['x','y','r'].forEach(function (ax) {
+        if (!scales[ax]) return;
+        if (scales[ax].grid) {
+          scales[ax].grid.color       = gridColor;
+          scales[ax].grid.borderColor = 'transparent';
+          scales[ax].grid.lineWidth   = 1;
+        }
+        if (scales[ax].ticks) {
+          scales[ax].ticks.color  = textColor;
+          scales[ax].ticks.font   = { family: "'Inter', sans-serif", size: 11, weight: '500' };
+          scales[ax].ticks.padding = 6;
+        }
+      });
+    }
+  }
+
+  /* ── Colores semánticos para prioridades ── */
+  var PRIO_COLORS = {
+    'Urgente': { bg: 'rgba(239,68,68,.82)',   border: 'rgba(239,68,68,.0)' },
+    'Alta':    { bg: 'rgba(245,158,11,.82)',  border: 'rgba(245,158,11,.0)' },
+    'Media':   { bg: 'rgba(59,130,246,.82)',  border: 'rgba(59,130,246,.0)' },
+    'Baja':    { bg: 'rgba(16,185,129,.82)',  border: 'rgba(16,185,129,.0)' }
+  };
+
+  var PRIO_LABELS = Object.keys(PRIO_COLORS);
+
+  function isPrioChart(labels) {
+    return labels && labels.some(function (l) { return PRIO_LABELS.indexOf(l) !== -1; });
+  }
+
+  /* ── Plugin: gradientes + colores por categoría ── */
+  function registerV4Plugin() {
+    var C = window.Chart;
+    if (!C || !C.register || C.__v4PluginDone) return;
+    C.__v4PluginDone = true;
+
+    C.register({
+      id: 'v4Premium',
+
+      /* Texto central en el donut */
+      beforeDraw: function (chart) {
+        if (chart.config.type !== 'doughnut') return;
+        var ds = chart.data.datasets && chart.data.datasets[0];
+        if (!ds) return;
+        var total = ds.data.reduce(function (a, b) { return a + (b || 0); }, 0);
+        if (!total) return;
+
+        var area = chart.chartArea;
+        if (!area) return;
+        var cx = (area.left + area.right) / 2;
+        var cy = (area.top  + area.bottom) / 2;
+        var isDark = document.documentElement.classList.contains('theme-dark');
+
+        var ctx = chart.ctx;
+        ctx.save();
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+
+        /* Número grande */
+        ctx.font      = "800 30px 'Inter', sans-serif";
+        ctx.fillStyle = isDark ? '#f1f5f9' : '#0f172a';
+        ctx.fillText(total, cx, cy - 11);
+
+        /* Etiqueta pequeña */
+        ctx.font      = "600 11px 'Inter', sans-serif";
+        ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+        ctx.fillText('TAREAS', cx, cy + 12);
+
+        ctx.restore();
+      },
+
+      /* Gradientes en barras + colores de prioridad */
+      beforeDatasetDraw: function (chart, args) {
+        if (chart.config.type !== 'bar') return;
+
+        var ctx  = chart.ctx;
+        var area = chart.chartArea;
+        if (!area) return;
+
+        var dataset = chart.data.datasets[args.index];
+        if (!dataset) return;
+
+        var labels   = chart.data.labels || [];
+        var isDark   = document.documentElement.classList.contains('theme-dark');
+
+        /* Prioridades: color semántico por barra */
+        if (isPrioChart(labels)) {
+          dataset.backgroundColor = labels.map(function (l) {
+            return (PRIO_COLORS[l] && PRIO_COLORS[l].bg) || 'rgba(99,102,241,.78)';
+          });
+          dataset.borderWidth   = 0;
+          dataset.borderRadius  = 8;
+          dataset.borderSkipped = false;
+          return;
+        }
+
+        /* Resto de gráficos de barras: degradado brand → accent */
+        var g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+        if (isDark) {
+          g.addColorStop(0,   'rgba(56,189,248,.90)');
+          g.addColorStop(0.5, 'rgba(99,102,241,.82)');
+          g.addColorStop(1,   'rgba(139,92,246,.72)');
+        } else {
+          g.addColorStop(0,   'rgba(14,165,233,.90)');
+          g.addColorStop(0.5, 'rgba(99,102,241,.82)');
+          g.addColorStop(1,   'rgba(139,92,246,.74)');
+        }
+        dataset.backgroundColor = g;
+        dataset.borderWidth   = 0;
+        dataset.borderRadius  = 8;
+        dataset.borderSkipped = false;
+      }
+    });
+  }
+
+  /* ── Re-aplicar defaults cuando cambie el tema ── */
+  function watchTheme() {
+    var el = document.documentElement;
+    var obs = new MutationObserver(function () {
+      applyChartDefaults();
+    });
+    obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  /* ── Inicializar cuando el DOM y Chart.js estén listos ── */
+  document.addEventListener('DOMContentLoaded', function () {
+    applyChartDefaults();
+    registerV4Plugin();
+    watchTheme();
+  });
+
+  /* Por si Chart.js cargó después de DOMContentLoaded */
+  if (document.readyState !== 'loading') {
+    applyChartDefaults();
+    registerV4Plugin();
+    watchTheme();
+  }
+})();
