@@ -272,7 +272,7 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
 };
 
 // --- COMPONENTE: DASHBOARD (PROJECT LIST) ---
-const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, onBackup, onImport, theme, onToggleTheme }) => {
+const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, onBackup, onExportCSV, onImport, theme, onToggleTheme, storagePercent }) => {
     const normClient = (p) => ((p.meta && p.meta.cliente) ? p.meta.cliente : 'Sin cliente').trim() || 'Sin cliente';
     const clients = Array.from(new Set(projects.map(normClient))).sort((a, b) => a.localeCompare(b, 'es'));
     const [clientFilter, setClientFilter] = useState('Todos');
@@ -533,9 +533,18 @@ if (est !== 'Completado' && String(t?.prioridad || '').toLowerCase() === 'urgent
                         React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onBackup(); } },
                             React.createElement("i", { className: "fas fa-file-arrow-down" }),
                             React.createElement("span", null, "Backup (JSON)")),
+                        React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onExportCSV && onExportCSV(); } },
+                            React.createElement("i", { className: "fas fa-file-csv" }),
+                            React.createElement("span", null, "Exportar CSV (Excel)")),
                         React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onImport(); } },
                             React.createElement("i", { className: "fas fa-file-arrow-up" }),
-                            React.createElement("span", null, "Importar\u2026"))))))),
+                            React.createElement("span", null, "Importar\u2026")),
+                        typeof storagePercent === 'number' && (React.createElement("div", { className: "px-3 pt-3 pb-1 border-t border-gray-100 mt-1" },
+                            React.createElement("div", { className: "flex justify-between text-[10px] text-gray-400 mb-1" },
+                                React.createElement("span", null, "Almacenamiento local"),
+                                React.createElement("span", { className: storagePercent >= 80 ? "text-orange-500 font-bold" : "" }, storagePercent, "%")),
+                            React.createElement("div", { className: "w-full h-1.5 rounded-full bg-gray-100 overflow-hidden" },
+                                React.createElement("div", { className: `h-full rounded-full transition-all ${storagePercent >= 80 ? 'bg-orange-400' : storagePercent >= 50 ? 'bg-amber-400' : 'bg-emerald-400'}`, style: { width: `${storagePercent}%` } }))))))))),
         
         projects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" },
             React.createElement("div", { className: "text-gray-300 text-6xl mb-6" },
@@ -2638,7 +2647,11 @@ quillRef.current.root.addEventListener("mouseup", () => {
 
 
 const MainApp = () => {
-    const [theme, setTheme] = React.useState(() => localStorage.getItem('gp_theme') || 'light');
+    const [theme, setTheme] = React.useState(() => {
+        const saved = localStorage.getItem('gp_theme');
+        if (saved) return saved;
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    });
     const AWS_API_URL = 'https://2qucj5d6k3qspjcc76f4n45zoa0rphnp.lambda-url.eu-west-1.on.aws/';
 
     React.useEffect(() => {
@@ -2659,6 +2672,9 @@ const MainApp = () => {
     const [importCandidate, setImportCandidate] = useState(null);
     const [importConfirmOpen, setImportConfirmOpen] = useState(false);
     const importFileInputRef = React.useRef(null);
+    const [csvToast, setCsvToast] = React.useState(false);
+    const [storageWarning, setStorageWarning] = React.useState(false);
+    const [storagePercent, setStoragePercent] = React.useState(0);
 
     // --- LOGICA DE SINCRONIZACIÓN Y AUTH ---
     const PENDING_KEY = 'unitecnic_projects_pending';
@@ -2831,6 +2847,15 @@ const normalized = (effectiveList || []).map(p => {
 
             
             setProjects(normalized);
+            try {
+                let total = 0;
+                for (let k in localStorage) {
+                    if (Object.prototype.hasOwnProperty.call(localStorage, k)) total += (k.length + (localStorage[k] || '').length) * 2;
+                }
+                const pct = Math.min(100, Math.round((total / (5 * 1024 * 1024)) * 100));
+                setStoragePercent(pct);
+                if (pct >= 80) setStorageWarning(true);
+            } catch(e) {}
             if (!window.location.hash) setRoute('#/list');
             applyRouteFromHash(normalized);
             
@@ -2891,6 +2916,36 @@ const normalized = (effectiveList || []).map(p => {
         } catch (err) {
             console.error("Error al generar el backup:", err);
             alert("No se pudo generar el archivo de copia de seguridad.");
+        }
+    };
+
+    // --- LÓGICA DE EXPORTACIÓN CSV ---
+    const exportCSV = () => {
+        try {
+            const projectsToExport = projectsRef.current || [];
+            const headers = ['Proyecto', 'Cliente', 'Estado', 'Responsable', 'Ejecutor', 'PEP', 'Total Tareas', 'Completadas', 'En Curso', 'Pendientes', 'Progreso %'];
+            const escape = (v) => `"${String(v || '').replace(/"/g, '""')}"`;
+            const rows = projectsToExport.map(p => {
+                const m = p.meta || {};
+                const stats = computeProjectStats(p.tasks || []);
+                return [m.titulo, m.cliente, normalizeProjectEstado(m.estado), m.responsableProyecto, m.ejecutorProyecto, m.pep, stats.total, stats.completed, stats.inProgress, stats.pending, stats.progress].map(escape).join(',');
+            });
+            const bom = '﻿';
+            const csv = bom + [headers.map(escape).join(','), ...rows].join('\r\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `proyectos_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            setCsvToast(true);
+            setTimeout(() => setCsvToast(false), 3000);
+        } catch (err) {
+            console.error("Error al generar CSV:", err);
+            alert("No se pudo generar el archivo CSV.");
         }
     };
 
@@ -3050,7 +3105,7 @@ const normalized = (effectiveList || []).map(p => {
         view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
         view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
-        view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme })),
+        view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent })),
         view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
         view === 'wiki' && currentProject && (
   React.createElement(ProjectWiki, {
@@ -3093,6 +3148,18 @@ const normalized = (effectiveList || []).map(p => {
             React.createElement("div", null,
                 React.createElement("div", { className: "font-semibold leading-tight" }, "Proyecto creado"),
                 React.createElement("div", { className: "text-sm text-white/75 leading-tight" }, "Guardado y a\u00F1adido al Dashboard.")))),
+        csvToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+80px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none no-print" },
+            React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" },
+                React.createElement("i", { className: "fas fa-file-csv" })),
+            React.createElement("div", null,
+                React.createElement("div", { className: "font-semibold leading-tight" }, "CSV generado"),
+                React.createElement("div", { className: "text-xs text-white/70" }, "Archivo descargado. Ábrelo con Excel.")))),
+        storageWarning && (React.createElement("div", { className: "fixed bottom-16 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[9998] no-print cursor-pointer", onClick: () => setStorageWarning(false) },
+            React.createElement("i", { className: "fas fa-triangle-exclamation text-lg" }),
+            React.createElement("div", null,
+                React.createElement("div", { className: "font-semibold leading-tight" }, "Almacenamiento casi lleno (", storagePercent, "%)"),
+                React.createElement("div", { className: "text-xs text-white/90" }, "Haz un backup y borra proyectos completados. Pulsa para cerrar.")),
+            React.createElement("i", { className: "fas fa-xmark ml-2 text-white/60" }))),
         backupToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none no-print" },
             React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" },
                 React.createElement("i", { className: "fas fa-file-arrow-down" })),
@@ -3101,7 +3168,41 @@ const normalized = (effectiveList || []).map(p => {
                 React.createElement("div", { className: "text-xs text-white/70" }, "Archivo .json descargado con proyectos y logos.")))),
         React.createElement("button", { type: "button", onClick: toggleTheme, className: `theme-fab no-print ${theme === 'dark' ? 'night' : 'day'}`, title: theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche', "aria-label": theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche' }, theme === 'dark' ? (React.createElement("i", { className: "fas fa-moon" })) : (React.createElement("i", { className: "fas fa-sun" })))));
 };
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    componentDidCatch(error, info) {
+        console.error('Error crítico en la aplicación:', error, info);
+    }
+    render() {
+        if (this.state.hasError) {
+            return React.createElement('div', { className: 'h-screen flex items-center justify-center bg-gray-50' },
+                React.createElement('div', { style: { background: 'white', borderRadius: '1.25rem', padding: '2.5rem', maxWidth: '28rem', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.1)', border: '1px solid #fecaca' } },
+                    React.createElement('div', { style: { fontSize: '3rem', marginBottom: '1rem' } }, '⚠️'),
+                    React.createElement('h2', { style: { fontWeight: 700, fontSize: '1.25rem', color: '#1f2937', marginBottom: '0.5rem' } }, 'Algo ha fallado'),
+                    React.createElement('p', { style: { color: '#6b7280', marginBottom: '1.5rem', lineHeight: 1.5 } }, 'Ha ocurrido un error inesperado. Tus datos están seguros en el servidor.'),
+                    React.createElement('button', {
+                        onClick: () => this.setState({ hasError: false }),
+                        style: { background: '#0888c8', color: 'white', border: 'none', borderRadius: '0.75rem', padding: '0.6rem 1.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.95rem' }
+                    }, 'Intentar de nuevo'),
+                    React.createElement('br', null),
+                    React.createElement('button', {
+                        onClick: () => window.location.reload(),
+                        style: { marginTop: '0.75rem', background: 'transparent', color: '#6b7280', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }
+                    }, 'Recargar página')
+                )
+            );
+        }
+        return this.props.children;
+    }
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(MainApp, null));
+root.render(React.createElement(ErrorBoundary, null, React.createElement(MainApp, null)));
 
 

@@ -43,15 +43,24 @@ window.formatFechaES = function (iso) {
 
   function apply(status) {
     var el = ensureEl();
-    var text = '';
+    var html = '';
     var bg = '';
-    if (status === 'ok') { text = 'Sincronizado'; bg = '#16a34a'; }
-    else if (status === 'pending') { text = 'Pendiente de sincronizar'; bg = '#f59e0b'; }
-    else if (status === 'offline') { text = 'Sin conexión'; bg = '#ef4444'; }
-    el.textContent = text;
+    var iconStyle = 'display:inline-block;margin-right:5px;font-size:11px;';
+    if (status === 'ok') {
+      html = '<span style="' + iconStyle + '">✓</span>Sincronizado';
+      bg = '#16a34a';
+      setTimeout(function() { el.style.opacity = '0'; }, 3000);
+    } else if (status === 'pending') {
+      html = '<span style="' + iconStyle + 'animation:spin 1s linear infinite;">↻</span>Guardando cambios…';
+      bg = '#f59e0b';
+    } else if (status === 'offline') {
+      html = '<span style="' + iconStyle + '">✗</span>Sin conexión — guardado local';
+      bg = '#ef4444';
+    }
+    el.innerHTML = html;
     el.style.background = bg;
     el.style.color = 'white';
-    el.style.opacity = text ? '0.95' : '0';
+    if (html) el.style.opacity = '0.95';
   }
 
   // Expuesto para que app.bundle.js lo use (si existe).
