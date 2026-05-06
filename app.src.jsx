@@ -1283,10 +1283,13 @@ React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal br
     }))))))));
 };
 // --- COMPONENTE: EDITOR DE PROYECTO ---
-const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme }) => {
+const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme, onAddTimeEntry, onEditTimeEntry, onDeleteTimeEntry }) => {
     var _a;
     const [data, setData] = useState(project);
     const [hasChanges, setHasChanges] = useState(false);
+    React.useEffect(() => {
+        if (!hasChanges) setData(project);
+    }, [project]);
     const taskIndex = React.useMemo(() => buildTaskIndex(data.tasks || []), [data.tasks]);
     const activityList = React.useMemo(() => {
         const a = (data && data.audit && Array.isArray(data.audit.activity)) ? data.audit.activity : [];
@@ -1786,7 +1789,9 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))
                 ))),
         viewMode === 'preview' ? (React.createElement("div", { className: "py-8" },
-            React.createElement(ProjectPreview, { data: data }))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" },
+            React.createElement(ProjectPreview, { data: data }),
+            React.createElement("div", { className: "max-w-7xl mx-auto mt-6 px-6" },
+                React.createElement(ProjectTimeEntriesPanel, { project: data, onAdd: onAddTimeEntry, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry })))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" },
             React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
                 React.createElement("div", { className: "flex justify-between items-center mb-6 pb-2 border-b" },
                     React.createElement("h3", { className: "text-sm font-bold text-gray-500 uppercase tracking-wider" }, "Datos del Proyecto"),
@@ -3182,6 +3187,189 @@ const ImportView = ({ onImport }) =>
     );
 
 // ─── VISTA: PERFIL ────────────────────────────────────────────────────────────
+const TIME_ALLOWANCE_TYPES = ['Ninguna', 'Desayuno', 'Comida', 'Cena', 'Media dieta', 'Dieta completa', 'Alojamiento', 'Otro'];
+
+const getProjectTimeEntries = (project) => Array.isArray(project && project.timeEntries) ? project.timeEntries : [];
+const toNumberOrZero = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+};
+const getCurrentDateInput = () => {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+const flattenTimeEntries = (projects) => {
+    const rows = [];
+    (Array.isArray(projects) ? projects : []).forEach(project => {
+        getProjectTimeEntries(project).forEach(entry => {
+            rows.push({
+                ...entry,
+                projectId: project.id,
+                projectTitle: (project.meta && project.meta.titulo) || 'Proyecto sin titulo'
+            });
+        });
+    });
+    return rows.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+};
+const isSameMonth = (dateStr, now) => {
+    const d = parseDateOnly(dateStr);
+    return !!d && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+};
+const isSameWeek = (dateStr, now) => {
+    const d = parseDateOnly(dateStr);
+    if (!d) return false;
+    const start = new Date(now);
+    const day = (start.getDay() + 6) % 7;
+    start.setDate(start.getDate() - day);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    return d >= start && d < end;
+};
+
+const TimeEntryModal = ({ projects, entry, lockedProjectId, onClose, onSave }) => {
+    const firstProjectId = lockedProjectId || (projects[0] && projects[0].id) || '';
+    const [form, setForm] = React.useState(() => ({
+        date: (entry && entry.date) || getCurrentDateInput(),
+        projectId: (entry && entry.projectId) || firstProjectId,
+        user: (entry && entry.user) || '',
+        hours: (entry && entry.hours) || '',
+        allowanceType: (entry && entry.allowanceType) || 'Ninguna',
+        allowanceAmount: (entry && entry.allowanceAmount) || '',
+        mileageKm: (entry && entry.mileageKm) || '',
+        notes: (entry && entry.notes) || ''
+    }));
+    const setField = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+    const submit = (e) => {
+        e.preventDefault();
+        if (!form.projectId) { alert('Selecciona un proyecto.'); return; }
+        if (!form.date) { alert('Indica una fecha.'); return; }
+        onSave({
+            projectId: lockedProjectId || form.projectId,
+            previousProjectId: entry && entry.projectId,
+            entryId: entry && entry.id,
+            values: {
+                date: form.date,
+                user: form.user.trim(),
+                hours: toNumberOrZero(form.hours),
+                allowanceType: form.allowanceType,
+                allowanceAmount: toNumberOrZero(form.allowanceAmount),
+                mileageKm: toNumberOrZero(form.mileageKm),
+                notes: form.notes.trim()
+            }
+        });
+    };
+    return React.createElement('div', { className: 'modal-overlay no-print', role: 'dialog', 'aria-modal': 'true' },
+        React.createElement('form', { className: 'modal-card imput-modal', onSubmit: submit },
+            React.createElement('div', { className: 'modal-title' }, entry ? 'Editar imputacion' : 'Nueva imputacion'),
+            React.createElement('div', { className: 'modal-subtitle' }, 'Registra horas, dietas y kilometraje asociados a un proyecto.'),
+            React.createElement('div', { className: 'imput-form-grid' },
+                React.createElement('label', null, 'Fecha', React.createElement('input', { type: 'date', value: form.date, onChange: e => setField('date', e.target.value), required: true })),
+                React.createElement('label', null, 'Proyecto', React.createElement('select', { value: lockedProjectId || form.projectId, onChange: e => setField('projectId', e.target.value), disabled: !!lockedProjectId, required: true },
+                    React.createElement('option', { value: '' }, 'Selecciona proyecto'),
+                    projects.map(p => React.createElement('option', { key: p.id, value: p.id }, (p.meta && p.meta.titulo) || 'Proyecto sin titulo')))),
+                React.createElement('label', null, 'Persona', React.createElement('input', { type: 'text', value: form.user, onChange: e => setField('user', e.target.value), placeholder: 'Nombre' })),
+                React.createElement('label', null, 'Horas', React.createElement('input', { type: 'number', min: '0', step: '0.25', value: form.hours, onChange: e => setField('hours', e.target.value) })),
+                React.createElement('label', null, 'Tipo de dieta', React.createElement('select', { value: form.allowanceType, onChange: e => setField('allowanceType', e.target.value) },
+                    TIME_ALLOWANCE_TYPES.map(t => React.createElement('option', { key: t, value: t }, t)))),
+                React.createElement('label', null, 'Importe dieta', React.createElement('input', { type: 'number', min: '0', step: '0.01', value: form.allowanceAmount, onChange: e => setField('allowanceAmount', e.target.value) })),
+                React.createElement('label', null, 'Kilometros', React.createElement('input', { type: 'number', min: '0', step: '0.1', value: form.mileageKm, onChange: e => setField('mileageKm', e.target.value) })),
+                React.createElement('label', { className: 'imput-form-wide' }, 'Observaciones', React.createElement('textarea', { rows: 3, value: form.notes, onChange: e => setField('notes', e.target.value), placeholder: 'Comentario opcional' }))
+            ),
+            React.createElement('div', { className: 'modal-actions' },
+                React.createElement('button', { type: 'button', className: 'btn-apple', onClick: onClose }, 'Cancelar'),
+                React.createElement('button', { type: 'submit', className: 'btn-apple-primary' }, entry ? 'Guardar cambios' : 'Crear imputacion'))));
+};
+
+const TimeEntriesTable = ({ rows, onEdit, onDelete, compact }) =>
+    rows.length === 0
+        ? React.createElement('div', { className: 'imput-empty' },
+            React.createElement('i', { className: 'fas fa-clock' }),
+            React.createElement('strong', null, 'Sin imputaciones'),
+            React.createElement('span', null, 'Aun no hay horas, dietas o kilometros registrados.'))
+        : React.createElement('div', { className: 'imput-table-wrap' },
+            React.createElement('table', { className: 'imput-table' },
+                React.createElement('thead', null, React.createElement('tr', null,
+                    React.createElement('th', null, 'Fecha'),
+                    !compact && React.createElement('th', null, 'Proyecto'),
+                    React.createElement('th', null, 'Persona'),
+                    React.createElement('th', null, 'Horas'),
+                    React.createElement('th', null, 'Dieta'),
+                    React.createElement('th', null, 'Importe'),
+                    React.createElement('th', null, 'Km'),
+                    React.createElement('th', null, 'Observaciones'),
+                    React.createElement('th', null, 'Acciones'))),
+                React.createElement('tbody', null, rows.map(row => React.createElement('tr', { key: row.id },
+                    React.createElement('td', null, window.formatFechaES ? window.formatFechaES(row.date) : row.date),
+                    !compact && React.createElement('td', null, row.projectTitle),
+                    React.createElement('td', null, row.user || '-'),
+                    React.createElement('td', null, toNumberOrZero(row.hours).toLocaleString('es-ES')),
+                    React.createElement('td', null, row.allowanceType || 'Ninguna'),
+                    React.createElement('td', null, `${toNumberOrZero(row.allowanceAmount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`),
+                    React.createElement('td', null, toNumberOrZero(row.mileageKm).toLocaleString('es-ES')),
+                    React.createElement('td', null, row.notes || '-'),
+                    React.createElement('td', { className: 'imput-actions' },
+                        React.createElement('button', { type: 'button', onClick: () => onEdit(row), title: 'Editar' }, React.createElement('i', { className: 'fas fa-pen' })),
+                        React.createElement('button', { type: 'button', onClick: () => onDelete(row.projectId, row.id), title: 'Eliminar' }, React.createElement('i', { className: 'fas fa-trash' }))))))));
+
+const ImputationsView = ({ projects, onBack, onCreate, onEdit, onDelete }) => {
+    const rows = React.useMemo(() => flattenTimeEntries(projects), [projects]);
+    const now = new Date();
+    const hoursMonth = rows.filter(r => isSameMonth(r.date, now)).reduce((sum, r) => sum + toNumberOrZero(r.hours), 0);
+    const hoursWeek = rows.filter(r => isSameWeek(r.date, now)).reduce((sum, r) => sum + toNumberOrZero(r.hours), 0);
+    const kmMonth = rows.filter(r => isSameMonth(r.date, now)).reduce((sum, r) => sum + toNumberOrZero(r.mileageKm), 0);
+    const allowanceMonth = rows.filter(r => isSameMonth(r.date, now)).reduce((sum, r) => sum + toNumberOrZero(r.allowanceAmount), 0);
+    const kpis = [
+        ['Horas este mes', hoursMonth.toLocaleString('es-ES'), 'fa-clock'],
+        ['Horas esta semana', hoursWeek.toLocaleString('es-ES'), 'fa-calendar-week'],
+        ['Kilometros este mes', kmMonth.toLocaleString('es-ES'), 'fa-route'],
+        ['Dietas este mes', `${allowanceMonth.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'fa-utensils']
+    ];
+    return React.createElement('div', { className: 'sb-page imput-page' },
+        React.createElement('div', { className: 'sb-page-header imput-header' },
+            React.createElement('div', null,
+                React.createElement('button', { type: 'button', className: 'btn-apple no-print', onClick: onBack },
+                    React.createElement('i', { className: 'fas fa-arrow-left' }), ' Volver'),
+                React.createElement('h1', { className: 'sb-page-title' }, 'Imputaciones'),
+                React.createElement('p', { className: 'sb-page-sub' }, 'Registro de horas, dietas y kilometraje por proyecto.')),
+            React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: () => onCreate(null) },
+                React.createElement('i', { className: 'fas fa-plus' }), ' Nueva imputacion')),
+        React.createElement('div', { className: 'imput-kpis' },
+            kpis.map(k => React.createElement('article', { className: 'imput-kpi', key: k[0] },
+                React.createElement('i', { className: 'fas ' + k[2] }),
+                React.createElement('span', null, k[0]),
+                React.createElement('strong', null, k[1])))),
+        React.createElement('section', { className: 'imput-card' },
+            React.createElement('div', { className: 'imput-card-head' },
+                React.createElement('div', null,
+                    React.createElement('h2', null, 'Listado de imputaciones'),
+                    React.createElement('p', null, `${rows.length} registro${rows.length === 1 ? '' : 's'}`))),
+            React.createElement(TimeEntriesTable, { rows: rows, onEdit: onEdit, onDelete: onDelete })));
+};
+
+const ProjectTimeEntriesPanel = ({ project, onAdd, onEdit, onDelete }) => {
+    const rows = flattenTimeEntries([project]);
+    const totals = rows.reduce((acc, row) => {
+        acc.hours += toNumberOrZero(row.hours);
+        acc.km += toNumberOrZero(row.mileageKm);
+        acc.allowance += toNumberOrZero(row.allowanceAmount);
+        return acc;
+    }, { hours: 0, km: 0, allowance: 0 });
+    return React.createElement('section', { className: 'imput-card project-imput-card no-print' },
+        React.createElement('div', { className: 'imput-card-head' },
+            React.createElement('div', null,
+                React.createElement('h2', null, 'Imputaciones'),
+                React.createElement('p', null, 'Horas, dietas y kilometraje registrados en este proyecto.')),
+            React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onAdd(project.id) },
+                React.createElement('i', { className: 'fas fa-plus' }), ' Añadir imputacion')),
+        React.createElement('div', { className: 'imput-project-totals' },
+            React.createElement('span', null, React.createElement('strong', null, totals.hours.toLocaleString('es-ES')), ' horas'),
+            React.createElement('span', null, React.createElement('strong', null, totals.km.toLocaleString('es-ES')), ' km'),
+            React.createElement('span', null, React.createElement('strong', null, `${totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), ' dietas')),
+        React.createElement(TimeEntriesTable, { rows: rows, compact: true, onEdit: onEdit, onDelete: onDelete }));
+};
+
 const ProfileView = () => {
     const userLabel = getUserLabel();
     const claims = (() => {
@@ -3349,6 +3537,9 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
             ni('fa-users', 'Carga de trabajo',
                 () => { onNavigate('workload', null); onClose(); },
                 null, isActive('workload'), false),
+            ni('fa-business-time', 'Imputaciones',
+                () => { onNavigate('imputations', null); onClose(); },
+                null, isActive('imputations'), false),
 
             React.createElement('div', { className: 'sidebar-divider' }),
 
@@ -3434,6 +3625,7 @@ const MainApp = () => {
     const [csvToast, setCsvToast] = React.useState(false);
     const [storageWarning, setStorageWarning] = React.useState(false);
     const [storagePercent, setStoragePercent] = React.useState(0);
+    const [timeEntryModal, setTimeEntryModal] = React.useState(null);
 
     // --- LOGICA DE SINCRONIZACIÓN Y AUTH ---
     const PENDING_KEY = 'unitecnic_projects_pending';
@@ -3553,6 +3745,11 @@ const makeDraftProject = () => ({
             if (parts[0] === 'workload') {
                 setCurrentProject(null);
                 setView('workload');
+                return;
+            }
+            if (parts[0] === 'imputations') {
+                setCurrentProject(null);
+                setView('imputations');
                 return;
             }
             if (parts[0] === 'charts') {
@@ -3908,6 +4105,52 @@ const normalized = (effectiveList || []).map(p => {
         currentList.splice(insertIdx, 0, moving);
         await saveProjectsLocal(currentList);
     };
+    const openTimeEntryModal = (projectId, entry) => {
+        setTimeEntryModal({ projectId: projectId || null, entry: entry || null });
+    };
+    const saveTimeEntry = async ({ projectId, previousProjectId, entryId, values }) => {
+        const nowIso = new Date().toISOString();
+        const id = entryId || ('te_' + Date.now());
+        let existingCreatedAt = null;
+        projects.forEach(p => {
+            getProjectTimeEntries(p).forEach(e => {
+                if (String(e.id) === String(id)) existingCreatedAt = e.createdAt || null;
+            });
+        });
+        const entry = {
+            id,
+            date: values.date || getCurrentDateInput(),
+            user: values.user || '',
+            hours: toNumberOrZero(values.hours),
+            allowanceType: values.allowanceType || 'Ninguna',
+            allowanceAmount: toNumberOrZero(values.allowanceAmount),
+            mileageKm: toNumberOrZero(values.mileageKm),
+            notes: values.notes || '',
+            createdAt: existingCreatedAt || nowIso,
+            updatedAt: nowIso
+        };
+        const targetId = String(projectId || previousProjectId || '');
+        if (!targetId) return;
+        const updatedList = projects.map(p => {
+            const currentEntries = getProjectTimeEntries(p).filter(e => String(e.id) !== String(id));
+            if (String(p.id) !== targetId) return { ...p, timeEntries: currentEntries };
+            return { ...p, timeEntries: [...currentEntries, entry] };
+        });
+        await saveProjectsLocal(updatedList);
+        const updatedCurrent = updatedList.find(p => currentProject && String(p.id) === String(currentProject.id));
+        if (updatedCurrent) setCurrentProject(updatedCurrent);
+        setTimeEntryModal(null);
+    };
+    const deleteTimeEntry = async (projectId, entryId) => {
+        if (!confirm('¿Eliminar esta imputación?')) return;
+        const updatedList = projects.map(p => {
+            if (String(p.id) !== String(projectId)) return p;
+            return { ...p, timeEntries: getProjectTimeEntries(p).filter(e => String(e.id) !== String(entryId)) };
+        });
+        await saveProjectsLocal(updatedList);
+        const updatedCurrent = updatedList.find(p => currentProject && String(p.id) === String(currentProject.id));
+        if (updatedCurrent) setCurrentProject(updatedCurrent);
+    };
     if (view === 'loading')
         return React.createElement("div", { className: "h-screen flex items-center justify-center bg-gray-50" },
             React.createElement("div", { className: "loader" }));
@@ -3943,6 +4186,7 @@ const normalized = (effectiveList || []).map(p => {
             React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
             view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })),
             view === 'workload' && (React.createElement(WorkloadDashboardView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+            view === 'imputations' && (React.createElement(ImputationsView, { projects: projects, onBack: () => { setView('home'); setRoute('#/home'); }, onCreate: openTimeEntryModal, onEdit: (entry) => openTimeEntryModal(entry.projectId, entry), onDelete: deleteTimeEntry })),
             view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
             view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
             view === 'users' && React.createElement(UsersView, null),
@@ -3950,7 +4194,7 @@ const normalized = (effectiveList || []).map(p => {
             view === 'profile' && React.createElement(ProfileView, null),
             view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }),
             view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })),
-            view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
+            view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme, onAddTimeEntry: openTimeEntryModal, onEditTimeEntry: (entry) => openTimeEntryModal(entry.projectId, entry), onDeleteTimeEntry: deleteTimeEntry })),
             view === 'wiki' && currentProject && (
   React.createElement(ProjectWiki, {
     project: currentProject,
@@ -3960,6 +4204,13 @@ const normalized = (effectiveList || []).map(p => {
   })
 ),
 
+        timeEntryModal && React.createElement(TimeEntryModal, {
+            projects: projects,
+            entry: timeEntryModal.entry,
+            lockedProjectId: timeEntryModal.projectId && !timeEntryModal.entry ? timeEntryModal.projectId : null,
+            onClose: () => setTimeEntryModal(null),
+            onSave: saveTimeEntry
+        }),
         importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" },
             React.createElement("div", { className: "modal-card" },
                 React.createElement("div", { className: "modal-title" }, "Importar backup"),
