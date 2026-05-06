@@ -10,8 +10,10 @@ window.formatFechaES = function (iso) {
   return dd + "-" + mm + "-" + yyyy;
 };
 
-
-/* Indicador simple de sincronización (sin requerir tocar el CSS).
+/* Indicador simple de sincronización.
+   Cambio V3: se deja de usar innerHTML para pintar el estado.
+   Motivo: aunque los textos eran internos, textContent + nodos DOM reduce superficie de inyección
+   y deja el componente preparado para futuros mensajes dinámicos sin riesgo de HTML accidental.
    Estados:
    - ok: sincronizado
    - pending: cambios guardados localmente pendientes de enviar a AWS
@@ -19,6 +21,7 @@ window.formatFechaES = function (iso) {
 */
 (function () {
   var PENDING_KEY = 'unitecnic_projects_pending';
+  var hideTimer = null;
 
   function ensureEl() {
     var el = document.getElementById('gp-sync-indicator');
@@ -32,35 +35,59 @@ window.formatFechaES = function (iso) {
     el.style.fontSize = '12px';
     el.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
     el.style.pointerEvents = 'none';
-    el.style.padding = '6px 10px';
+    el.style.padding = '7px 11px';
     el.style.borderRadius = '999px';
-    el.style.boxShadow = '0 10px 15px rgba(0,0,0,.15)';
+    el.style.boxShadow = '0 14px 30px rgba(0,0,0,.18)';
     el.style.opacity = '0';
-    el.style.transition = 'opacity .2s ease';
+    el.style.transition = 'opacity .2s ease, transform .2s ease';
+    el.style.display = 'inline-flex';
+    el.style.alignItems = 'center';
+    el.style.gap = '6px';
+    el.style.transform = 'translateY(4px)';
     document.body.appendChild(el);
     return el;
   }
 
-  function apply(status) {
-    var el = ensureEl();
-    var html = '';
-    var bg = '';
-    var iconStyle = 'display:inline-block;margin-right:5px;font-size:11px;';
-    if (status === 'ok') {
-      html = '<span style="' + iconStyle + '">✓</span>Sincronizado';
-      bg = '#16a34a';
-      setTimeout(function() { el.style.opacity = '0'; }, 3000);
-    } else if (status === 'pending') {
-      html = '<span style="' + iconStyle + 'animation:spin 1s linear infinite;">↻</span>Guardando cambios…';
-      bg = '#f59e0b';
-    } else if (status === 'offline') {
-      html = '<span style="' + iconStyle + '">✗</span>Sin conexión — guardado local';
-      bg = '#ef4444';
-    }
-    el.innerHTML = html;
+  function paint(el, icon, text, bg, spin) {
+    // Sustituimos el contenido de forma segura sin interpretar HTML.
+    el.replaceChildren();
+
+    var iconEl = document.createElement('span');
+    iconEl.textContent = icon;
+    iconEl.setAttribute('aria-hidden', 'true');
+    iconEl.style.display = 'inline-block';
+    iconEl.style.fontSize = '11px';
+    if (spin) iconEl.className = 'gp-sync-spin';
+
+    var textEl = document.createElement('span');
+    textEl.textContent = text;
+
+    el.appendChild(iconEl);
+    el.appendChild(textEl);
     el.style.background = bg;
     el.style.color = 'white';
-    if (html) el.style.opacity = '0.95';
+    el.style.opacity = '0.95';
+    el.style.transform = 'translateY(0)';
+  }
+
+  function apply(status) {
+    var el = ensureEl();
+    if (hideTimer) window.clearTimeout(hideTimer);
+
+    if (status === 'ok') {
+      paint(el, '✓', 'Sincronizado', '#16a34a', false);
+      hideTimer = window.setTimeout(function () {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(4px)';
+      }, 3000);
+    } else if (status === 'pending') {
+      paint(el, '↻', 'Guardando cambios…', '#f59e0b', true);
+    } else if (status === 'offline') {
+      paint(el, '✕', 'Sin conexión — guardado local', '#ef4444', false);
+    } else {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(4px)';
+    }
   }
 
   // Expuesto para que app.bundle.js lo use (si existe).
@@ -77,5 +104,3 @@ window.formatFechaES = function (iso) {
   window.addEventListener('online', refreshFromState);
   window.addEventListener('offline', function () { apply('offline'); });
 })();
-
-

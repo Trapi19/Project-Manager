@@ -1,0 +1,528 @@
+/* =========================================================
+   DISEÑO V3 / OVERHAUL VISUAL
+   ---------------------------------------------------------
+   Esta hoja se carga al final del <head> y por tanto actúa
+   como capa de presentación. No cambia la lógica ni los datos.
+
+   Objetivos:
+   1) Rediseño más editorial y profesional para dashboard.
+   2) Mejor lectura de tarjetas, tablas, formularios y vistas auxiliares.
+   3) Modo oscuro más consistente.
+   4) Móvil más cómodo.
+   5) Mantener impresión limpia: casi todo queda limitado a @media screen.
+   ========================================================= */
+
+:root{
+  /* Sistema visual V3: radios, sombras y superficies. */
+  --v3-brand: var(--brand, #0888C8);
+  --v3-brand-dark: var(--brand-dark, #056A9B);
+  --v3-ink: #101827;
+  --v3-muted: #64748b;
+  --v3-panel: rgba(255,255,255,.78);
+  --v3-panel-strong: rgba(255,255,255,.94);
+  --v3-panel-soft: rgba(248,250,252,.72);
+  --v3-border: rgba(15,23,42,.105);
+  --v3-border-strong: rgba(15,23,42,.18);
+  --v3-radius-xl: 30px;
+  --v3-radius-lg: 24px;
+  --v3-radius-md: 18px;
+  --v3-shadow-1: 0 18px 48px rgba(15,23,42,.08);
+  --v3-shadow-2: 0 28px 90px rgba(15,23,42,.14);
+  --v3-shadow-focus: 0 0 0 4px rgba(8,136,200,.16);
+}
+
+.theme-dark{
+  --v3-ink: #e5e7eb;
+  --v3-muted: #a7b0c0;
+  --v3-panel: rgba(15,23,42,.72);
+  --v3-panel-strong: rgba(17,24,39,.92);
+  --v3-panel-soft: rgba(2,6,23,.38);
+  --v3-border: rgba(148,163,184,.18);
+  --v3-border-strong: rgba(148,163,184,.28);
+  --v3-shadow-1: 0 20px 55px rgba(0,0,0,.34);
+  --v3-shadow-2: 0 34px 100px rgba(0,0,0,.50);
+  --v3-shadow-focus: 0 0 0 4px rgba(56,189,248,.18);
+}
+
+@keyframes gpSyncSpin{ to{ transform:rotate(360deg); } }
+.gp-sync-spin{ animation:gpSyncSpin .9s linear infinite; }
+
+@media screen{
+  html{ scroll-behavior:smooth; }
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(900px circle at 8% -12%, rgba(8,136,200,.20), transparent 38%),
+      radial-gradient(760px circle at 92% 4%, rgba(99,102,241,.13), transparent 34%),
+      linear-gradient(180deg, rgba(255,255,255,.72), rgba(248,250,252,.92)),
+      var(--bg-gradient) !important;
+    color:var(--v3-ink);
+  }
+
+  .theme-dark body{
+    background:
+      radial-gradient(960px circle at 10% -14%, rgba(14,165,233,.22), transparent 38%),
+      radial-gradient(780px circle at 94% 2%, rgba(139,92,246,.16), transparent 36%),
+      linear-gradient(180deg, rgba(2,6,23,.20), rgba(2,6,23,.88)),
+      var(--bg-gradient) !important;
+  }
+
+  /* Contenedor general: más anchura útil y ritmo vertical. */
+  #root .max-w-7xl{
+    max-width:1500px !important;
+  }
+
+  #root .max-w-7xl.mx-auto.p-6,
+  #root .max-w-7xl.mx-auto.p-6.md\:p-10{
+    padding-top:28px !important;
+  }
+
+  /* Cabecera principal del listado. La convertimos en una barra/panel premium. */
+  #root .max-w-7xl > .flex.flex-col.md\:flex-row.justify-between.items-start.md\:items-center.mb-10{
+    position:relative;
+    padding:18px !important;
+    border:1px solid var(--v3-border);
+    border-radius:var(--v3-radius-xl);
+    background:var(--v3-panel);
+    backdrop-filter:blur(22px) saturate(1.15);
+    -webkit-backdrop-filter:blur(22px) saturate(1.15);
+    box-shadow:var(--v3-shadow-1);
+    overflow:visible;
+  }
+
+  #root .max-w-7xl > .flex.flex-col.md\:flex-row.justify-between.items-start.md\:items-center.mb-10::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:inherit;
+    pointer-events:none;
+    background:linear-gradient(135deg, rgba(255,255,255,.56), transparent 48%);
+  }
+
+  .theme-dark #root .max-w-7xl > .flex.flex-col.md\:flex-row.justify-between.items-start.md\:items-center.mb-10::before{
+    background:linear-gradient(135deg, rgba(255,255,255,.08), transparent 48%);
+  }
+
+  h1.text-3xl{
+    letter-spacing:-.055em;
+    line-height:1.02;
+    font-weight:850 !important;
+  }
+
+  /* Logo/ícono del header: más integrado, menos cuadrado genérico. */
+  #root .w-14.h-14.rounded-2xl{
+    border-radius:20px !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.75), 0 14px 30px rgba(15,23,42,.10) !important;
+    background:linear-gradient(145deg, rgba(255,255,255,.95), rgba(240,249,255,.75)) !important;
+  }
+
+  .theme-dark #root .w-14.h-14.rounded-2xl{
+    background:linear-gradient(145deg, rgba(30,41,59,.95), rgba(15,23,42,.75)) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 16px 36px rgba(0,0,0,.38) !important;
+  }
+
+  /* Buscador y filtros: altura homogénea, sombra interna y foco consistente. */
+  .apple-search-input,
+  .apple-select-filter,
+  input[type="text"],
+  input[type="date"],
+  select,
+  textarea{
+    border-radius:16px !important;
+    border-color:var(--v3-border) !important;
+    background:var(--v3-panel-strong) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.56), 0 1px 2px rgba(15,23,42,.03) !important;
+  }
+
+  .theme-dark .apple-search-input,
+  .theme-dark .apple-select-filter,
+  .theme-dark input[type="text"],
+  .theme-dark input[type="date"],
+  .theme-dark select,
+  .theme-dark textarea{
+    background:rgba(15,23,42,.78) !important;
+    color:#f8fafc !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.20) !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus,
+  .apple-search-input:focus,
+  .apple-select-filter:focus{
+    border-color:rgba(8,136,200,.55) !important;
+    box-shadow:var(--v3-shadow-focus), inset 0 1px 0 rgba(255,255,255,.60) !important;
+  }
+
+  /* Botones: más consistentes y con feedback físico. */
+  .btn-apple,
+  .btn-apple-primary,
+  .btn-apple-danger,
+  .btn-apple-icon,
+  button.bg-blue-600,
+  button.text-blue-600{
+    border-radius:16px !important;
+    transition:transform .16s ease, box-shadow .16s ease, filter .16s ease, background-color .16s ease !important;
+  }
+
+  .btn-apple:hover,
+  .btn-apple-primary:hover,
+  .btn-apple-danger:hover,
+  .btn-apple-icon:hover,
+  button.bg-blue-600:hover{
+    transform:translateY(-1px);
+  }
+
+  .btn-apple:active,
+  .btn-apple-primary:active,
+  .btn-apple-danger:active,
+  .btn-apple-icon:active,
+  button.bg-blue-600:active{
+    transform:translateY(0) scale(.985);
+  }
+
+  /* Menú de acciones: lo acercamos a un popover real. */
+  .actions-popover{
+    border-radius:20px !important;
+    border:1px solid var(--v3-border) !important;
+    background:var(--v3-panel-strong) !important;
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+    box-shadow:var(--v3-shadow-2) !important;
+    padding:8px !important;
+  }
+
+  .actions-item{
+    border-radius:14px !important;
+  }
+
+  /* Resumen ejecutivo: ahora se siente como centro de control. */
+  .exec-summary{
+    border-radius:var(--v3-radius-xl) !important;
+    border:1px solid var(--v3-border) !important;
+    background:
+      linear-gradient(135deg, rgba(8,136,200,.08), transparent 42%),
+      linear-gradient(180deg, var(--v3-panel-strong), var(--v3-panel)) !important;
+    box-shadow:var(--v3-shadow-2) !important;
+  }
+
+  .theme-dark .exec-summary{
+    background:
+      radial-gradient(900px circle at 12% 0%, rgba(8,136,200,.20), transparent 42%),
+      radial-gradient(760px circle at 88% 0%, rgba(99,102,241,.14), transparent 44%),
+      linear-gradient(180deg, rgba(15,23,42,.94), rgba(15,23,42,.72)) !important;
+  }
+
+  .exec-title-text{
+    font-size:clamp(22px, 2.2vw, 30px) !important;
+    letter-spacing:-.05em !important;
+    font-weight:850 !important;
+  }
+
+  .exec-subtitle,
+  .exec-note{
+    color:var(--v3-muted) !important;
+  }
+
+  .exec-grid{
+    gap:18px !important;
+  }
+
+  @media (min-width:1280px){
+    .exec-grid{
+      grid-template-columns:repeat(6, minmax(0, 1fr)) !important;
+    }
+    .exec-grid .exec-card:nth-child(1),
+    .exec-grid .exec-card:nth-child(2),
+    .exec-grid .exec-card:nth-child(3),
+    .exec-grid .exec-card:nth-child(4){
+      grid-column:span 1 !important;
+    }
+    .exec-grid .exec-card:nth-child(5),
+    .exec-grid .exec-card:nth-child(6){
+      grid-column:span 3 !important;
+    }
+  }
+
+  .exec-card{
+    border-radius:24px !important;
+    border:1px solid var(--v3-border) !important;
+    background:rgba(255,255,255,.66) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.62), 0 12px 30px rgba(15,23,42,.06) !important;
+    min-height:150px;
+  }
+
+  .theme-dark .exec-card{
+    background:rgba(15,23,42,.62) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 18px 44px rgba(0,0,0,.28) !important;
+  }
+
+  .exec-card:hover{
+    transform:translateY(-5px) !important;
+    border-color:var(--v3-border-strong) !important;
+    box-shadow:0 24px 60px rgba(15,23,42,.14), inset 0 1px 0 rgba(255,255,255,.70) !important;
+  }
+
+  .theme-dark .exec-card:hover{
+    box-shadow:0 26px 70px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.09) !important;
+  }
+
+  .exec-value{
+    letter-spacing:-.06em !important;
+    font-weight:900 !important;
+  }
+
+  .exec-card-icon,
+  .exec-title-icon{
+    border-radius:18px !important;
+    background:linear-gradient(145deg, rgba(255,255,255,.82), rgba(255,255,255,.24)) !important;
+    border:1px solid var(--v3-border) !important;
+  }
+
+  .theme-dark .exec-card-icon,
+  .theme-dark .exec-title-icon{
+    background:linear-gradient(145deg, rgba(255,255,255,.10), rgba(255,255,255,.03)) !important;
+  }
+
+  /* Secciones por estado: menos bloque de color, más panel organizado. */
+  .section-tapiz{
+    border-radius:var(--v3-radius-xl) !important;
+    background:var(--v3-panel) !important;
+    border:1px solid var(--v3-border) !important;
+    box-shadow:var(--v3-shadow-1) !important;
+    backdrop-filter:blur(20px) saturate(1.10);
+    -webkit-backdrop-filter:blur(20px) saturate(1.10);
+  }
+
+  .section-tapiz > h2{
+    padding-bottom:12px;
+    border-bottom:1px solid var(--v3-border);
+    letter-spacing:-.025em;
+  }
+
+  .section-tapiz.section--ejecucion,
+  .section-tapiz.section--completado,
+  .section-tapiz.section--revision,
+  .section-tapiz.section--pausa{
+    box-shadow:var(--v3-shadow-1), inset 4px 0 0 rgba(var(--color-ejecucion-rgb, 59,130,246), .55) !important;
+  }
+  .section-tapiz.section--completado{ box-shadow:var(--v3-shadow-1), inset 4px 0 0 rgba(var(--color-completado-rgb, 16,185,129), .55) !important; }
+  .section-tapiz.section--revision{ box-shadow:var(--v3-shadow-1), inset 4px 0 0 rgba(var(--color-revision-rgb, 139,92,246), .55) !important; }
+  .section-tapiz.section--pausa{ box-shadow:var(--v3-shadow-1), inset 4px 0 0 rgba(var(--color-pausa-rgb, 239,68,68), .55) !important; }
+
+  /* Tarjetas de proyecto: mayor jerarquía, borde por estado y CTA más claro. */
+  .project-card{
+    border-radius:26px !important;
+    padding:22px !important;
+    background:linear-gradient(180deg, var(--v3-panel-strong), rgba(255,255,255,.72)) !important;
+    border:1px solid var(--v3-border) !important;
+    box-shadow:0 16px 40px rgba(15,23,42,.075) !important;
+    overflow:hidden;
+    position:relative;
+  }
+
+  .project-card::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:4px;
+    background:var(--v3-brand);
+    opacity:.55;
+  }
+
+  .project-card[data-estado="Completado"]::before{ background:#10b981; }
+  .project-card[data-estado="En Pausa"]::before{ background:#64748b; }
+  .project-card[data-estado="En Revisión"]::before{ background:#8b5cf6; }
+
+  .theme-dark .project-card{
+    background:linear-gradient(180deg, rgba(30,41,59,.88), rgba(15,23,42,.68)) !important;
+    box-shadow:0 20px 50px rgba(0,0,0,.32) !important;
+  }
+
+  .project-card:hover{
+    transform:translateY(-6px) !important;
+    box-shadow:0 28px 75px rgba(15,23,42,.16) !important;
+    border-color:var(--v3-border-strong) !important;
+  }
+
+  .theme-dark .project-card:hover{
+    box-shadow:0 32px 80px rgba(0,0,0,.52) !important;
+  }
+
+  .project-card h3{
+    letter-spacing:-.025em;
+    font-size:1.08rem !important;
+  }
+
+  .project-card .apple-link{
+    padding:8px 10px;
+    border-radius:999px;
+    background:rgba(8,136,200,.08);
+  }
+
+  /* Chips: mejor contraste y lectura. */
+  .apple-chip,
+  .exec-pill,
+  .dependency-pill{
+    border-radius:999px !important;
+    border-color:var(--v3-border) !important;
+    background:rgba(255,255,255,.58) !important;
+  }
+
+  .theme-dark .apple-chip,
+  .theme-dark .exec-pill,
+  .theme-dark .dependency-pill{
+    background:rgba(255,255,255,.06) !important;
+  }
+
+  /* Tablas: efecto app de gestión, cabecera fija, más respiración. */
+  table{
+    border-collapse:separate !important;
+    border-spacing:0 !important;
+  }
+
+  thead th{
+    position:sticky;
+    top:0;
+    z-index:3;
+    background:var(--v3-panel-strong) !important;
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--v3-border) !important;
+  }
+
+  tbody tr{
+    transition:background-color .16s ease, transform .16s ease !important;
+  }
+
+  tbody tr:hover{
+    background:rgba(8,136,200,.055) !important;
+  }
+
+  td, th{
+    border-color:var(--v3-border) !important;
+  }
+
+  /* Editor y cabeceras internas. */
+  .print-header,
+  .bg-white.rounded-xl.shadow-sm.border,
+  .bg-white.p-6.rounded-xl.shadow-sm.border,
+  .bg-white.border-b.border-gray-200.sticky{
+    background:var(--v3-panel-strong) !important;
+    border-color:var(--v3-border) !important;
+    border-radius:var(--v3-radius-lg) !important;
+    box-shadow:var(--v3-shadow-1) !important;
+  }
+
+  .bg-white.border-b.border-gray-200.sticky{
+    border-radius:0 0 var(--v3-radius-lg) var(--v3-radius-lg) !important;
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+  }
+
+  /* Vistas Workload / Alertas / Charts. */
+  .wl-header-sticky{
+    background:var(--v3-panel-strong) !important;
+    border-bottom:1px solid var(--v3-border) !important;
+    box-shadow:0 10px 30px rgba(15,23,42,.055);
+    backdrop-filter:blur(22px) saturate(1.12);
+    -webkit-backdrop-filter:blur(22px) saturate(1.12);
+  }
+
+  .wl-person-card,
+  .wl-subcard{
+    border-radius:24px !important;
+    border:1px solid var(--v3-border) !important;
+    background:var(--v3-panel-strong) !important;
+    box-shadow:var(--v3-shadow-1) !important;
+  }
+
+  .wl-subcard:hover,
+  .wl-person-card:hover{
+    transform:translateY(-2px);
+  }
+
+  /* Modales y toasts más consistentes. */
+  .modal-overlay{
+    background:rgba(2,6,23,.56) !important;
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+
+  .modal-card{
+    border-radius:28px !important;
+    background:var(--v3-panel-strong) !important;
+    border:1px solid var(--v3-border) !important;
+    box-shadow:var(--v3-shadow-2) !important;
+  }
+
+  .modal-title{
+    letter-spacing:-.03em;
+  }
+
+  /* Scrollbars discretas en navegadores Chromium/WebKit. */
+  *::-webkit-scrollbar{ width:10px; height:10px; }
+  *::-webkit-scrollbar-track{ background:transparent; }
+  *::-webkit-scrollbar-thumb{
+    background:rgba(100,116,139,.35);
+    border-radius:999px;
+    border:3px solid transparent;
+    background-clip:content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover{ background-color:rgba(100,116,139,.55); }
+
+  /* Accesibilidad: foco visible para teclado. */
+  :focus-visible{
+    outline:none !important;
+    box-shadow:var(--v3-shadow-focus) !important;
+  }
+
+  /* Estado vacío: más amable. */
+  .text-center.py-24.bg-white.rounded-2xl{
+    border-radius:var(--v3-radius-xl) !important;
+    background:var(--v3-panel) !important;
+    border-color:var(--v3-border) !important;
+    box-shadow:var(--v3-shadow-1) !important;
+  }
+
+  /* Móvil: cabeceras y tarjetas con menos padding para ganar pantalla útil. */
+  @media (max-width:640px){
+    #root .max-w-7xl.mx-auto.p-6,
+    #root .max-w-7xl.mx-auto.p-6.md\:p-10{
+      padding:14px !important;
+    }
+
+    #root .max-w-7xl > .flex.flex-col.md\:flex-row.justify-between.items-start.md\:items-center.mb-10{
+      border-radius:22px;
+      padding:14px !important;
+      margin-bottom:22px !important;
+    }
+
+    .exec-summary,
+    .section-tapiz{
+      border-radius:22px !important;
+      padding:16px !important;
+    }
+
+    .project-card{
+      border-radius:22px !important;
+      padding:18px !important;
+    }
+
+    .exec-header{
+      align-items:flex-start !important;
+      flex-direction:column !important;
+    }
+  }
+
+  /* Respeta usuarios con reducción de movimiento. */
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      scroll-behavior:auto !important;
+      animation-duration:.001ms !important;
+      transition-duration:.001ms !important;
+    }
+  }
+}
