@@ -27,6 +27,7 @@ tsc "$TMP" \
   --jsxFragmentFactory React.Fragment \
   --target ES2018 \
   --module none \
+  --ignoreDeprecations "6.0" \
   --outDir "$OUT_DIR"
 
 # Output file name from TS is based on TMP base name
