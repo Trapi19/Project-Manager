@@ -10,97 +10,138 @@ window.formatFechaES = function (iso) {
   return dd + "-" + mm + "-" + yyyy;
 };
 
-/* Indicador simple de sincronización.
-   Cambio V3: se deja de usar innerHTML para pintar el estado.
-   Motivo: aunque los textos eran internos, textContent + nodos DOM reduce superficie de inyección
-   y deja el componente preparado para futuros mensajes dinámicos sin riesgo de HTML accidental.
+/* Indicador premium de sincronización V4.
+   Usa nodos DOM seguros (sin innerHTML). Diseño pill con punto
+   de pulso animado para el estado pending, y desvanecimiento
+   suave para el estado ok.
    Estados:
-   - ok: sincronizado
-   - pending: cambios guardados localmente pendientes de enviar a AWS
-   - offline: sin conexión
+   - ok      : sincronizado (se oculta a los 3 s)
+   - pending : cambios guardados localmente pendientes de AWS
+   - offline : sin conexión de red
 */
 (function () {
+  'use strict';
   var PENDING_KEY = 'unitecnic_projects_pending';
-  var hideTimer = null;
+  var hideTimer   = null;
+  var BASE_FONT   = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+
+  /* Paleta por estado */
+  var STATES = {
+    ok:      { bg: 'rgba(16,185,129,.92)',  border: 'rgba(16,185,129,.55)',  text: '#fff', dot: '#a7f3d0', label: 'Sincronizado'              },
+    pending: { bg: 'rgba(217,119,6,.92)',   border: 'rgba(245,158,11,.55)',  text: '#fff', dot: '#fde68a', label: 'Guardando cambios…'         },
+    offline: { bg: 'rgba(185,28,28,.90)',   border: 'rgba(239,68,68,.55)',   text: '#fff', dot: '#fecaca', label: 'Sin conexión — local'        }
+  };
+
+  /* Inyecta los keyframes de pulso una sola vez */
+  function injectStyles() {
+    if (document.getElementById('gp-sync-kf')) return;
+    var s = document.createElement('style');
+    s.id = 'gp-sync-kf';
+    s.textContent =
+      '@keyframes gpDotPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.55);opacity:.6}}' +
+      '@keyframes gpSyncSpin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
 
   function ensureEl() {
     var el = document.getElementById('gp-sync-indicator');
     if (el) return el;
+    injectStyles();
     el = document.createElement('div');
     el.id = 'gp-sync-indicator';
-    el.style.position = 'fixed';
-    el.style.bottom = '14px';
-    el.style.left = '14px';
-    el.style.zIndex = '9999';
-    el.style.fontSize = '12px';
-    el.style.fontFamily = 'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
-    el.style.pointerEvents = 'none';
-    el.style.padding = '7px 11px';
-    el.style.borderRadius = '999px';
-    el.style.boxShadow = '0 14px 30px rgba(0,0,0,.18)';
-    el.style.opacity = '0';
-    el.style.transition = 'opacity .2s ease, transform .2s ease';
-    el.style.display = 'inline-flex';
-    el.style.alignItems = 'center';
-    el.style.gap = '6px';
-    el.style.transform = 'translateY(4px)';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    Object.assign(el.style, {
+      position:       'fixed',
+      bottom:         '18px',
+      left:           '18px',
+      zIndex:         '9999',
+      display:        'inline-flex',
+      alignItems:     'center',
+      gap:            '8px',
+      padding:        '7px 14px 7px 10px',
+      borderRadius:   '999px',
+      border:         '1px solid transparent',
+      fontFamily:     BASE_FONT,
+      fontSize:       '12.5px',
+      fontWeight:     '650',
+      letterSpacing:  '.01em',
+      pointerEvents:  'none',
+      backdropFilter: 'blur(14px) saturate(1.2)',
+      boxShadow:      '0 8px 28px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.14)',
+      opacity:        '0',
+      transform:      'translateY(6px) scale(.97)',
+      transition:     'opacity .22s ease, transform .22s ease'
+    });
     document.body.appendChild(el);
     return el;
   }
 
-  function paint(el, icon, text, bg, spin) {
-    // Sustituimos el contenido de forma segura sin interpretar HTML.
+  function paint(el, state, spin) {
+    var cfg = STATES[state] || STATES.ok;
     el.replaceChildren();
 
-    var iconEl = document.createElement('span');
-    iconEl.textContent = icon;
-    iconEl.setAttribute('aria-hidden', 'true');
-    iconEl.style.display = 'inline-block';
-    iconEl.style.fontSize = '11px';
-    if (spin) iconEl.className = 'gp-sync-spin';
+    /* Punto indicador */
+    var dot = document.createElement('span');
+    dot.setAttribute('aria-hidden', 'true');
+    Object.assign(dot.style, {
+      display:      'inline-block',
+      width:        '7px',
+      height:       '7px',
+      borderRadius: '50%',
+      background:   cfg.dot,
+      flexShrink:   '0',
+      animation:    spin
+        ? 'gpDotPulse 1s ease-in-out infinite'
+        : state === 'ok' ? 'none' : 'gpDotPulse 1.6s ease-in-out infinite'
+    });
 
-    var textEl = document.createElement('span');
-    textEl.textContent = text;
+    /* Texto */
+    var txt = document.createElement('span');
+    txt.textContent = cfg.label;
 
-    el.appendChild(iconEl);
-    el.appendChild(textEl);
-    el.style.background = bg;
-    el.style.color = 'white';
-    el.style.opacity = '0.95';
-    el.style.transform = 'translateY(0)';
+    el.appendChild(dot);
+    el.appendChild(txt);
+
+    /* Estilos del contenedor */
+    el.style.background    = cfg.bg;
+    el.style.borderColor   = cfg.border;
+    el.style.color         = cfg.text;
+    el.style.opacity       = '1';
+    el.style.transform     = 'translateY(0) scale(1)';
+  }
+
+  function hide(el) {
+    el.style.opacity   = '0';
+    el.style.transform = 'translateY(6px) scale(.97)';
   }
 
   function apply(status) {
     var el = ensureEl();
-    if (hideTimer) window.clearTimeout(hideTimer);
+    if (hideTimer) { window.clearTimeout(hideTimer); hideTimer = null; }
 
     if (status === 'ok') {
-      paint(el, '✓', 'Sincronizado', '#16a34a', false);
-      hideTimer = window.setTimeout(function () {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(4px)';
-      }, 3000);
+      paint(el, 'ok', false);
+      hideTimer = window.setTimeout(function () { hide(el); }, 3200);
     } else if (status === 'pending') {
-      paint(el, '↻', 'Guardando cambios…', '#f59e0b', true);
+      paint(el, 'pending', true);
     } else if (status === 'offline') {
-      paint(el, '✕', 'Sin conexión — guardado local', '#ef4444', false);
+      paint(el, 'offline', false);
     } else {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(4px)';
+      hide(el);
     }
   }
 
-  // Expuesto para que app.bundle.js lo use (si existe).
   window.gpSetSyncStatus = apply;
 
   function refreshFromState() {
     var hasPending = false;
-    try { hasPending = !!localStorage.getItem(PENDING_KEY); } catch (e) { hasPending = false; }
+    try { hasPending = !!localStorage.getItem(PENDING_KEY); } catch (e) {}
     if (typeof navigator !== 'undefined' && navigator.onLine === false) apply('offline');
     else apply(hasPending ? 'pending' : 'ok');
   }
 
   document.addEventListener('DOMContentLoaded', refreshFromState);
-  window.addEventListener('online', refreshFromState);
+  window.addEventListener('online',  refreshFromState);
   window.addEventListener('offline', function () { apply('offline'); });
 })();
