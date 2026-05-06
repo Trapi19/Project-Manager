@@ -18,6 +18,7 @@ DTS
 
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
+trap 'rm -rf "$OUT_DIR" "$TMP" "$SHIM"' EXIT
 
 # Use classic React JSX transform so output uses React.createElement (works with React UMD globals)
 
@@ -31,6 +32,14 @@ tsc "$TMP" \
 
 # Output file name from TS is based on TMP base name
 mv "$OUT_DIR/.tmp_app.js" "$ROOT_DIR/app.bundle.js"
-rm -rf "$OUT_DIR" "$TMP"
+# Normalize generated output to keep diffs clean.
+python3 - "$ROOT_DIR/app.bundle.js" <<'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+p.write_text("\n".join(line.rstrip() for line in p.read_text().split("\n")))
+PY
+rm -rf "$OUT_DIR" "$TMP" "$SHIM"
+trap - EXIT
 
 echo "Built: $ROOT_DIR/app.bundle.js"
