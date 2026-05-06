@@ -1385,6 +1385,281 @@ const WorkloadView = ({ projects, onBack }) => {
             return React.createElement("span", { className: cls }, (t.prioridad || 'Media'));
         })(), t.fechaLimite && React.createElement("span", { className: "wl-date-warn" }, window.formatFechaES(t.fechaLimite)))))))))))))))));
 };
+const WorkloadDashboardView = ({ projects, onBack }) => {
+    const [projectStatusFilter, setProjectStatusFilter] = React.useState('Activos');
+    const [personFilter, setPersonFilter] = React.useState('Todos');
+    const [priorityFilter, setPriorityFilter] = React.useState('Todas');
+    const workloadModel = React.useMemo(() => {
+        const peopleMap = {};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let openTasks = 0;
+        let criticalAssigned = 0;
+        const includeProjectByStatus = (p) => {
+            var _g;
+            const estado = normalizeProjectEstado((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.estado);
+            if (projectStatusFilter === 'Todos')
+                return true;
+            if (projectStatusFilter === 'Activos')
+                return estado !== 'Completado';
+            return estado === projectStatusFilter;
+        };
+        const priorityWeight = (t) => {
+            const pr = String((t === null || t === void 0 ? void 0 : t.prioridad) || 'Media').toLowerCase();
+            if (pr === 'urgente')
+                return 0;
+            if (pr === 'alta')
+                return 1;
+            if (pr === 'media')
+                return 2;
+            if (pr === 'baja')
+                return 3;
+            return 2;
+        };
+        (projects || []).filter(includeProjectByStatus).forEach(p => {
+            const tasks = Array.isArray(p === null || p === void 0 ? void 0 : p.tasks) ? p.tasks : [];
+            const idx = buildTaskIndex(tasks);
+            tasks.forEach(t => {
+                const est = effectiveEstado(t, idx);
+                if (est === 'Completado')
+                    return;
+                const pr = String((t === null || t === void 0 ? void 0 : t.prioridad) || 'Media');
+                if (priorityFilter !== 'Todas' && pr !== priorityFilter)
+                    return;
+                openTasks += 1;
+                const due = parseDateOnly(t.fechaLimite);
+                const isCritical = ['urgente', 'alta'].includes(pr.toLowerCase());
+                if (isCritical)
+                    criticalAssigned += 1;
+                splitAssignees(t.asignadoA).forEach(name => {
+                    var _g, _h, _j, _k;
+                    if (personFilter !== 'Todos' && name !== personFilter)
+                        return;
+                    if (!peopleMap[name]) {
+                        peopleMap[name] = { name, totalTasks: 0, criticalTasks: 0, overdueTasks: 0, projectsMap: {}, tasks: [] };
+                    }
+                    const person = peopleMap[name];
+                    person.totalTasks += 1;
+                    if (isCritical)
+                        person.criticalTasks += 1;
+                    if (due && due < today)
+                        person.overdueTasks += 1;
+                    if (!person.projectsMap[p.id]) {
+                        person.projectsMap[p.id] = {
+                            id: p.id,
+                            title: ((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.titulo) || 'Sin título',
+                            client: ((_h = p === null || p === void 0 ? void 0 : p.meta) === null || _h === void 0 ? void 0 : _h.cliente) || 'Sin cliente',
+                            tasks: []
+                        };
+                    }
+                    const taskItem = {
+                        ...t,
+                        projectId: p.id,
+                        projectTitle: ((_j = p === null || p === void 0 ? void 0 : p.meta) === null || _j === void 0 ? void 0 : _j.titulo) || 'Sin título',
+                        client: ((_k = p === null || p === void 0 ? void 0 : p.meta) === null || _k === void 0 ? void 0 : _k.cliente) || 'Sin cliente',
+                        isCritical,
+                        isOverdue: !!(due && due < today)
+                    };
+                    person.projectsMap[p.id].tasks.push(taskItem);
+                    person.tasks.push(taskItem);
+                });
+            });
+        });
+        const peopleRaw = Object.values(peopleMap).sort((a, b) => b.totalTasks - a.totalTasks);
+        const maxTasks = Math.max(0, ...peopleRaw.map(p => p.totalTasks));
+        const capacity = Math.max(5, Math.ceil(Math.max(1, maxTasks) / 5) * 5);
+        const people = peopleRaw.map(person => {
+            const pct = Math.min(140, Math.round((person.totalTasks / capacity) * 100));
+            const state = pct >= 100 ? 'Sobrecargado' : pct >= 75 ? 'Alta carga' : pct >= 35 ? 'Carga normal' : 'Disponible';
+            const tone = pct >= 100 ? 'over' : pct >= 75 ? 'high' : pct >= 35 ? 'normal' : 'available';
+            const projectsList = Object.values(person.projectsMap).map(project => ({
+                ...project,
+                tasks: [...project.tasks].sort((a, b) => {
+                    const w = priorityWeight(a) - priorityWeight(b);
+                    if (w !== 0)
+                        return w;
+                    return (parseDateOnly(a.fechaLimite) || 9999999999999) - (parseDateOnly(b.fechaLimite) || 9999999999999);
+                })
+            }));
+            return { ...person, pct, state, tone, projects: projectsList };
+        });
+        const overloaded = people.filter(p => p.tone === 'over');
+        const highLoad = people.filter(p => p.tone === 'high' || p.tone === 'over');
+        const available = people.filter(p => p.tone === 'available');
+        const avgLoad = people.length ? Math.round(people.reduce((sum, p) => sum + p.pct, 0) / people.length) : 0;
+        const spread = people.length > 1 ? Math.max(...people.map(p => p.pct)) - Math.min(...people.map(p => p.pct)) : 0;
+        const busiest = people[0] || null;
+        const leastBusy = [...people].reverse().find(p => p.tone === 'available') || people[people.length - 1] || null;
+        const allPeopleNames = Array.from(new Set((projects || []).flatMap(p => (p.tasks || []).flatMap(t => splitAssignees(t.asignadoA))))).sort((a, b) => a.localeCompare(b, 'es'));
+        const alerts = [];
+        overloaded.forEach(p => alerts.push(`${p.name} está al ${p.pct}% de carga.`));
+        if (!overloaded.length && highLoad.length)
+            alerts.push(`${highLoad[0].name} concentra una carga elevada.`);
+        if (spread >= 55 && people.length > 1)
+            alerts.push('Hay mucha diferencia de carga entre miembros del equipo.');
+        if (available.length)
+            alerts.push(`${available.map(p => p.name).slice(0, 2).join(' y ')} ${available.length === 1 ? 'tiene' : 'tienen'} disponibilidad.`);
+        const criticalHigh = highLoad.find(p => p.criticalTasks > 0);
+        if (criticalHigh)
+            alerts.push(`Existen tareas críticas asignadas a ${criticalHigh.name}, que ya tiene carga alta.`);
+        const recommendations = [];
+        if (busiest && leastBusy && busiest.name !== leastBusy.name && busiest.totalTasks - leastBusy.totalTasks >= 2) {
+            recommendations.push(`Redistribuir tareas desde ${busiest.name} hacia ${leastBusy.name}.`);
+        }
+        if (criticalHigh)
+            recommendations.push(`Revisar si las tareas críticas de ${criticalHigh.name} pueden priorizarse o moverse.`);
+        if (available.length)
+            recommendations.push(`Asignar nuevas tareas a personas con disponibilidad: ${available.map(p => p.name).slice(0, 3).join(', ')}.`);
+        if (highLoad.length)
+            recommendations.push(`Evitar asignar más tareas a ${highLoad.map(p => p.name).slice(0, 2).join(' y ')} hasta equilibrar la carga.`);
+        if (!recommendations.length)
+            recommendations.push('La carga del equipo está equilibrada. Mantener el reparto actual.');
+        return { people, allPeopleNames, capacity, openTasks, criticalAssigned, avgLoad, overloaded, available, alerts, recommendations };
+    }, [projects, projectStatusFilter, personFilter, priorityFilter]);
+    const kpis = [
+        { label: 'Personas activas', value: workloadModel.people.length, note: 'Con tareas abiertas', icon: 'fa-user-group', tone: 'blue' },
+        { label: 'Tareas abiertas', value: workloadModel.openTasks, note: 'Pendientes o en curso', icon: 'fa-list-check', tone: 'cyan' },
+        { label: 'Carga media', value: `${workloadModel.avgLoad}%`, note: 'Media del equipo', icon: 'fa-gauge-high', tone: 'green' },
+        { label: 'Sobrecargadas', value: workloadModel.overloaded.length, note: 'Personas al 100% o más', icon: 'fa-triangle-exclamation', tone: 'red' },
+        { label: 'Disponibles', value: workloadModel.available.length, note: 'Con margen de asignación', icon: 'fa-circle-check', tone: 'green' },
+        { label: 'Críticas asignadas', value: workloadModel.criticalAssigned, note: 'Urgentes o altas', icon: 'fa-bolt', tone: 'amber' }
+    ];
+    return (React.createElement("div", { className: "workload-page" },
+        React.createElement("section", { className: "workload-hero" },
+            React.createElement("div", { className: "workload-hero-main" },
+                React.createElement("button", { onClick: onBack, className: "workload-back no-print", title: "Volver" },
+                    React.createElement("i", { className: "fas fa-arrow-left" }),
+                    React.createElement("span", null, "Volver")),
+                React.createElement("div", null,
+                    React.createElement("h1", null, "Carga de trabajo"),
+                    React.createElement("p", null, "Distribuci\u00F3n de tareas, disponibilidad y equilibrio del equipo."))),
+            React.createElement("div", { className: "workload-filters no-print" },
+                React.createElement("label", null,
+                    React.createElement("span", null, "Estado"),
+                    React.createElement("select", { value: projectStatusFilter, onChange: e => setProjectStatusFilter(e.target.value) },
+                        React.createElement("option", { value: "Activos" }, "Activos"),
+                        React.createElement("option", { value: "Todos" }, "Todos"),
+                        React.createElement("option", { value: "En Ejecuci\u00F3n" }, "En ejecuci\u00F3n"),
+                        React.createElement("option", { value: "En Revisi\u00F3n" }, "En revisi\u00F3n"),
+                        React.createElement("option", { value: "En Pausa" }, "En pausa"),
+                        React.createElement("option", { value: "Completado" }, "Completados"))),
+                React.createElement("label", null,
+                    React.createElement("span", null, "Persona"),
+                    React.createElement("select", { value: personFilter, onChange: e => setPersonFilter(e.target.value) },
+                        React.createElement("option", { value: "Todos" }, "Todos"),
+                        workloadModel.allPeopleNames.map(name => React.createElement("option", { key: name, value: name }, name)))),
+                React.createElement("label", null,
+                    React.createElement("span", null, "Prioridad"),
+                    React.createElement("select", { value: priorityFilter, onChange: e => setPriorityFilter(e.target.value) },
+                        React.createElement("option", { value: "Todas" }, "Todas"),
+                        React.createElement("option", { value: "Urgente" }, "Urgente"),
+                        React.createElement("option", { value: "Alta" }, "Alta"),
+                        React.createElement("option", { value: "Media" }, "Media"),
+                        React.createElement("option", { value: "Baja" }, "Baja"))))),
+        workloadModel.people.length === 0 ? (React.createElement("div", { className: "workload-empty" },
+            React.createElement("i", { className: "fas fa-chart-simple" }),
+            React.createElement("h2", null, "No hay datos suficientes para calcular la carga de trabajo."),
+            React.createElement("p", null, "A\u00F1ade tareas asignadas a usuarios para visualizar la distribuci\u00F3n del equipo."))) : (React.createElement("div", { className: "workload-shell" },
+            React.createElement("section", { className: "workload-kpi-grid" }, kpis.map(kpi => React.createElement("article", { className: `workload-kpi workload-kpi--${kpi.tone}`, key: kpi.label },
+                React.createElement("i", { className: `fas ${kpi.icon}` }),
+                React.createElement("div", null,
+                    React.createElement("strong", null, kpi.value),
+                    React.createElement("span", null, kpi.label),
+                    React.createElement("small", null, kpi.note))))),
+            React.createElement("section", { className: "workload-layout" },
+                React.createElement("article", { className: "workload-panel workload-panel--main" },
+                    React.createElement("div", { className: "workload-panel-head" },
+                        React.createElement("div", null,
+                            React.createElement("span", null, "Equipo"),
+                            React.createElement("h2", null, "Carga por persona")),
+                        React.createElement("small", null,
+                            "Capacidad de referencia: ",
+                            workloadModel.capacity,
+                            " tareas")),
+                    React.createElement("div", { className: "workload-person-list" }, workloadModel.people.map(person => React.createElement("button", { className: `workload-person-row workload-person-row--${person.tone}`, key: person.name, onClick: () => setPersonFilter(person.name) },
+                        React.createElement("div", { className: "workload-person-id" },
+                            React.createElement("span", null, person.name.charAt(0).toUpperCase()),
+                            React.createElement("div", null,
+                                React.createElement("strong", null, person.name),
+                                React.createElement("small", null,
+                                    person.totalTasks,
+                                    " tarea",
+                                    person.totalTasks === 1 ? '' : 's',
+                                    " abiertas \u00B7 ",
+                                    person.projects.length,
+                                    " proyecto",
+                                    person.projects.length === 1 ? '' : 's'))),
+                        React.createElement("div", { className: "workload-person-load" },
+                            React.createElement("div", null,
+                                React.createElement("strong", null,
+                                    person.pct,
+                                    "%"),
+                                React.createElement("span", null, person.state)),
+                            React.createElement("div", { className: "workload-bar" },
+                                React.createElement("span", { style: { width: `${Math.min(100, person.pct)}%` } }))))))),
+                React.createElement("aside", { className: "workload-side" },
+                    React.createElement("article", { className: "workload-panel" },
+                        React.createElement("div", { className: "workload-panel-head" },
+                            React.createElement("div", null,
+                                React.createElement("span", null, "Control"),
+                                React.createElement("h2", null, "Alertas de carga"))),
+                        React.createElement("div", { className: "workload-alert-list" }, workloadModel.alerts.length ? workloadModel.alerts.map((alert, i) => React.createElement("div", { className: "workload-alert", key: i },
+                            React.createElement("i", { className: "fas fa-circle-exclamation" }),
+                            React.createElement("span", null, alert))) : React.createElement("div", { className: "workload-positive" },
+                            React.createElement("i", { className: "fas fa-circle-check" }),
+                            React.createElement("span", null, "La carga del equipo est\u00E1 equilibrada.")))),
+                    React.createElement("article", { className: "workload-panel" },
+                        React.createElement("div", { className: "workload-panel-head" },
+                            React.createElement("div", null,
+                                React.createElement("span", null, "Decisi\u00F3n"),
+                                React.createElement("h2", null, "Recomendaciones"))),
+                        React.createElement("div", { className: "workload-rec-list" }, workloadModel.recommendations.map((rec, i) => React.createElement("div", { className: "workload-rec", key: i },
+                            React.createElement("i", { className: "fas fa-arrow-right" }),
+                            React.createElement("span", null, rec))))))),
+            React.createElement("section", { className: "workload-panel" },
+                React.createElement("div", { className: "workload-panel-head" },
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Distribuci\u00F3n"),
+                        React.createElement("h2", null, "Ranking de carga"))),
+                React.createElement("div", { className: "workload-ranking" }, workloadModel.people.map(person => React.createElement("div", { className: `workload-rank-row workload-rank-row--${person.tone}`, key: person.name },
+                    React.createElement("span", null, person.name),
+                    React.createElement("div", { className: "workload-bar" },
+                        React.createElement("span", { style: { width: `${Math.min(100, person.pct)}%` } })),
+                    React.createElement("strong", null,
+                        person.pct,
+                        "%"))))),
+            React.createElement("section", { className: "workload-panel" },
+                React.createElement("div", { className: "workload-panel-head" },
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Detalle"),
+                        React.createElement("h2", null, "Detalle por persona"))),
+                React.createElement("div", { className: "workload-detail-grid" }, workloadModel.people.map(person => React.createElement("article", { className: `workload-detail-card workload-detail-card--${person.tone}`, key: person.name },
+                    React.createElement("div", { className: "workload-detail-top" },
+                        React.createElement("div", null,
+                            React.createElement("strong", null, person.name),
+                            React.createElement("span", null, person.state)),
+                        React.createElement("small", null,
+                            person.pct,
+                            "%")),
+                    React.createElement("div", { className: "workload-detail-meta" },
+                        React.createElement("span", null,
+                            person.totalTasks,
+                            " tareas"),
+                        React.createElement("span", null,
+                            person.projects.length,
+                            " proyectos"),
+                        React.createElement("span", null,
+                            person.criticalTasks,
+                            " cr\u00EDticas")),
+                    React.createElement("div", { className: "workload-project-list" }, person.projects.slice(0, 4).map(project => React.createElement("button", { key: project.id, onClick: () => window.location.hash = `#/project/${project.id}` },
+                        React.createElement("strong", null, project.title),
+                        React.createElement("span", null,
+                            project.client,
+                            " \u00B7 ",
+                            project.tasks.length,
+                            " tarea",
+                            project.tasks.length === 1 ? '' : 's'))))))))))));
+};
 // --- COMPONENTE: VISTA DETALLADA DE ALERTAS (FINAL: Bloqueos + Rojas + Próximos) ---
 const AlertsView = ({ projects, onBack }) => {
     const [searchTerm, setSearchTerm] = React.useState('');
@@ -2625,7 +2900,7 @@ const MainApp = () => {
         onClick: function () { setSidebarOpen(true); },
         "aria-label": "Abrir menú",
         "aria-expanded": sidebarOpen
-    }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })), view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'users' && React.createElement(UsersView, null), view === 'import' && React.createElement(ImportView, { onImport: openImportPicker }), view === 'profile' && React.createElement(ProfileView, null), view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }), view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })), view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })), view === 'wiki' && currentProject && (React.createElement(ProjectWiki, {
+    }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })), view === 'workload' && (React.createElement(WorkloadDashboardView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'users' && React.createElement(UsersView, null), view === 'import' && React.createElement(ImportView, { onImport: openImportPicker }), view === 'profile' && React.createElement(ProfileView, null), view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }), view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })), view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })), view === 'wiki' && currentProject && (React.createElement(ProjectWiki, {
         project: currentProject,
         onSave: saveProject,
         onBack: () => { setView('editor'); setRoute(`#/project/${currentProject.id}`); },

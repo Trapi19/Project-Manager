@@ -2129,6 +2129,171 @@ const activeTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
     );
 };
 
+const WorkloadDashboardView = ({ projects, onBack }) => {
+    const [projectStatusFilter, setProjectStatusFilter] = React.useState('Activos');
+    const [personFilter, setPersonFilter] = React.useState('Todos');
+    const [priorityFilter, setPriorityFilter] = React.useState('Todas');
+
+    const workloadModel = React.useMemo(() => {
+        const peopleMap = {};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let openTasks = 0;
+        let criticalAssigned = 0;
+
+        const includeProjectByStatus = (p) => {
+            const estado = normalizeProjectEstado(p?.meta?.estado);
+            if (projectStatusFilter === 'Todos') return true;
+            if (projectStatusFilter === 'Activos') return estado !== 'Completado';
+            return estado === projectStatusFilter;
+        };
+        const priorityWeight = (t) => {
+            const pr = String(t?.prioridad || 'Media').toLowerCase();
+            if (pr === 'urgente') return 0;
+            if (pr === 'alta') return 1;
+            if (pr === 'media') return 2;
+            if (pr === 'baja') return 3;
+            return 2;
+        };
+
+        (projects || []).filter(includeProjectByStatus).forEach(p => {
+            const tasks = Array.isArray(p?.tasks) ? p.tasks : [];
+            const idx = buildTaskIndex(tasks);
+            tasks.forEach(t => {
+                const est = effectiveEstado(t, idx);
+                if (est === 'Completado') return;
+                const pr = String(t?.prioridad || 'Media');
+                if (priorityFilter !== 'Todas' && pr !== priorityFilter) return;
+
+                openTasks += 1;
+                const due = parseDateOnly(t.fechaLimite);
+                const isCritical = ['urgente', 'alta'].includes(pr.toLowerCase());
+                if (isCritical) criticalAssigned += 1;
+
+                splitAssignees(t.asignadoA).forEach(name => {
+                    if (personFilter !== 'Todos' && name !== personFilter) return;
+                    if (!peopleMap[name]) {
+                        peopleMap[name] = { name, totalTasks: 0, criticalTasks: 0, overdueTasks: 0, projectsMap: {}, tasks: [] };
+                    }
+                    const person = peopleMap[name];
+                    person.totalTasks += 1;
+                    if (isCritical) person.criticalTasks += 1;
+                    if (due && due < today) person.overdueTasks += 1;
+                    if (!person.projectsMap[p.id]) {
+                        person.projectsMap[p.id] = {
+                            id: p.id,
+                            title: p?.meta?.titulo || 'Sin título',
+                            client: p?.meta?.cliente || 'Sin cliente',
+                            tasks: []
+                        };
+                    }
+                    const taskItem = {
+                        ...t,
+                        projectId: p.id,
+                        projectTitle: p?.meta?.titulo || 'Sin título',
+                        client: p?.meta?.cliente || 'Sin cliente',
+                        isCritical,
+                        isOverdue: !!(due && due < today)
+                    };
+                    person.projectsMap[p.id].tasks.push(taskItem);
+                    person.tasks.push(taskItem);
+                });
+            });
+        });
+
+        const peopleRaw = Object.values(peopleMap).sort((a, b) => b.totalTasks - a.totalTasks);
+        const maxTasks = Math.max(0, ...peopleRaw.map(p => p.totalTasks));
+        const capacity = Math.max(5, Math.ceil(Math.max(1, maxTasks) / 5) * 5);
+        const people = peopleRaw.map(person => {
+            const pct = Math.min(140, Math.round((person.totalTasks / capacity) * 100));
+            const state = pct >= 100 ? 'Sobrecargado' : pct >= 75 ? 'Alta carga' : pct >= 35 ? 'Carga normal' : 'Disponible';
+            const tone = pct >= 100 ? 'over' : pct >= 75 ? 'high' : pct >= 35 ? 'normal' : 'available';
+            const projectsList = Object.values(person.projectsMap).map(project => ({
+                ...project,
+                tasks: [...project.tasks].sort((a, b) => {
+                    const w = priorityWeight(a) - priorityWeight(b);
+                    if (w !== 0) return w;
+                    return (parseDateOnly(a.fechaLimite) || 9999999999999) - (parseDateOnly(b.fechaLimite) || 9999999999999);
+                })
+            }));
+            return { ...person, pct, state, tone, projects: projectsList };
+        });
+
+        const overloaded = people.filter(p => p.tone === 'over');
+        const highLoad = people.filter(p => p.tone === 'high' || p.tone === 'over');
+        const available = people.filter(p => p.tone === 'available');
+        const avgLoad = people.length ? Math.round(people.reduce((sum, p) => sum + p.pct, 0) / people.length) : 0;
+        const spread = people.length > 1 ? Math.max(...people.map(p => p.pct)) - Math.min(...people.map(p => p.pct)) : 0;
+        const busiest = people[0] || null;
+        const leastBusy = [...people].reverse().find(p => p.tone === 'available') || people[people.length - 1] || null;
+        const allPeopleNames = Array.from(new Set((projects || []).flatMap(p => (p.tasks || []).flatMap(t => splitAssignees(t.asignadoA))))).sort((a, b) => a.localeCompare(b, 'es'));
+
+        const alerts = [];
+        overloaded.forEach(p => alerts.push(`${p.name} está al ${p.pct}% de carga.`));
+        if (!overloaded.length && highLoad.length) alerts.push(`${highLoad[0].name} concentra una carga elevada.`);
+        if (spread >= 55 && people.length > 1) alerts.push('Hay mucha diferencia de carga entre miembros del equipo.');
+        if (available.length) alerts.push(`${available.map(p => p.name).slice(0, 2).join(' y ')} ${available.length === 1 ? 'tiene' : 'tienen'} disponibilidad.`);
+        const criticalHigh = highLoad.find(p => p.criticalTasks > 0);
+        if (criticalHigh) alerts.push(`Existen tareas críticas asignadas a ${criticalHigh.name}, que ya tiene carga alta.`);
+
+        const recommendations = [];
+        if (busiest && leastBusy && busiest.name !== leastBusy.name && busiest.totalTasks - leastBusy.totalTasks >= 2) {
+            recommendations.push(`Redistribuir tareas desde ${busiest.name} hacia ${leastBusy.name}.`);
+        }
+        if (criticalHigh) recommendations.push(`Revisar si las tareas críticas de ${criticalHigh.name} pueden priorizarse o moverse.`);
+        if (available.length) recommendations.push(`Asignar nuevas tareas a personas con disponibilidad: ${available.map(p => p.name).slice(0, 3).join(', ')}.`);
+        if (highLoad.length) recommendations.push(`Evitar asignar más tareas a ${highLoad.map(p => p.name).slice(0, 2).join(' y ')} hasta equilibrar la carga.`);
+        if (!recommendations.length) recommendations.push('La carga del equipo está equilibrada. Mantener el reparto actual.');
+
+        return { people, allPeopleNames, capacity, openTasks, criticalAssigned, avgLoad, overloaded, available, alerts, recommendations };
+    }, [projects, projectStatusFilter, personFilter, priorityFilter]);
+
+    const kpis = [
+        { label: 'Personas activas', value: workloadModel.people.length, note: 'Con tareas abiertas', icon: 'fa-user-group', tone: 'blue' },
+        { label: 'Tareas abiertas', value: workloadModel.openTasks, note: 'Pendientes o en curso', icon: 'fa-list-check', tone: 'cyan' },
+        { label: 'Carga media', value: `${workloadModel.avgLoad}%`, note: 'Media del equipo', icon: 'fa-gauge-high', tone: 'green' },
+        { label: 'Sobrecargadas', value: workloadModel.overloaded.length, note: 'Personas al 100% o más', icon: 'fa-triangle-exclamation', tone: 'red' },
+        { label: 'Disponibles', value: workloadModel.available.length, note: 'Con margen de asignación', icon: 'fa-circle-check', tone: 'green' },
+        { label: 'Críticas asignadas', value: workloadModel.criticalAssigned, note: 'Urgentes o altas', icon: 'fa-bolt', tone: 'amber' }
+    ];
+
+    return (
+        <div className="workload-page">
+            <section className="workload-hero">
+                <div className="workload-hero-main">
+                    <button onClick={onBack} className="workload-back no-print" title="Volver"><i className="fas fa-arrow-left"></i><span>Volver</span></button>
+                    <div><h1>Carga de trabajo</h1><p>Distribución de tareas, disponibilidad y equilibrio del equipo.</p></div>
+                </div>
+                <div className="workload-filters no-print">
+                    <label><span>Estado</span><select value={projectStatusFilter} onChange={e => setProjectStatusFilter(e.target.value)}><option value="Activos">Activos</option><option value="Todos">Todos</option><option value="En Ejecución">En ejecución</option><option value="En Revisión">En revisión</option><option value="En Pausa">En pausa</option><option value="Completado">Completados</option></select></label>
+                    <label><span>Persona</span><select value={personFilter} onChange={e => setPersonFilter(e.target.value)}><option value="Todos">Todos</option>{workloadModel.allPeopleNames.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+                    <label><span>Prioridad</span><select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}><option value="Todas">Todas</option><option value="Urgente">Urgente</option><option value="Alta">Alta</option><option value="Media">Media</option><option value="Baja">Baja</option></select></label>
+                </div>
+            </section>
+
+            {workloadModel.people.length === 0 ? (
+                <div className="workload-empty"><i className="fas fa-chart-simple"></i><h2>No hay datos suficientes para calcular la carga de trabajo.</h2><p>Añade tareas asignadas a usuarios para visualizar la distribución del equipo.</p></div>
+            ) : (
+                <div className="workload-shell">
+                    <section className="workload-kpi-grid">{kpis.map(kpi => <article className={`workload-kpi workload-kpi--${kpi.tone}`} key={kpi.label}><i className={`fas ${kpi.icon}`}></i><div><strong>{kpi.value}</strong><span>{kpi.label}</span><small>{kpi.note}</small></div></article>)}</section>
+                    <section className="workload-layout">
+                        <article className="workload-panel workload-panel--main">
+                            <div className="workload-panel-head"><div><span>Equipo</span><h2>Carga por persona</h2></div><small>Capacidad de referencia: {workloadModel.capacity} tareas</small></div>
+                            <div className="workload-person-list">{workloadModel.people.map(person => <button className={`workload-person-row workload-person-row--${person.tone}`} key={person.name} onClick={() => setPersonFilter(person.name)}><div className="workload-person-id"><span>{person.name.charAt(0).toUpperCase()}</span><div><strong>{person.name}</strong><small>{person.totalTasks} tarea{person.totalTasks === 1 ? '' : 's'} abiertas · {person.projects.length} proyecto{person.projects.length === 1 ? '' : 's'}</small></div></div><div className="workload-person-load"><div><strong>{person.pct}%</strong><span>{person.state}</span></div><div className="workload-bar"><span style={{ width: `${Math.min(100, person.pct)}%` }}></span></div></div></button>)}</div>
+                        </article>
+                        <aside className="workload-side">
+                            <article className="workload-panel"><div className="workload-panel-head"><div><span>Control</span><h2>Alertas de carga</h2></div></div><div className="workload-alert-list">{workloadModel.alerts.length ? workloadModel.alerts.map((alert, i) => <div className="workload-alert" key={i}><i className="fas fa-circle-exclamation"></i><span>{alert}</span></div>) : <div className="workload-positive"><i className="fas fa-circle-check"></i><span>La carga del equipo está equilibrada.</span></div>}</div></article>
+                            <article className="workload-panel"><div className="workload-panel-head"><div><span>Decisión</span><h2>Recomendaciones</h2></div></div><div className="workload-rec-list">{workloadModel.recommendations.map((rec, i) => <div className="workload-rec" key={i}><i className="fas fa-arrow-right"></i><span>{rec}</span></div>)}</div></article>
+                        </aside>
+                    </section>
+                    <section className="workload-panel"><div className="workload-panel-head"><div><span>Distribución</span><h2>Ranking de carga</h2></div></div><div className="workload-ranking">{workloadModel.people.map(person => <div className={`workload-rank-row workload-rank-row--${person.tone}`} key={person.name}><span>{person.name}</span><div className="workload-bar"><span style={{ width: `${Math.min(100, person.pct)}%` }}></span></div><strong>{person.pct}%</strong></div>)}</div></section>
+                    <section className="workload-panel"><div className="workload-panel-head"><div><span>Detalle</span><h2>Detalle por persona</h2></div></div><div className="workload-detail-grid">{workloadModel.people.map(person => <article className={`workload-detail-card workload-detail-card--${person.tone}`} key={person.name}><div className="workload-detail-top"><div><strong>{person.name}</strong><span>{person.state}</span></div><small>{person.pct}%</small></div><div className="workload-detail-meta"><span>{person.totalTasks} tareas</span><span>{person.projects.length} proyectos</span><span>{person.criticalTasks} críticas</span></div><div className="workload-project-list">{person.projects.slice(0, 4).map(project => <button key={project.id} onClick={() => window.location.hash = `#/project/${project.id}`}><strong>{project.title}</strong><span>{project.client} · {project.tasks.length} tarea{project.tasks.length === 1 ? '' : 's'}</span></button>)}</div></article>)}</div></section>
+                </div>
+            )}
+        </div>
+    );
+};
+
 // --- COMPONENTE: VISTA DETALLADA DE ALERTAS (FINAL: Bloqueos + Rojas + Próximos) ---
 const AlertsView = ({ projects, onBack }) => {
     const [searchTerm, setSearchTerm] = React.useState('');
@@ -3777,7 +3942,7 @@ const normalized = (effectiveList || []).map(p => {
 
             React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
             view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })),
-            view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+            view === 'workload' && (React.createElement(WorkloadDashboardView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
             view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
             view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
             view === 'users' && React.createElement(UsersView, null),
