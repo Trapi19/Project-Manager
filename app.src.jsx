@@ -155,6 +155,276 @@ const computeProjectStats = (tasks) => {
     return { total, completed, inProgress, pending, progress, progressSum };
 };
 
+const parseDateOnly = (iso) => {
+    if (!iso) return null;
+    const t = String(iso).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
+    const [y, m, d] = t.split('-').map(n => parseInt(n, 10));
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+};
+
+const splitAssignees = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return ['Sin asignar'];
+    const parts = raw.split(/[\/,;&]|\s+y\s+/).map(s => s.trim()).filter(Boolean);
+    return parts.length ? parts : ['Sin asignar'];
+};
+
+const computeExecutiveMetrics = (projects) => {
+    const list = Array.isArray(projects) ? projects : [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const soon = new Date(today);
+    soon.setDate(today.getDate() + 14);
+
+    const statusCounts = { active: 0, review: 0, completed: 0, paused: 0 };
+    let tasksTotal = 0;
+    let tasksOpen = 0;
+    let tasksCompleted = 0;
+    let progressSumAll = 0;
+    let blockedTasks = 0;
+    let urgentTasks = 0;
+    let criticalTasks = 0;
+    let overdueTasks = 0;
+    const workloadMap = {};
+    const deadlines = [];
+    const incidents = [];
+
+    list.forEach(p => {
+        const meta = (p && p.meta) || {};
+        const estadoProyecto = normalizeProjectEstado(meta.estado);
+        if (estadoProyecto === 'En Ejecución') statusCounts.active += 1;
+        else if (estadoProyecto === 'En Revisión') statusCounts.review += 1;
+        else if (estadoProyecto === 'Completado') statusCounts.completed += 1;
+        else if (estadoProyecto === 'En Pausa') statusCounts.paused += 1;
+
+        if (estadoProyecto === 'Completado') return;
+
+        const tasks = Array.isArray(p && p.tasks) ? p.tasks : [];
+        const stats = computeProjectStats(tasks);
+        const taskIndex = buildTaskIndex(tasks);
+        const projectTitle = meta.titulo || 'Proyecto sin título';
+
+        tasksTotal += stats.total || 0;
+        tasksCompleted += stats.completed || 0;
+        tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
+        progressSumAll += stats.progressSum || 0;
+
+        tasks.forEach(t => {
+            const effective = effectiveEstado(t, taskIndex);
+            const isOpen = effective !== 'Completado';
+            if (!isOpen) return;
+
+            splitAssignees(t.asignadoA).forEach(name => {
+                workloadMap[name] = (workloadMap[name] || 0) + 1;
+            });
+
+            const priority = String(t.prioridad || '').toLowerCase();
+            const title = t.tarea || 'Tarea sin título';
+            const due = parseDateOnly(t.fechaLimite);
+            const blocked = isTaskBlocked(t, taskIndex);
+            const urgent = priority.includes('urgente');
+            const critical = priority.includes('crítica') || priority.includes('critica') || priority.includes('critical');
+            const overdue = due && due < today;
+
+            if (blocked) blockedTasks += 1;
+            if (urgent) urgentTasks += 1;
+            if (critical) criticalTasks += 1;
+            if (overdue) overdueTasks += 1;
+
+            if (due && due >= today && due <= soon) {
+                deadlines.push({ project: projectTitle, task: title, date: t.fechaLimite, owner: t.asignadoA || meta.responsableProyecto || 'Sin asignar' });
+            }
+
+            if (blocked || urgent || critical || overdue) {
+                incidents.push({
+                    project: projectTitle,
+                    task: title,
+                    reason: blocked ? 'Bloqueada' : overdue ? 'Vencida' : critical ? 'Crítica' : 'Urgente',
+                    tone: blocked || overdue || critical ? 'critical' : 'warning'
+                });
+            }
+        });
+    });
+
+    const activeProjects = statusCounts.active + statusCounts.review + statusCounts.paused;
+    const avgProgress = tasksTotal > 0 ? Math.round((progressSumAll / tasksTotal) * 100) : 0;
+    const totalIncidents = blockedTasks + urgentTasks + criticalTasks + overdueTasks;
+    const health = (() => {
+        if (overdueTasks > 2 || blockedTasks > 3 || criticalTasks > 0 || (tasksTotal > 0 && avgProgress < 35)) {
+            return { label: 'Crítico', className: 'critical', icon: 'fa-triangle-exclamation', text: 'Hay bloqueos, vencimientos o tareas críticas que conviene revisar hoy.' };
+        }
+        if (overdueTasks > 0 || blockedTasks > 0 || urgentTasks > 0 || (tasksTotal > 0 && avgProgress < 55)) {
+            return { label: 'Atención', className: 'warning', icon: 'fa-circle-exclamation', text: 'La cartera avanza, pero hay señales que requieren seguimiento.' };
+        }
+        return { label: 'Bien', className: 'good', icon: 'fa-circle-check', text: 'La cartera está estable y sin incidencias relevantes.' };
+    })();
+    const workload = Object.entries(workloadMap)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6);
+    const maxWorkload = Math.max(1, ...workload.map(x => x.count));
+
+    return {
+        statusCounts,
+        activeProjects,
+        avgProgress,
+        tasksTotal,
+        tasksOpen,
+        tasksCompleted,
+        blockedTasks,
+        urgentTasks,
+        criticalTasks,
+        overdueTasks,
+        totalIncidents,
+        health,
+        workload,
+        maxWorkload,
+        deadlines: deadlines.sort((a, b) => (parseDateOnly(a.date) || 0) - (parseDateOnly(b.date) || 0)).slice(0, 5),
+        incidents: incidents.slice(0, 5)
+    };
+};
+
+const EmptyMiniState = ({ icon, title, text }) => (
+    <div className="home-empty">
+        <i className={`fas ${icon || 'fa-circle-info'}`} aria-hidden="true"></i>
+        <div>
+            <strong>{title}</strong>
+            <span>{text}</span>
+        </div>
+    </div>
+);
+
+const HomeView = ({ projects, onCreate, onNavigate }) => {
+    const metrics = React.useMemo(() => computeExecutiveMetrics(projects), [projects]);
+    const kpis = [
+        { label: 'Proyectos activos', value: metrics.activeProjects, note: `Ejecución ${metrics.statusCounts.active} · Revisión ${metrics.statusCounts.review} · Pausa ${metrics.statusCounts.paused}`, icon: 'fa-layer-group', tone: 'blue' },
+        { label: 'Avance medio', value: `${metrics.avgProgress}%`, note: 'Calculado sobre tareas abiertas y completadas', icon: 'fa-chart-line', tone: 'green', progress: metrics.avgProgress },
+        { label: 'Carga / tareas abiertas', value: metrics.tasksOpen, note: `${metrics.tasksTotal} tareas totales`, icon: 'fa-list-check', tone: 'amber' },
+        { label: 'Incidencias', value: metrics.totalIncidents, note: `${metrics.blockedTasks} bloqueadas · ${metrics.urgentTasks + metrics.criticalTasks} urgentes/críticas`, icon: 'fa-shield-halved', tone: 'red' },
+        { label: 'Próximos vencimientos', value: metrics.deadlines.length, note: 'En los próximos 14 días', icon: 'fa-calendar-day', tone: 'cyan' }
+    ];
+
+    return (
+        <div className="home-dashboard">
+            <section className="home-hero">
+                <div className="home-hero-brand">
+                    <div className="home-logo-wrap"><img src={UNITECNIC_LOGO_BASE64} alt="Unitecnic" /></div>
+                    <div>
+                        <h1>Dashboard Unitecnic</h1>
+                        <p>Resumen ejecutivo</p>
+                    </div>
+                </div>
+                <div className="home-hero-actions no-print">
+                    <button className="home-action primary" onClick={onCreate}><i className="fas fa-plus"></i><span>Nuevo proyecto</span></button>
+                    <button className="home-action" onClick={() => onNavigate('list', null)}><i className="fas fa-layer-group"></i><span>Ver proyectos</span></button>
+                </div>
+            </section>
+
+            <section className="home-kpi-grid">
+                {kpis.map(kpi => (
+                    <article className={`home-kpi home-kpi--${kpi.tone}`} key={kpi.label}>
+                        <div className="home-kpi-top">
+                            <span>{kpi.label}</span>
+                            <i className={`fas ${kpi.icon}`}></i>
+                        </div>
+                        <strong>{kpi.value}</strong>
+                        <p>{kpi.note}</p>
+                        {kpi.progress != null && <div className="home-progress"><span style={{ width: `${Math.max(0, Math.min(100, kpi.progress))}%` }}></span></div>}
+                    </article>
+                ))}
+            </section>
+
+            <section className={`home-health home-health--${metrics.health.className}`}>
+                <div className="home-health-score">
+                    <i className={`fas ${metrics.health.icon}`}></i>
+                    <div>
+                        <span>Salud general de proyectos</span>
+                        <strong>{metrics.health.label}</strong>
+                    </div>
+                </div>
+                <p>{metrics.health.text}</p>
+                <div className="home-health-metrics">
+                    <span>{metrics.overdueTasks} vencidas</span>
+                    <span>{metrics.blockedTasks} bloqueadas</span>
+                    <span>{metrics.avgProgress}% avance</span>
+                </div>
+            </section>
+
+            <section className="home-content-grid">
+                <article className="home-panel home-panel--deadlines">
+                    <div className="home-panel-head">
+                        <div><span>Agenda</span><h2>Próximos vencimientos</h2></div>
+                        <i className="fas fa-calendar-check"></i>
+                    </div>
+                    {metrics.deadlines.length ? (
+                        <div className="home-list">
+                            {metrics.deadlines.map((item, idx) => (
+                                <button className="home-list-row" key={`${item.project}-${item.task}-${idx}`} onClick={() => onNavigate('alerts', null)}>
+                                    <div><strong>{item.task}</strong><span>{item.project} · {item.owner}</span></div>
+                                    <time>{window.formatFechaES ? window.formatFechaES(item.date) : item.date}</time>
+                                </button>
+                            ))}
+                        </div>
+                    ) : <EmptyMiniState icon="fa-calendar-plus" title="Sin vencimientos cercanos" text="No hay tareas con fecha límite en los próximos días." />}
+                </article>
+
+                <article className="home-panel home-panel--workload">
+                    <div className="home-panel-head">
+                        <div><span>Equipo</span><h2>Carga por persona</h2></div>
+                        <i className="fas fa-users"></i>
+                    </div>
+                    {metrics.workload.length ? (
+                        <div className="home-workload-list">
+                            {metrics.workload.map(item => {
+                                const pct = Math.round((item.count / metrics.maxWorkload) * 100);
+                                return (
+                                    <div className="home-workload-row" key={item.name}>
+                                        <div><strong>{item.name}</strong><span>{pct}%</span></div>
+                                        <div className="home-workload-bar"><span style={{ width: `${pct}%` }}></span></div>
+                                        <small>{item.count} tareas abiertas</small>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : <EmptyMiniState icon="fa-user-check" title="Sin carga asignada" text="Cuando existan tareas abiertas aparecerán aquí." />}
+                </article>
+
+                <article className="home-panel home-panel--incidents">
+                    <div className="home-panel-head">
+                        <div><span>Control</span><h2>Incidencias relevantes</h2></div>
+                        <i className="fas fa-shield-halved"></i>
+                    </div>
+                    {metrics.incidents.length ? (
+                        <div className="home-incident-list">
+                            {metrics.incidents.map((item, idx) => (
+                                <button className={`home-incident home-incident--${item.tone}`} key={`${item.project}-${item.task}-${idx}`} onClick={() => onNavigate('alerts', null)}>
+                                    <span>{item.reason}</span>
+                                    <div><strong>{item.task}</strong><small>{item.project}</small></div>
+                                </button>
+                            ))}
+                        </div>
+                    ) : <EmptyMiniState icon="fa-shield-heart" title="Sin incidencias relevantes" text="No hay tareas críticas, urgentes, bloqueadas o vencidas." />}
+                </article>
+
+                <article className="home-panel home-panel--quick">
+                    <div className="home-panel-head">
+                        <div><span>Acción</span><h2>Accesos rápidos</h2></div>
+                        <i className="fas fa-bolt"></i>
+                    </div>
+                    <div className="home-quick-grid">
+                        <button onClick={onCreate}><i className="fas fa-plus"></i><span>Nuevo proyecto</span></button>
+                        <button onClick={() => onNavigate('list', null)}><i className="fas fa-layer-group"></i><span>Ver todos</span></button>
+                        <button onClick={() => onNavigate('list', 'En Ejecución')}><i className="fas fa-circle-play"></i><span>En ejecución</span></button>
+                        <button onClick={() => onNavigate('charts', null)}><i className="fas fa-chart-bar"></i><span>Gráficos</span></button>
+                    </div>
+                </article>
+            </section>
+        </div>
+    );
+};
+
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() },
     React.createElement("button", { type: "button", onClick: onToggle, className: "w-10 h-10 rounded-xl border border-[color:var(--border)] bg-white/80 hover:bg-white flex items-center justify-center text-[color:var(--brand-dark)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]", title: "Cambiar icono" }, Icons[value] || Icons.monitor),
     open && (React.createElement("div", { className: "absolute z-50 mt-2 w-56 rounded-2xl border border-[color:var(--border)] bg-white shadow-2xl p-2" },
@@ -503,17 +773,21 @@ if (est !== 'Completado' && String(t?.prioridad || '').toLowerCase() === 'urgent
         };
     })();
 
+    const projectViewTitle = statusFilter ? `Proyectos · ${statusFilter}` : 'Proyectos';
+    const projectViewSubtitle = statusFilter ? 'Listado filtrado por estado' : 'Gestión y seguimiento de proyectos';
+
     // AQUI ESTÁ LA CLAVE DEL MARGEN: 'max-w-7xl mx-auto'
-    return (React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10" },
+    return (React.createElement("div", { className: "project-list-view max-w-7xl mx-auto p-6 md:p-10" },
         React.createElement("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4" },
             React.createElement("div", { className: "flex items-start gap-4" },
                 React.createElement("div", { className: "w-14 h-14 rounded-2xl bg-white/70 border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0" },
                     React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "w-full h-full object-contain p-2" })),
                 React.createElement("div", null,
-                    React.createElement("h1", { className: "text-3xl font-bold text-gray-900" }, "Dashboard Unitecnic"),
+                    React.createElement("h1", { className: "text-3xl font-bold text-gray-900" }, projectViewTitle),
                     React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" },
-                        React.createElement("i", { className: "fas fa-hdd text-orange-500" }),
-                        " Modo Cloud (AWS)"),
+                        React.createElement("i", { className: "fas fa-folder-open text-orange-500" }),
+                        " ",
+                        projectViewSubtitle),
                     // BUSCADOR CORREGIDO (pl-12 y estructura correcta)
                     React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" },
                         React.createElement("div", { className: "relative group" },
@@ -562,12 +836,12 @@ if (est !== 'Completado' && String(t?.prioridad || '').toLowerCase() === 'urgent
                             React.createElement("div", { className: "w-full h-1.5 rounded-full bg-gray-100 overflow-hidden" },
                                 React.createElement("div", { className: `h-full rounded-full transition-all ${storagePercent >= 80 ? 'bg-orange-400' : storagePercent >= 50 ? 'bg-amber-400' : 'bg-emerald-400'}`, style: { width: `${storagePercent}%` } }))))))))),
 
-        projects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" },
+        filteredProjects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" },
             React.createElement("div", { className: "text-gray-300 text-6xl mb-6" },
                 React.createElement("i", { className: "fas fa-folder-open" })),
-            React.createElement("h3", { className: "text-xl font-semibold text-gray-700" }, "No hay proyectos activos"),
-            React.createElement("p", { className: "text-gray-400 mt-2 mb-6" }, "Gestiona tus instalaciones y mantenimientos desde aqu\u00ED."),
-            React.createElement("button", { onClick: onCreate, className: "text-blue-600 font-medium hover:underline" }, "Crear primer proyecto"))) : (React.createElement("div", { className: "space-y-12" },
+            React.createElement("h3", { className: "text-xl font-semibold text-gray-700" }, "No hay proyectos para mostrar"),
+            React.createElement("p", { className: "text-gray-400 mt-2 mb-6" }, statusFilter ? "Este estado todavía no tiene proyectos." : "Ajusta la búsqueda o crea el primer proyecto."),
+            React.createElement("button", { onClick: onCreate, className: "text-blue-600 font-medium hover:underline" }, "Crear proyecto"))) : (React.createElement("div", { className: "space-y-12" },
             React.createElement("div", { className: "section-tapiz exec-summary p-6 rounded-2xl border" },
                 React.createElement("div", { className: "exec-header" },
                     React.createElement("div", { className: "exec-title" },
@@ -2677,6 +2951,24 @@ const UsersView = () =>
         )
     );
 
+const ImportView = ({ onImport }) =>
+    React.createElement('div', { className: 'sb-page' },
+        React.createElement('div', { className: 'sb-page-header' },
+            React.createElement('h1', { className: 'sb-page-title' }, 'Importar'),
+            React.createElement('p', { className: 'sb-page-sub' }, 'Restauración de backups de proyectos Unitecnic')
+        ),
+        React.createElement('div', { className: 'sb-placeholder' },
+            React.createElement('div', { className: 'sb-placeholder-icon' },
+                React.createElement('i', { className: 'fas fa-file-arrow-up' })),
+            React.createElement('h2', { className: 'sb-placeholder-title' }, 'Importar backup JSON'),
+            React.createElement('p', { className: 'sb-placeholder-text' },
+                'Selecciona un backup exportado desde esta aplicación. Antes de sobrescribir los datos actuales se mostrará una confirmación.'),
+            React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: onImport },
+                React.createElement('i', { className: 'fas fa-file-arrow-up' }),
+                'Seleccionar archivo')
+        )
+    );
+
 // ─── VISTA: PERFIL ────────────────────────────────────────────────────────────
 const ProfileView = () => {
     const userLabel = getUserLabel();
@@ -2783,7 +3075,7 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
         React.createElement('div', { className: 'sidebar-head' },
             React.createElement('button', {
                 className: 'sidebar-brand',
-                onClick: () => { onNavigate('list', null); onClose(); },
+                onClick: () => { onNavigate('home', null); onClose(); },
                 title: 'Ir al inicio'
             },
                 React.createElement('img', { src: UNITECNIC_LOGO_BASE64, alt: 'Unitecnic', className: 'sidebar-brand-img' }),
@@ -2800,8 +3092,8 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
         ),
         // NAVEGACIÓN
         React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'Menú' },
-            ni('fa-house', 'Home', () => { onNavigate('list', null); onClose(); }, null,
-                isActive('list', null), false),
+            ni('fa-house', 'Home', () => { onNavigate('home', null); onClose(); }, null,
+                isActive('home'), false),
 
             // Grupo Proyectos
             React.createElement('div', { className: 'sidebar-group' },
@@ -2848,13 +3140,9 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
             ni('fa-user-group', 'Usuarios',
                 () => { onNavigate('users', null); onClose(); },
                 null, isActive('users'), false),
-            React.createElement('button', {
-                className: 'sidebar-nav-item',
-                onClick: () => { onImport(); onClose(); }
-            },
-                React.createElement('i', { className: 'fas fa-file-arrow-up snav-icon', 'aria-hidden': 'true' }),
-                React.createElement('span', { className: 'snav-label' }, 'Importar')
-            )
+            ni('fa-file-arrow-up', 'Importar',
+                () => { onNavigate('import', null); onClose(); },
+                null, isActive('import'), false)
         ),
         // PIE
         React.createElement('div', { className: 'sidebar-foot' },
@@ -3062,6 +3350,11 @@ const makeDraftProject = () => ({
                 setView('users');
                 return;
             }
+            if (parts[0] === 'import') {
+                setCurrentProject(null);
+                setView('import');
+                return;
+            }
             if (parts[0] === 'profile') {
                 setCurrentProject(null);
                 setView('profile');
@@ -3078,7 +3371,13 @@ const makeDraftProject = () => ({
                 setStatusFilter(decodeURIComponent(parts[1]));
                 return;
             }
-            if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
+            if (!parts.length || parts[0] === 'home' || parts[0] === 'dashboard') {
+                setCurrentProject(null);
+                setStatusFilter(null);
+                setView('home');
+                return;
+            }
+            if (parts[0] === 'list') {
                 setCurrentProject(null);
                 setStatusFilter(null);
                 setView('list');
@@ -3282,7 +3581,11 @@ const normalized = (effectiveList || []).map(p => {
     // --- NAVEGACIÓN DESDE SIDEBAR ---
     const handleSidebarNavigate = (targetView, targetFilter) => {
         setStatusFilter(targetFilter || null);
-        if (targetView === 'list') {
+        if (targetView === 'home') {
+            setCurrentProject(null);
+            setView('home');
+            setRoute('#/home');
+        } else if (targetView === 'list') {
             setCurrentProject(null);
             setView('list');
             const hash = targetFilter ? '#/proj/' + encodeURIComponent(targetFilter) : '#/list';
@@ -3423,10 +3726,12 @@ const normalized = (effectiveList || []).map(p => {
             }, React.createElement("i", { className: "fas fa-bars" })),
 
             React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
+            view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })),
             view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
             view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
             view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
             view === 'users' && React.createElement(UsersView, null),
+            view === 'import' && React.createElement(ImportView, { onImport: openImportPicker }),
             view === 'profile' && React.createElement(ProfileView, null),
             view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }),
             view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })),

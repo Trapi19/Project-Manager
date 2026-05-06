@@ -127,6 +127,255 @@ const computeProjectStats = (tasks) => {
     const progress = total > 0 ? Math.round((progressSum / total) * 100) : 0;
     return { total, completed, inProgress, pending, progress, progressSum };
 };
+const parseDateOnly = (iso) => {
+    if (!iso)
+        return null;
+    const t = String(iso).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(t))
+        return null;
+    const [y, m, d] = t.split('-').map(n => parseInt(n, 10));
+    if (!y || !m || !d)
+        return null;
+    return new Date(y, m - 1, d);
+};
+const splitAssignees = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw)
+        return ['Sin asignar'];
+    const parts = raw.split(/[\/,;&]|\s+y\s+/).map(s => s.trim()).filter(Boolean);
+    return parts.length ? parts : ['Sin asignar'];
+};
+const computeExecutiveMetrics = (projects) => {
+    const list = Array.isArray(projects) ? projects : [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const soon = new Date(today);
+    soon.setDate(today.getDate() + 14);
+    const statusCounts = { active: 0, review: 0, completed: 0, paused: 0 };
+    let tasksTotal = 0;
+    let tasksOpen = 0;
+    let tasksCompleted = 0;
+    let progressSumAll = 0;
+    let blockedTasks = 0;
+    let urgentTasks = 0;
+    let criticalTasks = 0;
+    let overdueTasks = 0;
+    const workloadMap = {};
+    const deadlines = [];
+    const incidents = [];
+    list.forEach(p => {
+        const meta = (p && p.meta) || {};
+        const estadoProyecto = normalizeProjectEstado(meta.estado);
+        if (estadoProyecto === 'En Ejecución')
+            statusCounts.active += 1;
+        else if (estadoProyecto === 'En Revisión')
+            statusCounts.review += 1;
+        else if (estadoProyecto === 'Completado')
+            statusCounts.completed += 1;
+        else if (estadoProyecto === 'En Pausa')
+            statusCounts.paused += 1;
+        if (estadoProyecto === 'Completado')
+            return;
+        const tasks = Array.isArray(p && p.tasks) ? p.tasks : [];
+        const stats = computeProjectStats(tasks);
+        const taskIndex = buildTaskIndex(tasks);
+        const projectTitle = meta.titulo || 'Proyecto sin título';
+        tasksTotal += stats.total || 0;
+        tasksCompleted += stats.completed || 0;
+        tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
+        progressSumAll += stats.progressSum || 0;
+        tasks.forEach(t => {
+            const effective = effectiveEstado(t, taskIndex);
+            const isOpen = effective !== 'Completado';
+            if (!isOpen)
+                return;
+            splitAssignees(t.asignadoA).forEach(name => {
+                workloadMap[name] = (workloadMap[name] || 0) + 1;
+            });
+            const priority = String(t.prioridad || '').toLowerCase();
+            const title = t.tarea || 'Tarea sin título';
+            const due = parseDateOnly(t.fechaLimite);
+            const blocked = isTaskBlocked(t, taskIndex);
+            const urgent = priority.includes('urgente');
+            const critical = priority.includes('crítica') || priority.includes('critica') || priority.includes('critical');
+            const overdue = due && due < today;
+            if (blocked)
+                blockedTasks += 1;
+            if (urgent)
+                urgentTasks += 1;
+            if (critical)
+                criticalTasks += 1;
+            if (overdue)
+                overdueTasks += 1;
+            if (due && due >= today && due <= soon) {
+                deadlines.push({ project: projectTitle, task: title, date: t.fechaLimite, owner: t.asignadoA || meta.responsableProyecto || 'Sin asignar' });
+            }
+            if (blocked || urgent || critical || overdue) {
+                incidents.push({
+                    project: projectTitle,
+                    task: title,
+                    reason: blocked ? 'Bloqueada' : overdue ? 'Vencida' : critical ? 'Crítica' : 'Urgente',
+                    tone: blocked || overdue || critical ? 'critical' : 'warning'
+                });
+            }
+        });
+    });
+    const activeProjects = statusCounts.active + statusCounts.review + statusCounts.paused;
+    const avgProgress = tasksTotal > 0 ? Math.round((progressSumAll / tasksTotal) * 100) : 0;
+    const totalIncidents = blockedTasks + urgentTasks + criticalTasks + overdueTasks;
+    const health = (() => {
+        if (overdueTasks > 2 || blockedTasks > 3 || criticalTasks > 0 || (tasksTotal > 0 && avgProgress < 35)) {
+            return { label: 'Crítico', className: 'critical', icon: 'fa-triangle-exclamation', text: 'Hay bloqueos, vencimientos o tareas críticas que conviene revisar hoy.' };
+        }
+        if (overdueTasks > 0 || blockedTasks > 0 || urgentTasks > 0 || (tasksTotal > 0 && avgProgress < 55)) {
+            return { label: 'Atención', className: 'warning', icon: 'fa-circle-exclamation', text: 'La cartera avanza, pero hay señales que requieren seguimiento.' };
+        }
+        return { label: 'Bien', className: 'good', icon: 'fa-circle-check', text: 'La cartera está estable y sin incidencias relevantes.' };
+    })();
+    const workload = Object.entries(workloadMap)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6);
+    const maxWorkload = Math.max(1, ...workload.map(x => x.count));
+    return {
+        statusCounts,
+        activeProjects,
+        avgProgress,
+        tasksTotal,
+        tasksOpen,
+        tasksCompleted,
+        blockedTasks,
+        urgentTasks,
+        criticalTasks,
+        overdueTasks,
+        totalIncidents,
+        health,
+        workload,
+        maxWorkload,
+        deadlines: deadlines.sort((a, b) => (parseDateOnly(a.date) || 0) - (parseDateOnly(b.date) || 0)).slice(0, 5),
+        incidents: incidents.slice(0, 5)
+    };
+};
+const EmptyMiniState = ({ icon, title, text }) => (React.createElement("div", { className: "home-empty" },
+    React.createElement("i", { className: `fas ${icon || 'fa-circle-info'}`, "aria-hidden": "true" }),
+    React.createElement("div", null,
+        React.createElement("strong", null, title),
+        React.createElement("span", null, text))));
+const HomeView = ({ projects, onCreate, onNavigate }) => {
+    const metrics = React.useMemo(() => computeExecutiveMetrics(projects), [projects]);
+    const kpis = [
+        { label: 'Proyectos activos', value: metrics.activeProjects, note: `Ejecución ${metrics.statusCounts.active} · Revisión ${metrics.statusCounts.review} · Pausa ${metrics.statusCounts.paused}`, icon: 'fa-layer-group', tone: 'blue' },
+        { label: 'Avance medio', value: `${metrics.avgProgress}%`, note: 'Calculado sobre tareas abiertas y completadas', icon: 'fa-chart-line', tone: 'green', progress: metrics.avgProgress },
+        { label: 'Carga / tareas abiertas', value: metrics.tasksOpen, note: `${metrics.tasksTotal} tareas totales`, icon: 'fa-list-check', tone: 'amber' },
+        { label: 'Incidencias', value: metrics.totalIncidents, note: `${metrics.blockedTasks} bloqueadas · ${metrics.urgentTasks + metrics.criticalTasks} urgentes/críticas`, icon: 'fa-shield-halved', tone: 'red' },
+        { label: 'Próximos vencimientos', value: metrics.deadlines.length, note: 'En los próximos 14 días', icon: 'fa-calendar-day', tone: 'cyan' }
+    ];
+    return (React.createElement("div", { className: "home-dashboard" },
+        React.createElement("section", { className: "home-hero" },
+            React.createElement("div", { className: "home-hero-brand" },
+                React.createElement("div", { className: "home-logo-wrap" },
+                    React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic" })),
+                React.createElement("div", null,
+                    React.createElement("h1", null, "Dashboard Unitecnic"),
+                    React.createElement("p", null, "Resumen ejecutivo"))),
+            React.createElement("div", { className: "home-hero-actions no-print" },
+                React.createElement("button", { className: "home-action primary", onClick: onCreate },
+                    React.createElement("i", { className: "fas fa-plus" }),
+                    React.createElement("span", null, "Nuevo proyecto")),
+                React.createElement("button", { className: "home-action", onClick: () => onNavigate('list', null) },
+                    React.createElement("i", { className: "fas fa-layer-group" }),
+                    React.createElement("span", null, "Ver proyectos")))),
+        React.createElement("section", { className: "home-kpi-grid" }, kpis.map(kpi => (React.createElement("article", { className: `home-kpi home-kpi--${kpi.tone}`, key: kpi.label },
+            React.createElement("div", { className: "home-kpi-top" },
+                React.createElement("span", null, kpi.label),
+                React.createElement("i", { className: `fas ${kpi.icon}` })),
+            React.createElement("strong", null, kpi.value),
+            React.createElement("p", null, kpi.note),
+            kpi.progress != null && React.createElement("div", { className: "home-progress" },
+                React.createElement("span", { style: { width: `${Math.max(0, Math.min(100, kpi.progress))}%` } })))))),
+        React.createElement("section", { className: `home-health home-health--${metrics.health.className}` },
+            React.createElement("div", { className: "home-health-score" },
+                React.createElement("i", { className: `fas ${metrics.health.icon}` }),
+                React.createElement("div", null,
+                    React.createElement("span", null, "Salud general de proyectos"),
+                    React.createElement("strong", null, metrics.health.label))),
+            React.createElement("p", null, metrics.health.text),
+            React.createElement("div", { className: "home-health-metrics" },
+                React.createElement("span", null,
+                    metrics.overdueTasks,
+                    " vencidas"),
+                React.createElement("span", null,
+                    metrics.blockedTasks,
+                    " bloqueadas"),
+                React.createElement("span", null,
+                    metrics.avgProgress,
+                    "% avance"))),
+        React.createElement("section", { className: "home-content-grid" },
+            React.createElement("article", { className: "home-panel home-panel--deadlines" },
+                React.createElement("div", { className: "home-panel-head" },
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Agenda"),
+                        React.createElement("h2", null, "Pr\u00F3ximos vencimientos")),
+                    React.createElement("i", { className: "fas fa-calendar-check" })),
+                metrics.deadlines.length ? (React.createElement("div", { className: "home-list" }, metrics.deadlines.map((item, idx) => (React.createElement("button", { className: "home-list-row", key: `${item.project}-${item.task}-${idx}`, onClick: () => onNavigate('alerts', null) },
+                    React.createElement("div", null,
+                        React.createElement("strong", null, item.task),
+                        React.createElement("span", null,
+                            item.project,
+                            " \u00B7 ",
+                            item.owner)),
+                    React.createElement("time", null, window.formatFechaES ? window.formatFechaES(item.date) : item.date)))))) : React.createElement(EmptyMiniState, { icon: "fa-calendar-plus", title: "Sin vencimientos cercanos", text: "No hay tareas con fecha l\u00EDmite en los pr\u00F3ximos d\u00EDas." })),
+            React.createElement("article", { className: "home-panel home-panel--workload" },
+                React.createElement("div", { className: "home-panel-head" },
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Equipo"),
+                        React.createElement("h2", null, "Carga por persona")),
+                    React.createElement("i", { className: "fas fa-users" })),
+                metrics.workload.length ? (React.createElement("div", { className: "home-workload-list" }, metrics.workload.map(item => {
+                    const pct = Math.round((item.count / metrics.maxWorkload) * 100);
+                    return (React.createElement("div", { className: "home-workload-row", key: item.name },
+                        React.createElement("div", null,
+                            React.createElement("strong", null, item.name),
+                            React.createElement("span", null,
+                                pct,
+                                "%")),
+                        React.createElement("div", { className: "home-workload-bar" },
+                            React.createElement("span", { style: { width: `${pct}%` } })),
+                        React.createElement("small", null,
+                            item.count,
+                            " tareas abiertas")));
+                }))) : React.createElement(EmptyMiniState, { icon: "fa-user-check", title: "Sin carga asignada", text: "Cuando existan tareas abiertas aparecer\u00E1n aqu\u00ED." })),
+            React.createElement("article", { className: "home-panel home-panel--incidents" },
+                React.createElement("div", { className: "home-panel-head" },
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Control"),
+                        React.createElement("h2", null, "Incidencias relevantes")),
+                    React.createElement("i", { className: "fas fa-shield-halved" })),
+                metrics.incidents.length ? (React.createElement("div", { className: "home-incident-list" }, metrics.incidents.map((item, idx) => (React.createElement("button", { className: `home-incident home-incident--${item.tone}`, key: `${item.project}-${item.task}-${idx}`, onClick: () => onNavigate('alerts', null) },
+                    React.createElement("span", null, item.reason),
+                    React.createElement("div", null,
+                        React.createElement("strong", null, item.task),
+                        React.createElement("small", null, item.project))))))) : React.createElement(EmptyMiniState, { icon: "fa-shield-heart", title: "Sin incidencias relevantes", text: "No hay tareas cr\u00EDticas, urgentes, bloqueadas o vencidas." })),
+            React.createElement("article", { className: "home-panel home-panel--quick" },
+                React.createElement("div", { className: "home-panel-head" },
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Acci\u00F3n"),
+                        React.createElement("h2", null, "Accesos r\u00E1pidos")),
+                    React.createElement("i", { className: "fas fa-bolt" })),
+                React.createElement("div", { className: "home-quick-grid" },
+                    React.createElement("button", { onClick: onCreate },
+                        React.createElement("i", { className: "fas fa-plus" }),
+                        React.createElement("span", null, "Nuevo proyecto")),
+                    React.createElement("button", { onClick: () => onNavigate('list', null) },
+                        React.createElement("i", { className: "fas fa-layer-group" }),
+                        React.createElement("span", null, "Ver todos")),
+                    React.createElement("button", { onClick: () => onNavigate('list', 'En Ejecución') },
+                        React.createElement("i", { className: "fas fa-circle-play" }),
+                        React.createElement("span", null, "En ejecuci\u00F3n")),
+                    React.createElement("button", { onClick: () => onNavigate('charts', null) },
+                        React.createElement("i", { className: "fas fa-chart-bar" }),
+                        React.createElement("span", null, "Gr\u00E1ficos")))))));
+};
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() }, React.createElement("button", { type: "button", onClick: onToggle, className: "w-10 h-10 rounded-xl border border-[color:var(--border)] bg-white/80 hover:bg-white flex items-center justify-center text-[color:var(--brand-dark)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]", title: "Cambiar icono" }, Icons[value] || Icons.monitor), open && (React.createElement("div", { className: "absolute z-50 mt-2 w-56 rounded-2xl border border-[color:var(--border)] bg-white shadow-2xl p-2" }, React.createElement("div", { className: "grid grid-cols-4 gap-2" }, IconOptions.map(opt => (React.createElement("button", { key: opt.id, type: "button", onClick: () => onChange(opt.id), className: `h-11 rounded-xl border flex items-center justify-center transition-colors ${opt.id === value
         ? "border-[color:rgba(8,136,200,0.35)] bg-[color:rgba(8,136,200,0.10)] text-[color:var(--brand-dark)]"
         : "border-slate-100 hover:border-[color:rgba(8,136,200,0.25)] hover:bg-[color:rgba(8,136,200,0.06)] text-slate-700"}`, title: opt.label }, Icons[opt.id] || Icons.monitor)))), React.createElement("div", { className: "mt-2 text-[11px] text-slate-500 px-1" }, "Selecciona un icono")))));
@@ -175,9 +424,9 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
         } }, React.createElement("div", null, React.createElement("div", { className: "flex justify-between items-start" }, React.createElement("div", { className: `h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${projectEstado === 'Completado' ? 'bg-emerald-100 text-emerald-700'
             : projectEstado === 'En Pausa' ? 'bg-slate-100 text-slate-700'
                 : projectEstado === 'En Revisión' ? 'bg-violet-100 text-violet-700'
-                    : 'bg-[color:rgba(8,136,200,0.12)] text-[color:var(--brand-dark)]'} overflow-hidden` }, p.meta.clientLogoData ? (React.createElement("img", { src: p.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: `fas ${projectEstado === 'Completado' ? 'fa-check-circle' : projectEstado === 'En Pausa' ? 'fa-pause-circle' : projectEstado === 'En Revisión' ? 'fa-search' : 'fa-project-diagram'}` }))), React.createElement("button", { onClick: (e) => { e.stopPropagation(); onDelete(p.id); }, className: "text-gray-300 hover:text-red-500 p-2 transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar proyecto" }, React.createElement("i", { className: "fas fa-trash" }))), React.createElement("h3", { className: "font-bold text-lg text-gray-800 mb-1 truncate" }, p.meta.titulo || "Sin Título"), React.createElement("p", { className: "text-sm text-gray-500 truncate" }, p.meta.subtitulo || "Sin descripción"), p.meta.cliente && (React.createElement("div", { className: "mt-2" }, React.createElement("span", { className: "apple-chip apple-chip--muted apple-chip--small" }, React.createElement("i", { className: "fas fa-building text-[10px]" }), p.meta.cliente))), 
+                    : 'bg-[color:rgba(8,136,200,0.12)] text-[color:var(--brand-dark)]'} overflow-hidden` }, p.meta.clientLogoData ? (React.createElement("img", { src: p.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: `fas ${projectEstado === 'Completado' ? 'fa-check-circle' : projectEstado === 'En Pausa' ? 'fa-pause-circle' : projectEstado === 'En Revisión' ? 'fa-search' : 'fa-project-diagram'}` }))), React.createElement("button", { onClick: (e) => { e.stopPropagation(); onDelete(p.id); }, className: "text-gray-300 hover:text-red-500 p-2 transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar proyecto" }, React.createElement("i", { className: "fas fa-trash" }))), React.createElement("h3", { className: "font-bold text-lg text-gray-800 mb-1 truncate" }, p.meta.titulo || "Sin Título"), React.createElement("p", { className: "text-sm text-gray-500 truncate" }, p.meta.subtitulo || "Sin descripción"), p.meta.cliente && (React.createElement("div", { className: "mt-2" }, React.createElement("span", { className: "apple-chip apple-chip--muted apple-chip--small" }, React.createElement("i", { className: "fas fa-building text-[10px]" }), p.meta.cliente))),
     // SECCIÓN DE METADATOS (Responsable y PEP con etiquetas claras)
-    (p.meta.responsableProyecto || p.meta.pep) && (React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" }, p.meta.responsableProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" }, React.createElement("i", { className: "fas fa-user-gear text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "Resp:"), p.meta.responsableProyecto)), p.meta.ejecutorProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" }, React.createElement("i", { className: "fas fa-hard-hat text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "Ejec:"), p.meta.ejecutorProyecto)), p.meta.pep && (React.createElement("span", { className: "apple-chip apple-chip--muted internal-only" }, React.createElement("i", { className: "fas fa-hashtag text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "PEP:"), p.meta.pep)))), 
+    (p.meta.responsableProyecto || p.meta.pep) && (React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" }, p.meta.responsableProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" }, React.createElement("i", { className: "fas fa-user-gear text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "Resp:"), p.meta.responsableProyecto)), p.meta.ejecutorProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" }, React.createElement("i", { className: "fas fa-hard-hat text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "Ejec:"), p.meta.ejecutorProyecto)), p.meta.pep && (React.createElement("span", { className: "apple-chip apple-chip--muted internal-only" }, React.createElement("i", { className: "fas fa-hashtag text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "PEP:"), p.meta.pep)))),
     // SECCIÓN DE DOCUMENTACIÓN (Botón independiente para evitar amontonamiento)
     p.meta.sharepointUrl && (React.createElement("div", { className: "mt-3" }, React.createElement("a", {
         href: p.meta.sharepointUrl,
@@ -410,21 +659,23 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
             sortedDeadlines: upcomingDeadlines.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).slice(0, 3)
         };
     })();
+    const projectViewTitle = statusFilter ? `Proyectos · ${statusFilter}` : 'Proyectos';
+    const projectViewSubtitle = statusFilter ? 'Listado filtrado por estado' : 'Gestión y seguimiento de proyectos';
     // AQUI ESTÁ LA CLAVE DEL MARGEN: 'max-w-7xl mx-auto'
-    return (React.createElement("div", { className: "max-w-7xl mx-auto p-6 md:p-10" }, React.createElement("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4" }, React.createElement("div", { className: "flex items-start gap-4" }, React.createElement("div", { className: "w-14 h-14 rounded-2xl bg-white/70 border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0" }, React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "w-full h-full object-contain p-2" })), React.createElement("div", null, React.createElement("h1", { className: "text-3xl font-bold text-gray-900" }, "Dashboard Unitecnic"), React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-hdd text-orange-500" }), " Modo Cloud (AWS)"), 
+    return (React.createElement("div", { className: "project-list-view max-w-7xl mx-auto p-6 md:p-10" }, React.createElement("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4" }, React.createElement("div", { className: "flex items-start gap-4" }, React.createElement("div", { className: "w-14 h-14 rounded-2xl bg-white/70 border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0" }, React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "w-full h-full object-contain p-2" })), React.createElement("div", null, React.createElement("h1", { className: "text-3xl font-bold text-gray-900" }, projectViewTitle), React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-folder-open text-orange-500" }), " ", projectViewSubtitle),
     // BUSCADOR CORREGIDO (pl-12 y estructura correcta)
     React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" }, React.createElement("div", { className: "relative group" }, React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }), React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape')
             setSearchTerm(''); }, className: "apple-search-input pl-12" })), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"), React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) }, React.createElement("option", { value: "Todos" }, "Todos"), clients.map(c => React.createElement("option", { key: c, value: c }, c))))))), React.createElement("div", { className: "flex items-center gap-2 no-print" }, React.createElement("button", { onClick: onCreate, className: "btn-apple-primary no-print", title: "Crear nuevo proyecto" }, React.createElement("i", { className: "fas fa-plus" }), "Nuevo"), React.createElement("button", {
         onClick: () => window.location.hash = '#/charts',
         className: "btn-apple no-print",
         title: "Ver gráficos"
-    }, React.createElement("i", { className: "fas fa-chart-bar" }), "Gráficos"), React.createElement("div", { className: "actions-menu no-print", ref: actionsRef }, React.createElement("button", { type: "button", className: "btn-apple-icon", title: "Acciones", "aria-label": "Acciones", onClick: () => setActionsOpen(o => !o) }, React.createElement("i", { className: "fas fa-ellipsis" })), actionsOpen && (React.createElement("div", { className: "actions-popover", role: "menu", "aria-label": "Acciones" }, React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onBackup(); } }, React.createElement("i", { className: "fas fa-file-arrow-down" }), React.createElement("span", null, "Backup (JSON)")), React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onExportCSV && onExportCSV(); } }, React.createElement("i", { className: "fas fa-file-csv" }), React.createElement("span", null, "Exportar CSV (Excel)")), React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onImport(); } }, React.createElement("i", { className: "fas fa-file-arrow-up" }), React.createElement("span", null, "Importar\u2026")), typeof storagePercent === 'number' && (React.createElement("div", { className: "px-3 pt-3 pb-1 border-t border-gray-100 mt-1" }, React.createElement("div", { className: "flex justify-between text-[10px] text-gray-400 mb-1" }, React.createElement("span", null, "Almacenamiento local"), React.createElement("span", { className: storagePercent >= 80 ? "text-orange-500 font-bold" : "" }, storagePercent, "%")), React.createElement("div", { className: "w-full h-1.5 rounded-full bg-gray-100 overflow-hidden" }, React.createElement("div", { className: `h-full rounded-full transition-all ${storagePercent >= 80 ? 'bg-orange-400' : storagePercent >= 50 ? 'bg-amber-400' : 'bg-emerald-400'}`, style: { width: `${storagePercent}%` } }))))))))), projects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" }, React.createElement("div", { className: "text-gray-300 text-6xl mb-6" }, React.createElement("i", { className: "fas fa-folder-open" })), React.createElement("h3", { className: "text-xl font-semibold text-gray-700" }, "No hay proyectos activos"), React.createElement("p", { className: "text-gray-400 mt-2 mb-6" }, "Gestiona tus instalaciones y mantenimientos desde aqu\u00ED."), React.createElement("button", { onClick: onCreate, className: "text-blue-600 font-medium hover:underline" }, "Crear primer proyecto"))) : (React.createElement("div", { className: "space-y-12" }, React.createElement("div", { className: "section-tapiz exec-summary p-6 rounded-2xl border" }, React.createElement("div", { className: "exec-header" }, React.createElement("div", { className: "exec-title" }, React.createElement("div", { className: "exec-title-icon", "aria-hidden": "true" }, React.createElement("i", { className: "fas fa-gauge-high" })), React.createElement("div", null, React.createElement("div", { className: "exec-title-text" }, "Resumen ejecutivo"), React.createElement("div", { className: "exec-subtitle" }, "Centro de control (seg\u00FAn el filtro de cliente)"))), React.createElement("div", { className: "exec-pill", title: "Se recalcula con los filtros activos" }, React.createElement("i", { className: "fas fa-sliders", "aria-hidden": "true" }), React.createElement("span", null, "Seg\u00FAn filtros"))), React.createElement("div", { className: "exec-grid" }, 
+    }, React.createElement("i", { className: "fas fa-chart-bar" }), "Gráficos"), React.createElement("div", { className: "actions-menu no-print", ref: actionsRef }, React.createElement("button", { type: "button", className: "btn-apple-icon", title: "Acciones", "aria-label": "Acciones", onClick: () => setActionsOpen(o => !o) }, React.createElement("i", { className: "fas fa-ellipsis" })), actionsOpen && (React.createElement("div", { className: "actions-popover", role: "menu", "aria-label": "Acciones" }, React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onBackup(); } }, React.createElement("i", { className: "fas fa-file-arrow-down" }), React.createElement("span", null, "Backup (JSON)")), React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onExportCSV && onExportCSV(); } }, React.createElement("i", { className: "fas fa-file-csv" }), React.createElement("span", null, "Exportar CSV (Excel)")), React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onImport(); } }, React.createElement("i", { className: "fas fa-file-arrow-up" }), React.createElement("span", null, "Importar\u2026")), typeof storagePercent === 'number' && (React.createElement("div", { className: "px-3 pt-3 pb-1 border-t border-gray-100 mt-1" }, React.createElement("div", { className: "flex justify-between text-[10px] text-gray-400 mb-1" }, React.createElement("span", null, "Almacenamiento local"), React.createElement("span", { className: storagePercent >= 80 ? "text-orange-500 font-bold" : "" }, storagePercent, "%")), React.createElement("div", { className: "w-full h-1.5 rounded-full bg-gray-100 overflow-hidden" }, React.createElement("div", { className: `h-full rounded-full transition-all ${storagePercent >= 80 ? 'bg-orange-400' : storagePercent >= 50 ? 'bg-amber-400' : 'bg-emerald-400'}`, style: { width: `${storagePercent}%` } }))))))))), filteredProjects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" }, React.createElement("div", { className: "text-gray-300 text-6xl mb-6" }, React.createElement("i", { className: "fas fa-folder-open" })), React.createElement("h3", { className: "text-xl font-semibold text-gray-700" }, "No hay proyectos para mostrar"), React.createElement("p", { className: "text-gray-400 mt-2 mb-6" }, statusFilter ? "Este estado todavía no tiene proyectos." : "Ajusta la búsqueda o crea el primer proyecto."), React.createElement("button", { onClick: onCreate, className: "text-blue-600 font-medium hover:underline" }, "Crear proyecto"))) : (React.createElement("div", { className: "space-y-12" }, React.createElement("div", { className: "section-tapiz exec-summary p-6 rounded-2xl border" }, React.createElement("div", { className: "exec-header" }, React.createElement("div", { className: "exec-title" }, React.createElement("div", { className: "exec-title-icon", "aria-hidden": "true" }, React.createElement("i", { className: "fas fa-gauge-high" })), React.createElement("div", null, React.createElement("div", { className: "exec-title-text" }, "Resumen ejecutivo"), React.createElement("div", { className: "exec-subtitle" }, "Centro de control (seg\u00FAn el filtro de cliente)"))), React.createElement("div", { className: "exec-pill", title: "Se recalcula con los filtros activos" }, React.createElement("i", { className: "fas fa-sliders", "aria-hidden": "true" }), React.createElement("span", null, "Seg\u00FAn filtros"))), React.createElement("div", { className: "exec-grid" },
     // 1. PROYECTOS
-    React.createElement("div", { className: "exec-card", onClick: () => setClientFilter('Todos'), title: "Ver todos" }, React.createElement("div", { className: "exec-card-top" }, React.createElement("div", null, React.createElement("div", { className: "exec-label" }, "Proyectos activos"), React.createElement("div", { className: "exec-value" }, executiveSummary.projectsActive)), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-layer-group" }))), React.createElement("div", { className: "exec-chips" }, React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.3)] text-blue-700 bg-blue-50/50 text-[10px] font-bold" }, "Eje: ", activeProjects.length), React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.3)] text-red-700 bg-red-50/50 text-[10px] font-bold" }, "Pausa: ", pausedProjects.length), React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(139,92,246,0.3)] text-violet-700 bg-violet-50/50 text-[10px] font-bold" }, "Rev: ", reviewProjects.length))), 
+    React.createElement("div", { className: "exec-card", onClick: () => setClientFilter('Todos'), title: "Ver todos" }, React.createElement("div", { className: "exec-card-top" }, React.createElement("div", null, React.createElement("div", { className: "exec-label" }, "Proyectos activos"), React.createElement("div", { className: "exec-value" }, executiveSummary.projectsActive)), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-layer-group" }))), React.createElement("div", { className: "exec-chips" }, React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.3)] text-blue-700 bg-blue-50/50 text-[10px] font-bold" }, "Eje: ", activeProjects.length), React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.3)] text-red-700 bg-red-50/50 text-[10px] font-bold" }, "Pausa: ", pausedProjects.length), React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(139,92,246,0.3)] text-violet-700 bg-violet-50/50 text-[10px] font-bold" }, "Rev: ", reviewProjects.length))),
     // 2. AVANCE
-    React.createElement("div", { className: "exec-card" }, React.createElement("div", { className: "exec-card-top" }, React.createElement("div", null, React.createElement("div", { className: "exec-label" }, "Avance medio"), React.createElement("div", { className: "exec-value" }, executiveSummary.progressAvg, "%"), React.createElement("div", { className: "exec-note" }, "Ponderado por tareas")), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-chart-line" }))), React.createElement("div", { className: "exec-progress" }, React.createElement("div", { className: "exec-progress-fill", style: { width: `${executiveSummary.progressAvg}%` } }))), 
+    React.createElement("div", { className: "exec-card" }, React.createElement("div", { className: "exec-card-top" }, React.createElement("div", null, React.createElement("div", { className: "exec-label" }, "Avance medio"), React.createElement("div", { className: "exec-value" }, executiveSummary.progressAvg, "%"), React.createElement("div", { className: "exec-note" }, "Ponderado por tareas")), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-chart-line" }))), React.createElement("div", { className: "exec-progress" }, React.createElement("div", { className: "exec-progress-fill", style: { width: `${executiveSummary.progressAvg}%` } }))),
     // 3. TAREAS
-    React.createElement("div", { className: "exec-card" }, React.createElement("div", { className: "exec-card-top" }, React.createElement("div", null, React.createElement("div", { className: "exec-label" }, "Carga de trabajo"), React.createElement("div", { className: "exec-value" }, executiveSummary.tasksTotal), React.createElement("div", { className: "exec-note" }, "Abiertas: ", executiveSummary.tasksOpen)), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-list-check" })))), 
+    React.createElement("div", { className: "exec-card" }, React.createElement("div", { className: "exec-card-top" }, React.createElement("div", null, React.createElement("div", { className: "exec-label" }, "Carga de trabajo"), React.createElement("div", { className: "exec-value" }, executiveSummary.tasksTotal), React.createElement("div", { className: "exec-note" }, "Abiertas: ", executiveSummary.tasksOpen)), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-list-check" })))),
     // 4. INCIDENCIAS (BLOQUEOS + ALERTAS) - LINKADO A LA NUEVA VISTA
     React.createElement("div", {
         className: "exec-card cursor-pointer hover:ring-2 hover:ring-red-100 transition-all",
@@ -439,19 +690,19 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         }
     }, (executiveSummary.blockedTasks + executiveSummary.redProjects + executiveSummary.urgentTasks)), React.createElement("div", { className: "exec-note" }, (executiveSummary.blockedTasks + executiveSummary.redProjects + executiveSummary.urgentTasks) > 0
         ? "Requiere atención"
-        : "Sin incidencias")), React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" }, React.createElement("i", { className: "fas fa-shield-halved" }))), React.createElement("div", { className: "mt-4 flex flex-col gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-tight" }, React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-orange-400' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.blockedTasks, " Tareas Bloqueadas")), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.redProjects > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.redProjects, " Alertas Críticas")), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.urgentTasks > 0 ? 'bg-amber-500 animate-pulse' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.urgentTasks, " Tareas Urgentes")))), 
+        : "Sin incidencias")), React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" }, React.createElement("i", { className: "fas fa-shield-halved" }))), React.createElement("div", { className: "mt-4 flex flex-col gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-tight" }, React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-orange-400' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.blockedTasks, " Tareas Bloqueadas")), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.redProjects > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.redProjects, " Alertas Críticas")), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.urgentTasks > 0 ? 'bg-amber-500 animate-pulse' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.urgentTasks, " Tareas Urgentes")))),
     // 5. CARGA POR RESPONSABLE (DOBLE)
     React.createElement("div", {
         className: "exec-card md:col-span-2 cursor-pointer hover:ring-2 hover:ring-indigo-100 transition-all",
         onClick: () => window.location.hash = '#/workload',
         title: "Ver detalle detallado por persona"
-    }, React.createElement("div", { className: "exec-card-top mb-5" }, React.createElement("div", { className: "exec-label" }, "Carga por Persona"), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))), React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" }, executiveSummary.workloadData.map((item, i) => (React.createElement("div", { key: i }, React.createElement("div", { className: "flex justify-between text-sm mb-2" }, React.createElement("span", { className: "font-bold truncate" }, item.name), React.createElement("span", { className: "text-gray-500 font-medium" }, item.count)), React.createElement("div", { className: "w-full h-2 bg-gray-200 rounded-full overflow-hidden" }, React.createElement("div", { className: "h-full bg-indigo-500", style: { width: `${Math.min(100, (item.count / 10) * 100)}%` } }))))))), 
+    }, React.createElement("div", { className: "exec-card-top mb-5" }, React.createElement("div", { className: "exec-label" }, "Carga por Persona"), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))), React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" }, executiveSummary.workloadData.map((item, i) => (React.createElement("div", { key: i }, React.createElement("div", { className: "flex justify-between text-sm mb-2" }, React.createElement("span", { className: "font-bold truncate" }, item.name), React.createElement("span", { className: "text-gray-500 font-medium" }, item.count)), React.createElement("div", { className: "w-full h-2 bg-gray-200 rounded-full overflow-hidden" }, React.createElement("div", { className: "h-full bg-indigo-500", style: { width: `${Math.min(100, (item.count / 10) * 100)}%` } }))))))),
     // 6. PRÓXIMOS VENCIMIENTOS (INTERACTIVA)
     React.createElement("div", {
         className: "exec-card md:col-span-2 cursor-pointer hover:ring-2 hover:ring-cyan-100 transition-all",
         onClick: () => window.location.hash = '#/alerts', // <-- Ahora te lleva al Centro de Control con la nueva sección
         title: "Ver detalles de vencimientos"
-    }, React.createElement("div", { className: "exec-card-top mb-5" }, React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))), React.createElement("div", { className: "space-y-3" }, executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (React.createElement("div", { key: i, className: "flex items-center justify-between p-3 rounded-xl bg-black/5" }, React.createElement("div", { className: "min-w-0 flex-1" }, React.createElement("div", { className: "text-sm font-bold truncate" }, item.tarea), React.createElement("div", { className: "text-[11px] text-gray-500 truncate mt-0.5" }, item.proyecto)), React.createElement("div", { className: "ml-4 text-[12px] font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-md" }, window.formatFechaES(item.fecha))))) : React.createElement("p", { className: "text-sm italic text-gray-400 p-2" }, "Sin vencimientos cercanos"))))), 
+    }, React.createElement("div", { className: "exec-card-top mb-5" }, React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))), React.createElement("div", { className: "space-y-3" }, executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (React.createElement("div", { key: i, className: "flex items-center justify-between p-3 rounded-xl bg-black/5" }, React.createElement("div", { className: "min-w-0 flex-1" }, React.createElement("div", { className: "text-sm font-bold truncate" }, item.tarea), React.createElement("div", { className: "text-[11px] text-gray-500 truncate mt-0.5" }, item.proyecto)), React.createElement("div", { className: "ml-4 text-[12px] font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-md" }, window.formatFechaES(item.fecha))))) : React.createElement("p", { className: "text-sm italic text-gray-400 p-2" }, "Sin vencimientos cercanos"))))),
     // SECCIONES DE PROYECTOS
     showSectionActive && React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') }, React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" }, React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }), " En Ejecuci\u00F3n", React.createElement("span", { className: "ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs" }, activeProjects.length)), activeProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, activeProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
             onDragStart: handleProjectDragStart,
@@ -531,7 +782,7 @@ const ProjectPreview = ({ data }) => {
     };
     return (React.createElement("div", { className: "bg-gray-50 print-container" }, React.createElement("div", { className: "max-w-7xl mx-auto space-y-6" }, React.createElement("div", { id: "header-container", className: "print-header flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "header-left-part flex items-center w-full md:w-2/3 gap-4 md:gap-6" }, data.meta.clientLogoData && React.createElement("img", { src: normalizeDataImage(data.meta.clientLogoData), alt: "Logo Cliente", className: "h-14 w-auto object-contain shrink-0 logo-print" }), React.createElement("div", null, React.createElement("h1", { className: "text-3xl font-bold text-gray-900 leading-tight tracking-tight" }, data.meta.titulo), React.createElement("p", { className: "text-gray-500 mt-2 text-lg" }, data.meta.subtitulo), React.createElement("div", { className: "mt-3 text-xs text-gray-700 leading-snug" }, data.meta.responsableProyecto && React.createElement("div", null, React.createElement("span", { className: "font-semibold" }, "Responsable: "), data.meta.responsableProyecto), data.meta.ejecutorProyecto && React.createElement("div", null, React.createElement("span", { className: "font-semibold" }, "Ejecutor: "), data.meta.ejecutorProyecto), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, "Fecha de emisión: ", new Date().toLocaleDateString("es-ES"))))), React.createElement("div", { className: "header-right-part mt-4 md:mt-0 flex items-center gap-6 self-start md:self-center" }, React.createElement("div", { className: "hidden md:block w-px h-12 bg-gray-200 no-print" }), React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "h-10 md:h-12 object-contain logo-print" }))), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-6" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between gap-4" }, React.createElement("div", { className: "min-w-0" }, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Estado Global"), React.createElement("p", { className: "text-3xl font-bold text-gray-900 mt-2 tabular-nums" }, progress, "%"), React.createElement("p", { className: "text-xs text-gray-400 mt-1" }, "Completado")), React.createElement("div", { className: "shrink-0" }, React.createElement("svg", { width: "64", height: "64", viewBox: "0 0 64 64", className: "block" }, React.createElement("circle", { cx: "32", cy: "32", r: "26", fill: "none", stroke: "var(--progress-track)", strokeWidth: "8" }), React.createElement("circle", { cx: "32", cy: "32", r: "26", fill: "none", stroke: "#2563EB", strokeWidth: "8", strokeLinecap: "round", transform: "rotate(-90 32 32)", strokeDasharray: 2 * Math.PI * 26, strokeDashoffset: (2 * Math.PI * 26) * (1 - (progress / 100)) }), React.createElement("text", { x: "32", y: "36", textAnchor: "middle", fontSize: "14", fontWeight: "700", fill: "var(--progress-text)", className: "tabular-nums" }, progress, "%"))))), React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between" }, React.createElement("div", null, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Tareas Resueltas"), React.createElement("p", { className: "text-3xl font-bold text-green-600 mt-2" }, completedTasks)), React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-green-50 rounded-full text-green-600" }, React.createElement("i", { className: "fas fa-check" })))), React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between" }, React.createElement("div", null, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Pendientes"), React.createElement("p", { className: "text-3xl font-bold text-orange-600 mt-2" }, totalTasks - completedTasks)), React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-orange-50 rounded-full text-orange-600" }, React.createElement("i", { className: "fas fa-clock" }))))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" }, React.createElement("h2", { className: "text-lg font-semibold text-gray-800" }, "Detalle de Trabajos")), React.createElement("div", { className: "w-full overflow-x-auto" }, React.createElement("table", { className: "w-full min-w-[1100px] table-fixed text-left border-collapse text-sm" }, React.createElement("thead", null, React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider" }, React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/5" }, "\u00C1rea"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Tarea"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6 internal-only" }, "Asignado"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Estado"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Prioridad"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Detalles"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Inicio"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "L\u00EDmite"))), React.createElement("tbody", { className: "divide-y divide-gray-200" }, data.tasks.map((row) => {
         var _a;
-        return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" }, 
+        return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" },
         // 1. Columna ÁREA
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("div", { className: "flex items-center" }, React.createElement("div", {
             className: "p-1.5 rounded-lg mr-2 no-print flex items-center justify-center " + (row.iconType === 'wifi' ? 'bg-blue-100 text-blue-600' :
@@ -544,13 +795,13 @@ const ProjectPreview = ({ data }) => {
                                         row.iconType === 'lock' ? 'bg-slate-200 text-slate-700' :
                                             'bg-gray-100 text-gray-600'),
             style: { width: '32px', height: '32px' }
-        }, Icons[row.iconType] || Icons.monitor), React.createElement("span", { className: "font-medium text-gray-900" }, row.area))), 
+        }, Icons[row.iconType] || Icons.monitor), React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
         // 2. Columna TAREA (Subtareas aquí)
-        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("div", { className: "flex flex-col gap-1" }, React.createElement("span", { className: "text-gray-900 font-bold" }, row.tarea), (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 ml-1 border-l-2 border-gray-200 pl-2" }, row.subtasks.map(sub => React.createElement("div", { key: sub.id, className: "flex items-start gap-2 mt-1" }, React.createElement("span", { className: sub.done ? "text-emerald-600 font-bold text-xs" : "text-gray-300 text-xs" }, sub.done ? "☑" : "☐"), React.createElement("span", { className: `text-xs ${sub.done ? "line-through text-gray-400" : "text-gray-600"}` }, sub.text)))), isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill mt-1" }, React.createElement("i", { className: "fas fa-lock" }), "Bloqueada por: ", React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—'))))), 
+        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("div", { className: "flex flex-col gap-1" }, React.createElement("span", { className: "text-gray-900 font-bold" }, row.tarea), (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 ml-1 border-l-2 border-gray-200 pl-2" }, row.subtasks.map(sub => React.createElement("div", { key: sub.id, className: "flex items-start gap-2 mt-1" }, React.createElement("span", { className: sub.done ? "text-emerald-600 font-bold text-xs" : "text-gray-300 text-xs" }, sub.done ? "☑" : "☐"), React.createElement("span", { className: `text-xs ${sub.done ? "line-through text-gray-400" : "text-gray-600"}` }, sub.text)))), isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill mt-1" }, React.createElement("i", { className: "fas fa-lock" }), "Bloqueada por: ", React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—'))))),
         // 3. Columna ASIGNADO
-        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" }, React.createElement("span", { className: "text-gray-700" }, row.asignadoA ? row.asignadoA : '-')), 
+        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" }, React.createElement("span", { className: "text-gray-700" }, row.asignadoA ? row.asignadoA : '-')),
         // 4. Columna ESTADO
-        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)), 
+        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusColor(row.estado)}` }, row.estado)),
         // 5. Columna PRIORIDAD
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", {
             className: `status-pill px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ` +
@@ -558,11 +809,11 @@ const ProjectPreview = ({ data }) => {
                     (row.prioridad || 'Media') === 'Alta' ? 'bg-amber-50 text-amber-700 border-amber-200' :
                         (row.prioridad || 'Media') === 'Baja' ? 'bg-slate-50 text-slate-700 border-slate-200' :
                             'bg-blue-50 text-blue-700 border-blue-200')
-        }, (row.prioridad || 'Media'))), 
+        }, (row.prioridad || 'Media'))),
         // 6. Columna DETALLES (Limpia)
-        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')), 
+        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')),
         // 7. Columna FECHA INICIO
-        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))), 
+        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))),
         // 8. Columna FECHA LÍMITE
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaLimite)))));
     }))))))));
@@ -974,13 +1225,13 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         placeholder: "https://unitecnic.sharepoint.com/..."
     }))), React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Logo del cliente"), React.createElement("div", { className: "flex items-center gap-3" }, React.createElement("div", { className: "h-12 w-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden" }, data.meta.clientLogoData ? (React.createElement("img", { src: data.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: "fas fa-image text-slate-400" }))), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("label", { className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer text-sm font-semibold text-gray-700 transition" }, React.createElement("i", { className: "fas fa-upload" }), "Subir logo", React.createElement("input", { type: "file", accept: "image/*", className: "hidden", onChange: (e) => { var _a; return handleClientLogoUpload((_a = e.target.files) === null || _a === void 0 ? void 0 : _a[0]); } })), data.meta.clientLogoData && (React.createElement("button", { type: "button", className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-700 transition", onClick: handleClientLogoRemove, title: "Quitar logo" }, React.createElement("i", { className: "fas fa-trash" }), "Quitar")))), React.createElement("p", { className: "text-xs text-gray-500 mt-2" }, "Consejo: al subir un logo se guarda para este cliente y se aplicar\u00E1 autom\u00E1ticamente en futuros proyectos cuando escribas el mismo nombre de cliente.")), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Estado"), React.createElement("select", { className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white", value: normalizeProjectEstado(data.meta.estado), onChange: (e) => updateMeta('estado', e.target.value) }, React.createElement("option", { value: "En Ejecuci\u00F3n" }, "\u26A1 En Ejecuci\u00F3n (Activo)"), React.createElement("option", { value: "En Pausa" }, "\u23F8 En Pausa"), React.createElement("option", { value: "En Revisi\u00F3n" }, "\uD83D\uDD0E En Revisi\u00F3n"), React.createElement("option", { value: "Completado" }, "\u2705 Completado (Hist\u00F3rico)")))), React.createElement("div", { className: "space-y-4" }))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center" }, React.createElement("h2", { className: "font-semibold text-gray-800" }, "Plan de Trabajo"), React.createElement("button", { onClick: addTask, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm" }, React.createElement("i", { className: "fas fa-plus" }), " Nueva Tarea")), React.createElement("div", { className: "overflow-auto", style: { maxHeight: "calc(100vh - 320px)" } }, React.createElement("table", { className: "w-full min-w-[1200px] text-left border-collapse" }, React.createElement("thead", null, React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200" }, React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[320px]" }, "\u00C1REA / TIPO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "TAREA"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "ESTADO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "PRIORIDAD"), React.createElement("th", { className: "px-4 py-3 font-semibold whitespace-nowrap min-w-[200px] internal-only" }, "ASIGNADO A"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "DETALLES"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"), React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))), React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, data.tasks.map((task, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` }, React.createElement("td", { className: "px-6 py-4 min-w-[320px]" }, React.createElement("div", { className: "flex flex-col gap-2" }, React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { draggable: true, onDragStart: (e) => handleTaskDragStart(e, task.id), onDragEnd: handleTaskDragEnd, className: "task-drag-handle inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:border-gray-300 cursor-grab active:cursor-grabbing", title: "Arrastra para reordenar" }, React.createElement("i", { className: "fas fa-grip-vertical" })), React.createElement(IconPicker, { value: task.iconType, open: openIconPickerId === task.id, onToggle: () => setOpenIconPickerId(prev => prev === task.id ? null : task.id), onChange: (newId) => { updateTask(task.id, 'iconType', newId); setOpenIconPickerId(null); } }), React.createElement("input", { type: "text", className: "flex-1 border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none font-medium", value: task.area, onChange: (e) => updateTask(task.id, 'area', e.target.value) }), React.createElement("div", { className: "flex flex-wrap items-center gap-2 pl-12 min-w-0" }, React.createElement("div", { className: "text-[11px] text-gray-500 shrink-0" }, "Depende de"), React.createElement("select", { className: "flex-1 min-w-[240px] border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[color:var(--brand)]", value: task.dependsOn || '', onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value ? Number(e.target.value) : null) }, React.createElement("option", { value: "" }, "(ninguna)"), data.tasks
         .filter(t => t.id !== task.id)
-        .map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))), isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" }, React.createElement("i", { className: "fas fa-lock" }), " Bloqueada")))))), React.createElement("td", { className: "px-6 py-4 min-w-[280px]" }, 
+        .map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))), isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" }, React.createElement("i", { className: "fas fa-lock" }), " Bloqueada")))))), React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
     // Tarea principal
-    React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full font-medium", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) }), 
+    React.createElement("textarea", { rows: "2", className: "w-full border border-gray-200 rounded text-sm p-2 focus:ring-1 focus:ring-blue-500 outline-none resize-none bg-transparent w-full font-medium", value: task.tarea, onChange: (e) => updateTask(task.id, 'tarea', e.target.value) }),
     // ZONA DE SUBTAREAS
-    React.createElement("div", { className: "subtasks-container" }, (task.subtasks || []).map(sub => (React.createElement("div", { key: sub.id, className: "subtask-item" }, 
+    React.createElement("div", { className: "subtasks-container" }, (task.subtasks || []).map(sub => (React.createElement("div", { key: sub.id, className: "subtask-item" },
     // Checkbox
-    React.createElement("input", { type: "checkbox", className: "subtask-checkbox", checked: !!sub.done, onChange: () => toggleSubtask(task.id, sub.id) }), 
+    React.createElement("input", { type: "checkbox", className: "subtask-checkbox", checked: !!sub.done, onChange: () => toggleSubtask(task.id, sub.id) }),
     // AHORA ESTO ES UN INPUT EDITABLE
     React.createElement("input", {
         type: "text",
@@ -988,7 +1239,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         value: sub.text,
         placeholder: "Escribe la subtarea...",
         onChange: (e) => updateSubtask(task.id, sub.id, e.target.value)
-    }), 
+    }),
     // Botón borrar
     React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "btn-del-subtask", title: "Borrar subtarea" }, React.createElement("i", { className: "fas fa-trash" }))))), React.createElement("button", { onClick: () => addSubtask(task.id), className: "btn-add-subtask" }, React.createElement("i", { className: "fas fa-plus-circle" }), " Subtarea"))), React.createElement("td", { className: "px-6 py-4 min-w-[160px]" }, React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
             : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
@@ -1211,11 +1462,11 @@ const AlertsView = ({ projects, onBack }) => {
     return (React.createElement("div", { className: "wl-view-container bg-gray-50 min-h-screen" }, React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } }, React.createElement("div", { className: "max-w-7xl mx-auto px-6 py-4 flex flex-col gap-4" }, React.createElement("div", { className: "flex justify-between items-center" }, React.createElement("div", { className: "flex items-center gap-4" }, React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } }, React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"), React.createElement("div", { style: { width: '1px', height: '24px', background: 'var(--border)' } }), React.createElement("h2", { className: "wl-title" }, React.createElement("i", { className: "fas fa-shield-halved", style: { color: '#ef4444' } }), " Centro de Control"))), React.createElement("div", { className: "flex flex-col sm:flex-row gap-3 bg-gray-50 p-2 rounded-lg border border-gray-100" }, React.createElement("div", { className: "relative group flex-1" }, React.createElement("i", { className: "fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" }), React.createElement("input", {
         type: "text", placeholder: "Buscar...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value),
         className: "w-full pl-12 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
-    })), React.createElement("select", { className: "py-1.5 px-3 text-sm border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 outline-none", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) }, React.createElement("option", { value: "Todos" }, "Todos los clientes"), clients.map(c => React.createElement("option", { key: c, value: c }, c)))))), React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-10" }, 
+    })), React.createElement("select", { className: "py-1.5 px-3 text-sm border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-blue-500 outline-none", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) }, React.createElement("option", { value: "Todos" }, "Todos los clientes"), clients.map(c => React.createElement("option", { key: c, value: c }, c)))))), React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-10" },
     // 1. BLOQUEOS
-    alertsData.blockedProjects.length > 0 && React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-lock text-orange-500" }), " Bloqueos por Dependencias", React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.blockedProjects.length)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.blockedProjects.map(proj => (React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, proj.items.map(t => React.createElement("div", { key: t.id, className: "text-xs bg-orange-50 text-orange-800 p-1.5 rounded" }, React.createElement("i", { className: "fas fa-lock mr-1" }), t.tarea, " (Espera a: ", t.blockerName, ")")))))))), 
+    alertsData.blockedProjects.length > 0 && React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-lock text-orange-500" }), " Bloqueos por Dependencias", React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.blockedProjects.length)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.blockedProjects.map(proj => (React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, proj.items.map(t => React.createElement("div", { key: t.id, className: "text-xs bg-orange-50 text-orange-800 p-1.5 rounded" }, React.createElement("i", { className: "fas fa-lock mr-1" }), t.tarea, " (Espera a: ", t.blockerName, ")")))))))),
     // 2. ALERTAS ROJAS
-    alertsData.redProjects.length > 0 && React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-bell text-red-500" }), " Alertas Críticas", React.createElement("span", { className: "alert-count-badge" }, alertsData.redProjects.length)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.redProjects.map(proj => (React.createElement("div", { key: proj.id, className: "wl-person-card alert-critical-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, (proj.reasons || []).map((r, i) => React.createElement("div", { key: i, className: "alert-critical-item" }, React.createElement("i", { className: "fas fa-circle-exclamation" }), String(r || '').toUpperCase())))))))), 
+    alertsData.redProjects.length > 0 && React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-bell text-red-500" }), " Alertas Críticas", React.createElement("span", { className: "alert-count-badge" }, alertsData.redProjects.length)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.redProjects.map(proj => (React.createElement("div", { key: proj.id, className: "wl-person-card alert-critical-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, (proj.reasons || []).map((r, i) => React.createElement("div", { key: i, className: "alert-critical-item" }, React.createElement("i", { className: "fas fa-circle-exclamation" }), String(r || '').toUpperCase())))))))),
     // 3. TAREAS URGENTES (NUEVA SECCIÓN)
     React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-triangle-exclamation text-amber-500" }), " Tareas Urgentes", React.createElement("span", { className: "alert-count-badge" }, alertsData.urgentProjects.length)), alertsData.urgentProjects.length === 0
         ? React.createElement("div", { className: "p-6 text-center text-gray-400 bg-white rounded-xl border border-dashed text-sm" }, "No hay tareas urgentes.")
@@ -1224,7 +1475,7 @@ const AlertsView = ({ projects, onBack }) => {
             className: "wl-person-card alert-urgent-card",
             style: { padding: '16px' },
             onClick: () => window.location.hash = `#/project/${proj.id}`
-        }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, (proj.items || []).map(t => React.createElement("div", { key: t.id, className: "alert-urgent-item" }, React.createElement("i", { className: "fas fa-bolt" }), t.tarea))))))), 
+        }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, (proj.items || []).map(t => React.createElement("div", { key: t.id, className: "alert-urgent-item" }, React.createElement("i", { className: "fas fa-bolt" }), t.tarea))))))),
     // 4. PRÓXIMOS VENCIMIENTOS (NUEVA SECCIÓN)
     React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-calendar-day text-cyan-600" }), " Próximos Vencimientos (7 días)", React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.upcomingProjects.length)), alertsData.upcomingProjects.length === 0
         ? React.createElement("div", { className: "p-6 text-center text-gray-400 bg-white rounded-xl border border-dashed text-sm" }, "No hay vencimientos esta semana.")
@@ -1462,13 +1713,13 @@ const ChartsView = ({ projects, onBack }) => {
         };
     }, [projects, themeTick]);
     const total = flattenTasks().length;
-    return React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" }, React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } }, React.createElement("div", { className: "max-w-7xl mx-auto px-6 py-4 flex items-center justify-between" }, React.createElement("div", { className: "flex items-center gap-3" }, React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } }, React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"), React.createElement("div", null, React.createElement("div", { className: "text-xl font-extrabold" }, "Gráficos"), React.createElement("div", { className: "text-xs opacity-70" }, `Resumen global · ${total} tareas`))))), React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-6" }, React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6" }, 
+    return React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" }, React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } }, React.createElement("div", { className: "max-w-7xl mx-auto px-6 py-4 flex items-center justify-between" }, React.createElement("div", { className: "flex items-center gap-3" }, React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } }, React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"), React.createElement("div", null, React.createElement("div", { className: "text-xl font-extrabold" }, "Gráficos"), React.createElement("div", { className: "text-xs opacity-70" }, `Resumen global · ${total} tareas`))))), React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-6" }, React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6" },
     // Donut
-    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Estado"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: donutRef }))), 
+    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Estado"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: donutRef }))),
     // Área
-    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border lg:col-span-2" }, React.createElement("div", { className: "font-bold mb-3" }, "Áreas (Top 15)"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byAreaRef })))), React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" }, 
+    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border lg:col-span-2" }, React.createElement("div", { className: "font-bold mb-3" }, "Áreas (Top 15)"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byAreaRef })))), React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
     // Prioridad
-    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Prioridad"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byPriorityRef }))), 
+    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Prioridad"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byPriorityRef }))),
     // Asignado
     React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Tareas por Persona"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byAssigneeRef }))))));
 };
@@ -1626,7 +1877,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         ? { display: 'none' }
         : {};
     // Render principal
-    return (React.createElement("div", null, 
+    return (React.createElement("div", null,
     // Barra superior (misma filosofía que ProjectEditor)
     React.createElement("div", {
         className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-3 flex justify-between items-center shadow-sm no-print"
@@ -1634,7 +1885,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         type: "button",
         onClick: onBack,
         className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium"
-    }, React.createElement("i", { className: "fas fa-arrow-left" }), React.createElement("span", { className: "hidden sm:inline" }, "Volver al proyecto")), React.createElement("div", { className: "h-6 w-px bg-gray-200" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold text-gray-800" }, "Wiki"), React.createElement("div", { className: "text-xs text-gray-500" }, (((_g = project === null || project === void 0 ? void 0 : project.meta) === null || _g === void 0 ? void 0 : _g.titulo) || "Proyecto")))), React.createElement("div", { className: "flex items-center gap-2" }, 
+    }, React.createElement("i", { className: "fas fa-arrow-left" }), React.createElement("span", { className: "hidden sm:inline" }, "Volver al proyecto")), React.createElement("div", { className: "h-6 w-px bg-gray-200" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold text-gray-800" }, "Wiki"), React.createElement("div", { className: "text-xs text-gray-500" }, (((_g = project === null || project === void 0 ? void 0 : project.meta) === null || _g === void 0 ? void 0 : _g.titulo) || "Proyecto")))), React.createElement("div", { className: "flex items-center gap-2" },
     // Botón Editar / Ver (como el de ProjectEditor)
     (mode === 'view')
         ? React.createElement("button", {
@@ -1646,7 +1897,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
             type: "button",
             onClick: handleCancelEdit,
             className: "px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2 shadow-sm"
-        }, React.createElement("i", { className: "fas fa-eye" }), React.createElement("span", { className: "hidden sm:inline" }, "Ver")), 
+        }, React.createElement("i", { className: "fas fa-eye" }), React.createElement("span", { className: "hidden sm:inline" }, "Ver")),
     // Guardar: solo en modo edit
     (mode === 'edit') && React.createElement("button", {
         type: "button",
@@ -1655,13 +1906,13 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`
     }, isSaving
         ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" })
-        : React.createElement("i", { className: "fas fa-save" }), React.createElement("span", { className: "hidden sm:inline" }, isSaving ? "Guardando..." : "Guardar")))), 
+        : React.createElement("i", { className: "fas fa-save" }), React.createElement("span", { className: "hidden sm:inline" }, isSaving ? "Guardando..." : "Guardar")))),
     // Contenido
     React.createElement("div", { className: "max-w-5xl mx-auto p-6" }, React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" }, React.createElement("div", { className: "font-semibold text-gray-800" }, mode === 'view' ? "Vista" : "Edición"), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, mode === 'view'
         ? "Pulsa “Editar” para modificar."
-        : "Usa la barra para negrita, listas y títulos.")), 
+        : "Usa la barra para negrita, listas y títulos.")),
     // Zona Quill
-    React.createElement("div", { className: "p-4" }, 
+    React.createElement("div", { className: "p-4" },
     // Truco: cuando está en view, escondemos la toolbar que Quill crea (ql-toolbar)
     React.createElement("div", {
         style: {},
@@ -1688,6 +1939,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
 };
 // ─── VISTA: USUARIOS ─────────────────────────────────────────────────────────
 const UsersView = () => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Usuarios'), React.createElement('p', { className: 'sb-page-sub' }, 'Gestión de accesos y roles del equipo')), React.createElement('div', { className: 'sb-placeholder' }, React.createElement('div', { className: 'sb-placeholder-icon' }, React.createElement('i', { className: 'fas fa-user-group' })), React.createElement('h2', { className: 'sb-placeholder-title' }, 'Gestión de usuarios'), React.createElement('p', { className: 'sb-placeholder-text' }, 'La administración de usuarios y roles estará disponible próximamente. Aquí podrás gestionar el acceso al panel, asignar permisos y ver la actividad por persona.'), React.createElement('span', { className: 'sb-placeholder-badge' }, 'Próximamente')));
+const ImportView = ({ onImport }) => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Importar'), React.createElement('p', { className: 'sb-page-sub' }, 'Restauración de backups de proyectos Unitecnic')), React.createElement('div', { className: 'sb-placeholder' }, React.createElement('div', { className: 'sb-placeholder-icon' }, React.createElement('i', { className: 'fas fa-file-arrow-up' })), React.createElement('h2', { className: 'sb-placeholder-title' }, 'Importar backup JSON'), React.createElement('p', { className: 'sb-placeholder-text' }, 'Selecciona un backup exportado desde esta aplicación. Antes de sobrescribir los datos actuales se mostrará una confirmación.'), React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: onImport }, React.createElement('i', { className: 'fas fa-file-arrow-up' }), 'Seleccionar archivo')));
 // ─── VISTA: PERFIL ────────────────────────────────────────────────────────────
 const ProfileView = () => {
     const userLabel = getUserLabel();
@@ -1737,28 +1989,25 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
     return React.createElement('aside', {
         className: 'sidebar' + (sidebarOpen ? ' sidebar--open' : ''),
         'aria-label': 'Navegación principal'
-    }, 
+    },
     // CABECERA
     React.createElement('div', { className: 'sidebar-head' }, React.createElement('button', {
         className: 'sidebar-brand',
-        onClick: () => { onNavigate('list', null); onClose(); },
+        onClick: () => { onNavigate('home', null); onClose(); },
         title: 'Ir al inicio'
     }, React.createElement('img', { src: UNITECNIC_LOGO_BASE64, alt: 'Unitecnic', className: 'sidebar-brand-img' }), React.createElement('div', { className: 'sidebar-brand-text' }, React.createElement('span', { className: 'sidebar-brand-name' }, 'Unitecnic'), React.createElement('span', { className: 'sidebar-brand-sub' }, 'Project Manager'))), React.createElement('button', {
         className: 'sidebar-close-btn',
         onClick: onClose,
         'aria-label': 'Cerrar menú'
-    }, React.createElement('i', { className: 'fas fa-xmark' }))), 
+    }, React.createElement('i', { className: 'fas fa-xmark' }))),
     // NAVEGACIÓN
-    React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'Menú' }, ni('fa-house', 'Home', () => { onNavigate('list', null); onClose(); }, null, isActive('list', null), false), 
+    React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'Menú' }, ni('fa-house', 'Home', () => { onNavigate('home', null); onClose(); }, null, isActive('home'), false),
     // Grupo Proyectos
     React.createElement('div', { className: 'sidebar-group' }, React.createElement('button', {
         className: 'sidebar-group-btn' + (isActive(['list', 'editor', 'wiki']) ? ' active' : ''),
         onClick: () => setProyectosOpen(function (o) { return !o; }),
         'aria-expanded': proyectosOpen
-    }, React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Proyectos'), React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })), proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' }, ni('fa-layer-group', 'Todos', () => { onNavigate('list', null); onClose(); }, counts.total, isActive('list', null), true), ni('fa-circle-play', 'En Ejecución', () => { onNavigate('list', 'En Ejecución'); onClose(); }, counts.active, isActive('list', 'En Ejecución'), true), ni('fa-magnifying-glass', 'En Revisión', () => { onNavigate('list', 'En Revisión'); onClose(); }, counts.review, isActive('list', 'En Revisión'), true), ni('fa-circle-check', 'Completados', () => { onNavigate('list', 'Completado'); onClose(); }, counts.completed, isActive('list', 'Completado'), true), ni('fa-circle-pause', 'En Pausa', () => { onNavigate('list', 'En Pausa'); onClose(); }, counts.paused, isActive('list', 'En Pausa'), true))), ni('fa-chart-bar', 'Gráficos', () => { onNavigate('charts', null); onClose(); }, null, isActive('charts'), false), ni('fa-shield-halved', 'Incidencias', () => { onNavigate('alerts', null); onClose(); }, null, isActive('alerts'), false), ni('fa-users', 'Carga de trabajo', () => { onNavigate('workload', null); onClose(); }, null, isActive('workload'), false), React.createElement('div', { className: 'sidebar-divider' }), ni('fa-user-group', 'Usuarios', () => { onNavigate('users', null); onClose(); }, null, isActive('users'), false), React.createElement('button', {
-        className: 'sidebar-nav-item',
-        onClick: () => { onImport(); onClose(); }
-    }, React.createElement('i', { className: 'fas fa-file-arrow-up snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Importar'))), 
+    }, React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Proyectos'), React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })), proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' }, ni('fa-layer-group', 'Todos', () => { onNavigate('list', null); onClose(); }, counts.total, isActive('list', null), true), ni('fa-circle-play', 'En Ejecución', () => { onNavigate('list', 'En Ejecución'); onClose(); }, counts.active, isActive('list', 'En Ejecución'), true), ni('fa-magnifying-glass', 'En Revisión', () => { onNavigate('list', 'En Revisión'); onClose(); }, counts.review, isActive('list', 'En Revisión'), true), ni('fa-circle-check', 'Completados', () => { onNavigate('list', 'Completado'); onClose(); }, counts.completed, isActive('list', 'Completado'), true), ni('fa-circle-pause', 'En Pausa', () => { onNavigate('list', 'En Pausa'); onClose(); }, counts.paused, isActive('list', 'En Pausa'), true))), ni('fa-chart-bar', 'Gráficos', () => { onNavigate('charts', null); onClose(); }, null, isActive('charts'), false), ni('fa-shield-halved', 'Incidencias', () => { onNavigate('alerts', null); onClose(); }, null, isActive('alerts'), false), ni('fa-users', 'Carga de trabajo', () => { onNavigate('workload', null); onClose(); }, null, isActive('workload'), false), React.createElement('div', { className: 'sidebar-divider' }), ni('fa-user-group', 'Usuarios', () => { onNavigate('users', null); onClose(); }, null, isActive('users'), false), ni('fa-file-arrow-up', 'Importar', () => { onNavigate('import', null); onClose(); }, null, isActive('import'), false)),
     // PIE
     React.createElement('div', { className: 'sidebar-foot' }, React.createElement('div', { className: 'sidebar-user-row' }, React.createElement('div', { className: 'sidebar-avatar' }, (userLabel || 'U').charAt(0).toUpperCase()), React.createElement('div', { className: 'sidebar-user-info' }, React.createElement('div', { className: 'sidebar-user-name', title: userLabel }, userLabel), React.createElement('div', { className: 'sidebar-user-role' }, 'Administrador'))), React.createElement('div', { className: 'sidebar-foot-actions' }, React.createElement('button', {
         className: 'sfab' + (isActive('profile') ? ' active' : ''),
@@ -1960,6 +2209,11 @@ const MainApp = () => {
                 setView('users');
                 return;
             }
+            if (parts[0] === 'import') {
+                setCurrentProject(null);
+                setView('import');
+                return;
+            }
             if (parts[0] === 'profile') {
                 setCurrentProject(null);
                 setView('profile');
@@ -1976,7 +2230,13 @@ const MainApp = () => {
                 setStatusFilter(decodeURIComponent(parts[1]));
                 return;
             }
-            if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
+            if (!parts.length || parts[0] === 'home' || parts[0] === 'dashboard') {
+                setCurrentProject(null);
+                setStatusFilter(null);
+                setView('home');
+                return;
+            }
+            if (parts[0] === 'list') {
                 setCurrentProject(null);
                 setStatusFilter(null);
                 setView('list');
@@ -2192,7 +2452,12 @@ const MainApp = () => {
     // --- NAVEGACIÓN DESDE SIDEBAR ---
     const handleSidebarNavigate = (targetView, targetFilter) => {
         setStatusFilter(targetFilter || null);
-        if (targetView === 'list') {
+        if (targetView === 'home') {
+            setCurrentProject(null);
+            setView('home');
+            setRoute('#/home');
+        }
+        else if (targetView === 'list') {
             setCurrentProject(null);
             setView('list');
             const hash = targetFilter ? '#/proj/' + encodeURIComponent(targetFilter) : '#/list';
@@ -2295,13 +2560,13 @@ const MainApp = () => {
     };
     if (view === 'loading')
         return React.createElement("div", { className: "h-screen flex items-center justify-center bg-gray-50" }, React.createElement("div", { className: "loader" }));
-    return (React.createElement("div", { className: "app-layout" }, 
+    return (React.createElement("div", { className: "app-layout" },
     // Overlay fondo (mobile)
     React.createElement("div", {
         className: "sidebar-overlay" + (sidebarOpen ? " sidebar-overlay--on" : ""),
         onClick: function () { setSidebarOpen(false); },
         "aria-hidden": "true"
-    }), 
+    }),
     // Sidebar principal
     React.createElement(Sidebar, {
         view: view,
@@ -2313,16 +2578,16 @@ const MainApp = () => {
         theme: theme,
         onToggleTheme: toggleTheme,
         onImport: openImportPicker
-    }), 
+    }),
     // Contenido principal
-    React.createElement("main", { className: "sidebar-main" }, 
+    React.createElement("main", { className: "sidebar-main" },
     // Botón hamburguesa (solo mobile)
     React.createElement("button", {
         className: "sidebar-hamburger no-print",
         onClick: function () { setSidebarOpen(true); },
         "aria-label": "Abrir menú",
         "aria-expanded": sidebarOpen
-    }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'users' && React.createElement(UsersView, null), view === 'profile' && React.createElement(ProfileView, null), view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }), view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })), view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })), view === 'wiki' && currentProject && (React.createElement(ProjectWiki, {
+    }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })), view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'users' && React.createElement(UsersView, null), view === 'import' && React.createElement(ImportView, { onImport: openImportPicker }), view === 'profile' && React.createElement(ProfileView, null), view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }), view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })), view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })), view === 'wiki' && currentProject && (React.createElement(ProjectWiki, {
         project: currentProject,
         onSave: saveProject,
         onBack: () => { setView('editor'); setRoute(`#/project/${currentProject.id}`); },
