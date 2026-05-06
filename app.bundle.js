@@ -1253,7 +1253,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         type: "button",
         onClick: () => { window.location.hash = `#/wiki/${encodeURIComponent(String((data && data.id) || ''))}`; },
         className: "px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm"
-    }, React.createElement("i", { className: "fas fa-book" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Wiki")), React.createElement("div", { className: "relative" }, React.createElement("button", { onClick: () => setShowExportMenu(!showExportMenu), className: "px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" }, React.createElement("i", { className: "fas fa-share-square" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Exportar"), " ", React.createElement("i", { className: "fas fa-chevron-down text-xs" })), showExportMenu && (React.createElement("div", { className: "absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden" }, React.createElement("button", { onClick: exportHTML, className: "w-full text-left px-4 py-3 hover:bg-purple-50 text-sm text-gray-700 flex items-center gap-3 border-b border-gray-50" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-code" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "Web Cliente (HTML)"), React.createElement("p", { className: "text-xs text-gray-400" }, "S\u00F3lo lectura, incluye logo"))), React.createElement("button", { onClick: exportCSV, className: "w-full text-left px-4 py-3 hover:bg-green-50 text-sm text-gray-700 flex items-center gap-3 border-b border-gray-50" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-csv" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "Excel (CSV)"), React.createElement("p", { className: "text-xs text-gray-400" }, "Para hojas de c\u00E1lculo"))), React.createElement("button", { onClick: printPDF, className: "w-full text-left px-4 py-3 hover:bg-red-50 text-sm text-gray-700 flex items-center gap-3" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-pdf" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "PDF Oficial"), React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))))), viewMode === 'preview' ? (React.createElement("div", { className: "py-8" }, React.createElement(ProjectPreview, { data: data }), React.createElement("div", { className: "max-w-7xl mx-auto mt-6 px-6" }, React.createElement(ProjectTimeEntriesPanel, { project: data, onAdd: onAddTimeEntry, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry })))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex justify-between items-center mb-6 pb-2 border-b" }, React.createElement("h3", { className: "text-sm font-bold text-gray-500 uppercase tracking-wider" }, "Datos del Proyecto"), React.createElement("span", { className: "text-xs text-gray-400" }, "ID: ", data.id)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-8" }, React.createElement("div", { className: "space-y-4" }, React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "T\u00EDtulo"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.titulo, onChange: (e) => updateMeta('titulo', e.target.value), placeholder: "Ej: Renovaci\u00F3n Sede Central" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Subt\u00EDtulo / Fase"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.subtitulo, onChange: (e) => updateMeta('subtitulo', e.target.value), placeholder: "Ej: Fase 1 - Cableado Estructurado" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Cliente"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.cliente || '', onChange: (e) => handleClienteChange(e.target.value), placeholder: "Ej: RTVE / EITB / Mediaset..." })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Proyecto"), React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "" })), React.createElement("div", { className: "mt-4" }, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Ejecución / Técnico"), React.createElement("input", {
+    }, React.createElement("i", { className: "fas fa-book" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Wiki")), React.createElement("div", { className: "relative" }, React.createElement("button", { onClick: () => setShowExportMenu(!showExportMenu), className: "px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" }, React.createElement("i", { className: "fas fa-share-square" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Exportar"), " ", React.createElement("i", { className: "fas fa-chevron-down text-xs" })), showExportMenu && (React.createElement("div", { className: "absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden" }, React.createElement("button", { onClick: exportHTML, className: "w-full text-left px-4 py-3 hover:bg-purple-50 text-sm text-gray-700 flex items-center gap-3 border-b border-gray-50" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-code" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "Web Cliente (HTML)"), React.createElement("p", { className: "text-xs text-gray-400" }, "S\u00F3lo lectura, incluye logo"))), React.createElement("button", { onClick: exportCSV, className: "w-full text-left px-4 py-3 hover:bg-green-50 text-sm text-gray-700 flex items-center gap-3 border-b border-gray-50" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-csv" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "Excel (CSV)"), React.createElement("p", { className: "text-xs text-gray-400" }, "Para hojas de c\u00E1lculo"))), React.createElement("button", { onClick: printPDF, className: "w-full text-left px-4 py-3 hover:bg-red-50 text-sm text-gray-700 flex items-center gap-3" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-pdf" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "PDF Oficial"), React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))))), viewMode === 'preview' ? (React.createElement("div", { className: "py-8" }, React.createElement(ProjectPreview, { data: data }), React.createElement("div", { className: "max-w-7xl mx-auto mt-6 px-6" }, React.createElement(ProjectTimeEntriesPanelV2, { project: data, onAdd: onAddTimeEntry, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry })))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex justify-between items-center mb-6 pb-2 border-b" }, React.createElement("h3", { className: "text-sm font-bold text-gray-500 uppercase tracking-wider" }, "Datos del Proyecto"), React.createElement("span", { className: "text-xs text-gray-400" }, "ID: ", data.id)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-8" }, React.createElement("div", { className: "space-y-4" }, React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "T\u00EDtulo"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.titulo, onChange: (e) => updateMeta('titulo', e.target.value), placeholder: "Ej: Renovaci\u00F3n Sede Central" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Subt\u00EDtulo / Fase"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.subtitulo, onChange: (e) => updateMeta('subtitulo', e.target.value), placeholder: "Ej: Fase 1 - Cableado Estructurado" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Cliente"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.cliente || '', onChange: (e) => handleClienteChange(e.target.value), placeholder: "Ej: RTVE / EITB / Mediaset..." })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Proyecto"), React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "" })), React.createElement("div", { className: "mt-4" }, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Ejecución / Técnico"), React.createElement("input", {
         type: "text",
         className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow",
         value: data.meta.ejecutorProyecto || '',
@@ -2366,6 +2366,213 @@ const ProjectTimeEntriesPanel = ({ project, onAdd, onEdit, onDelete }) => {
     }, { hours: 0, km: 0, allowance: 0 });
     return React.createElement('section', { className: 'imput-card project-imput-card no-print' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones'), React.createElement('p', null, 'Horas, dietas y kilometraje registrados en este proyecto.')), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onAdd(project.id) }, React.createElement('i', { className: 'fas fa-plus' }), ' Añadir imputacion')), React.createElement('div', { className: 'imput-project-totals' }, React.createElement('span', null, React.createElement('strong', null, totals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, totals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, `${totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), ' dietas')), React.createElement(TimeEntriesTable, { rows: rows, compact: true, onEdit: onEdit, onDelete: onDelete }));
 };
+const getImputMonthKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+const getImputMonthLabel = (monthKey) => {
+    const [year, month] = String(monthKey || getImputMonthKey()).split('-').map(Number);
+    return new Date(year, (month || 1) - 1, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+};
+const addImputMonths = (monthKey, delta) => {
+    const [year, month] = String(monthKey || getImputMonthKey()).split('-').map(Number);
+    return getImputMonthKey(new Date(year, ((month || 1) - 1) + delta, 1));
+};
+const getImputMonthDays = (monthKey) => {
+    const [year, month] = String(monthKey || getImputMonthKey()).split('-').map(Number);
+    const first = new Date(year, (month || 1) - 1, 1);
+    const total = new Date(year, month || 1, 0).getDate();
+    const leading = (first.getDay() + 6) % 7;
+    const days = [];
+    for (let i = 0; i < leading; i++)
+        days.push(null);
+    for (let d = 1; d <= total; d++)
+        days.push(`${year}-${String(month || 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+    while (days.length % 7 !== 0)
+        days.push(null);
+    return days;
+};
+const imputCsvEscape = (value) => `"${String(value !== null && value !== void 0 ? value : '').replace(/"/g, '""')}"`;
+const AdvancedTimeEntryModal = ({ projects, entry, lockedProjectId, initialDate, onClose, onSave }) => {
+    const firstProjectId = lockedProjectId || (projects[0] && projects[0].id) || '';
+    const [form, setForm] = React.useState(() => ({
+        date: (entry && entry.date) || initialDate || getCurrentDateInput(),
+        projectId: (entry && entry.projectId) || firstProjectId,
+        user: (entry && entry.user) || '',
+        hours: (entry && entry.hours) || '',
+        allowanceType: (entry && entry.allowanceType) || 'Ninguna',
+        allowanceAmount: (entry && entry.allowanceAmount) || '',
+        mileageKm: (entry && entry.mileageKm) || '',
+        notes: (entry && entry.notes) || ''
+    }));
+    const setField = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+    const submit = (e) => {
+        e.preventDefault();
+        const hours = toNumberOrZero(form.hours);
+        const allowanceAmount = toNumberOrZero(form.allowanceAmount);
+        const mileageKm = toNumberOrZero(form.mileageKm);
+        if (!form.projectId) {
+            alert('Selecciona un proyecto.');
+            return;
+        }
+        if (!form.date || !parseDateOnly(form.date)) {
+            alert('Indica una fecha valida.');
+            return;
+        }
+        if (!form.user.trim()) {
+            alert('Indica la persona.');
+            return;
+        }
+        if (hours <= 0) {
+            alert('Las horas deben ser mayores que 0.');
+            return;
+        }
+        if (allowanceAmount < 0) {
+            alert('El importe de dieta no puede ser negativo.');
+            return;
+        }
+        if (mileageKm < 0) {
+            alert('Los kilometros no pueden ser negativos.');
+            return;
+        }
+        onSave({
+            projectId: lockedProjectId || form.projectId,
+            previousProjectId: entry && entry.projectId,
+            entryId: entry && entry.id,
+            values: {
+                date: form.date,
+                user: form.user.trim(),
+                hours,
+                allowanceType: form.allowanceType,
+                allowanceAmount,
+                mileageKm,
+                notes: form.notes.trim()
+            }
+        });
+    };
+    return React.createElement('div', { className: 'modal-overlay no-print', role: 'dialog', 'aria-modal': 'true' }, React.createElement('form', { className: 'modal-card imput-modal', onSubmit: submit }, React.createElement('div', { className: 'modal-title' }, entry ? 'Editar imputacion' : 'Nueva imputacion'), React.createElement('div', { className: 'modal-subtitle' }, 'Registra horas, dietas y kilometraje asociados a un proyecto.'), React.createElement('div', { className: 'imput-form-grid' }, React.createElement('label', null, 'Fecha', React.createElement('input', { type: 'date', value: form.date, onChange: e => setField('date', e.target.value), required: true })), React.createElement('label', null, 'Proyecto', React.createElement('select', { value: lockedProjectId || form.projectId, onChange: e => setField('projectId', e.target.value), disabled: !!lockedProjectId, required: true }, React.createElement('option', { value: '' }, 'Selecciona proyecto'), projects.map(p => React.createElement('option', { key: p.id, value: p.id }, (p.meta && p.meta.titulo) || 'Proyecto sin titulo')))), React.createElement('label', null, 'Persona', React.createElement('input', { type: 'text', value: form.user, onChange: e => setField('user', e.target.value), placeholder: 'Nombre', required: true })), React.createElement('label', null, 'Horas', React.createElement('input', { type: 'number', min: '0.25', step: '0.25', value: form.hours, onChange: e => setField('hours', e.target.value), required: true })), React.createElement('label', null, 'Tipo de dieta', React.createElement('select', { value: form.allowanceType, onChange: e => setField('allowanceType', e.target.value) }, TIME_ALLOWANCE_TYPES.map(t => React.createElement('option', { key: t, value: t }, t)))), React.createElement('label', null, 'Importe dieta', React.createElement('input', { type: 'number', min: '0', step: '0.01', value: form.allowanceAmount, onChange: e => setField('allowanceAmount', e.target.value) })), React.createElement('label', null, 'Kilometros', React.createElement('input', { type: 'number', min: '0', step: '0.1', value: form.mileageKm, onChange: e => setField('mileageKm', e.target.value) })), React.createElement('label', { className: 'imput-form-wide' }, 'Observaciones', React.createElement('textarea', { rows: 3, value: form.notes, onChange: e => setField('notes', e.target.value), placeholder: 'Comentario opcional' }))), React.createElement('div', { className: 'modal-actions' }, React.createElement('button', { type: 'button', className: 'btn-apple', onClick: onClose }, 'Cancelar'), React.createElement('button', { type: 'submit', className: 'btn-apple-primary' }, entry ? 'Guardar cambios' : 'Crear imputacion'))));
+};
+const AdvancedTimeEntriesTable = ({ rows, onEdit, onDelete, compact, emptyText }) => rows.length === 0
+    ? React.createElement('div', { className: 'imput-empty' }, React.createElement('i', { className: 'fas fa-clock' }), React.createElement('strong', null, 'Sin imputaciones'), React.createElement('span', null, emptyText || 'Aun no hay horas, dietas o kilometros registrados.'))
+    : React.createElement('div', { className: 'imput-table-wrap' }, React.createElement('table', { className: 'imput-table' }, React.createElement('thead', null, React.createElement('tr', null, React.createElement('th', null, 'Fecha'), !compact && React.createElement('th', null, 'Proyecto'), React.createElement('th', null, 'Persona'), React.createElement('th', null, 'Horas'), React.createElement('th', null, 'Dieta'), React.createElement('th', null, 'Importe'), React.createElement('th', null, 'Km'), React.createElement('th', null, 'Observaciones'), React.createElement('th', null, 'Acciones'))), React.createElement('tbody', null, rows.map(row => React.createElement('tr', { key: row.id }, React.createElement('td', { 'data-label': 'Fecha' }, window.formatFechaES ? window.formatFechaES(row.date) : row.date), !compact && React.createElement('td', { 'data-label': 'Proyecto' }, row.projectTitle), React.createElement('td', { 'data-label': 'Persona' }, row.user || '-'), React.createElement('td', { 'data-label': 'Horas' }, toNumberOrZero(row.hours).toLocaleString('es-ES')), React.createElement('td', { 'data-label': 'Dieta' }, row.allowanceType || 'Ninguna'), React.createElement('td', { 'data-label': 'Importe' }, `${toNumberOrZero(row.allowanceAmount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), React.createElement('td', { 'data-label': 'Km' }, toNumberOrZero(row.mileageKm).toLocaleString('es-ES')), React.createElement('td', { 'data-label': 'Observaciones' }, row.notes || '-'), React.createElement('td', { className: 'imput-actions', 'data-label': 'Acciones' }, React.createElement('button', { type: 'button', onClick: () => onEdit(row), title: 'Editar' }, React.createElement('i', { className: 'fas fa-pen' })), React.createElement('button', { type: 'button', onClick: () => onDelete(row.projectId, row.id), title: 'Eliminar' }, React.createElement('i', { className: 'fas fa-trash' }))))))));
+const AdvancedImputationsView = ({ projects, onBack, onCreate, onEdit, onDelete }) => {
+    const [monthFilter, setMonthFilter] = React.useState(getImputMonthKey());
+    const [projectFilter, setProjectFilter] = React.useState('Todos');
+    const [personFilter, setPersonFilter] = React.useState('Todos');
+    const [allowanceFilter, setAllowanceFilter] = React.useState('Todos');
+    const [textFilter, setTextFilter] = React.useState('');
+    const [selectedDate, setSelectedDate] = React.useState(getCurrentDateInput());
+    const rowsAll = React.useMemo(() => flattenTimeEntries(projects), [projects]);
+    const people = React.useMemo(() => Array.from(new Set(rowsAll.map(r => r.user).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es')), [rowsAll]);
+    const filteredRows = React.useMemo(() => {
+        const q = textFilter.trim().toLowerCase();
+        return rowsAll.filter(row => {
+            const monthOk = !monthFilter || String(row.date || '').startsWith(monthFilter);
+            const projectOk = projectFilter === 'Todos' || String(row.projectId) === String(projectFilter);
+            const personOk = personFilter === 'Todos' || row.user === personFilter;
+            const allowanceOk = allowanceFilter === 'Todos' || (row.allowanceType || 'Ninguna') === allowanceFilter;
+            const textOk = !q || String(row.notes || '').toLowerCase().includes(q);
+            return monthOk && projectOk && personOk && allowanceOk && textOk;
+        });
+    }, [rowsAll, monthFilter, projectFilter, personFilter, allowanceFilter, textFilter]);
+    const sumBy = (items, field) => items.reduce((sum, r) => sum + toNumberOrZero(r[field]), 0);
+    const now = new Date();
+    const hoursPeriod = sumBy(filteredRows, 'hours');
+    const hoursWeek = sumBy(filteredRows.filter(r => isSameWeek(r.date, now)), 'hours');
+    const kmPeriod = sumBy(filteredRows, 'mileageKm');
+    const allowancePeriod = sumBy(filteredRows, 'allowanceAmount');
+    const topByHours = (field) => {
+        const map = {};
+        filteredRows.forEach(r => {
+            const key = r[field] || 'Sin datos';
+            map[key] = (map[key] || 0) + toNumberOrZero(r.hours);
+        });
+        return Object.entries(map).sort((a, b) => b[1] - a[1])[0] || ['Sin datos', 0];
+    };
+    const topProject = topByHours('projectTitle');
+    const topPerson = topByHours('user');
+    const dayMap = React.useMemo(() => {
+        const map = {};
+        filteredRows.forEach(row => {
+            if (!map[row.date])
+                map[row.date] = { rows: [], hours: 0, km: 0, allowance: 0 };
+            map[row.date].rows.push(row);
+            map[row.date].hours += toNumberOrZero(row.hours);
+            map[row.date].km += toNumberOrZero(row.mileageKm);
+            map[row.date].allowance += toNumberOrZero(row.allowanceAmount);
+        });
+        return map;
+    }, [filteredRows]);
+    const selectedRows = filteredRows.filter(r => r.date === selectedDate);
+    const selectedTotals = { hours: sumBy(selectedRows, 'hours'), km: sumBy(selectedRows, 'mileageKm'), allowance: sumBy(selectedRows, 'allowanceAmount') };
+    const recs = React.useMemo(() => {
+        if (!filteredRows.length)
+            return ['No hay imputaciones registradas en el periodo seleccionado.'];
+        const list = [];
+        if (topPerson[1] > hoursPeriod * 0.5 && filteredRows.length > 1)
+            list.push(`${topPerson[0]} concentra la mayoria de horas imputadas este mes.`);
+        const highDays = Object.values(dayMap).filter(v => v.hours > 8).length;
+        if (highDays)
+            list.push(`Hay ${highDays} dia${highDays === 1 ? '' : 's'} con mas de 8 horas imputadas.`);
+        if (topProject[1] > 0)
+            list.push(`El proyecto con mas horas es ${topProject[0]}.`);
+        if (filteredRows.some(r => toNumberOrZero(r.mileageKm) > 0 && !String(r.notes || '').trim()))
+            list.push('Hay kilometros registrados sin observaciones.');
+        if (!list.length)
+            list.push('La carga imputada esta repartida de forma equilibrada.');
+        return list.slice(0, 4);
+    }, [filteredRows, dayMap, topPerson[0], topPerson[1], topProject[0], topProject[1], hoursPeriod]);
+    const kpis = [
+        ['Horas del periodo', hoursPeriod.toLocaleString('es-ES'), filteredRows.length ? `${filteredRows.length} registros` : 'Sin datos en el periodo', 'fa-clock'],
+        ['Horas esta semana', hoursWeek.toLocaleString('es-ES'), 'Segun filtros activos', 'fa-calendar-week'],
+        ['Km del periodo', kmPeriod.toLocaleString('es-ES'), filteredRows.length ? 'Kilometraje filtrado' : 'Sin datos en el periodo', 'fa-route'],
+        ['Dietas del periodo', `${allowancePeriod.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'Importe total', 'fa-utensils'],
+        ['Proyecto con mas horas', topProject[0], `${toNumberOrZero(topProject[1]).toLocaleString('es-ES')} h`, 'fa-folder-open'],
+        ['Persona con mas horas', topPerson[0], `${toNumberOrZero(topPerson[1]).toLocaleString('es-ES')} h`, 'fa-user']
+    ];
+    const clearFilters = () => {
+        setMonthFilter(getImputMonthKey());
+        setProjectFilter('Todos');
+        setPersonFilter('Todos');
+        setAllowanceFilter('Todos');
+        setTextFilter('');
+        setSelectedDate(getCurrentDateInput());
+    };
+    const exportCSV = () => {
+        if (!filteredRows.length) {
+            alert('No hay imputaciones que coincidan con los filtros seleccionados.');
+            return;
+        }
+        const headers = ['Fecha', 'Proyecto', 'Persona', 'Horas', 'Tipo de dieta', 'Importe dieta', 'Kilometros', 'Observaciones'];
+        const rows = filteredRows.map(r => [r.date, r.projectTitle, r.user, r.hours, r.allowanceType || 'Ninguna', r.allowanceAmount, r.mileageKm, r.notes].map(imputCsvEscape).join(';'));
+        const blob = new Blob(['\uFEFF' + [headers.map(imputCsvEscape).join(';'), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `imputaciones_${monthFilter || getImputMonthKey()}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+    const setMonth = (next) => { const safe = next || getImputMonthKey(); setMonthFilter(safe); setSelectedDate(`${safe}-01`); };
+    return React.createElement('div', { className: 'sb-page imput-page' }, React.createElement('div', { className: 'sb-page-header imput-header' }, React.createElement('div', null, React.createElement('button', { type: 'button', className: 'btn-apple no-print', onClick: onBack }, React.createElement('i', { className: 'fas fa-arrow-left' }), ' Volver'), React.createElement('h1', { className: 'sb-page-title' }, 'Imputaciones'), React.createElement('p', { className: 'sb-page-sub' }, 'Registro de horas, dietas y kilometraje por proyecto.')), React.createElement('div', { className: 'imput-header-actions no-print' }, React.createElement('button', { type: 'button', className: 'btn-apple', onClick: exportCSV }, React.createElement('i', { className: 'fas fa-file-csv' }), ' Exportar CSV'), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onCreate(null, null, selectedDate) }, React.createElement('i', { className: 'fas fa-plus' }), ' Nueva imputacion'))), projects.length === 0 && React.createElement('div', { className: 'imput-empty imput-empty--top' }, 'No hay proyectos disponibles para imputar horas.'), React.createElement('section', { className: 'imput-card imput-filters no-print' }, React.createElement('label', null, 'Mes', React.createElement('input', { type: 'month', value: monthFilter, onChange: e => setMonth(e.target.value) })), React.createElement('label', null, 'Proyecto', React.createElement('select', { value: projectFilter, onChange: e => setProjectFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todos'), projects.map(p => React.createElement('option', { key: p.id, value: p.id }, (p.meta && p.meta.titulo) || 'Proyecto sin titulo')))), React.createElement('label', null, 'Persona', React.createElement('select', { value: personFilter, onChange: e => setPersonFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todas'), people.map(p => React.createElement('option', { key: p, value: p }, p)))), React.createElement('label', null, 'Tipo de dieta', React.createElement('select', { value: allowanceFilter, onChange: e => setAllowanceFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todos'), TIME_ALLOWANCE_TYPES.map(t => React.createElement('option', { key: t, value: t }, t)))), React.createElement('label', null, 'Observaciones', React.createElement('input', { type: 'text', value: textFilter, onChange: e => setTextFilter(e.target.value), placeholder: 'Buscar texto...' })), React.createElement('button', { type: 'button', className: 'btn-apple', onClick: clearFilters }, 'Limpiar filtros')), React.createElement('div', { className: 'imput-kpis imput-kpis--six' }, kpis.map(k => React.createElement('article', { className: 'imput-kpi', key: k[0] }, React.createElement('i', { className: 'fas ' + k[3] }), React.createElement('span', null, k[0]), React.createElement('strong', null, k[1]), React.createElement('small', null, k[2])))), React.createElement('section', { className: 'imput-card imput-analysis' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Analisis de imputaciones'), React.createElement('p', null, 'Lectura rapida segun los filtros activos.'))), React.createElement('div', { className: 'imput-recs' }, recs.map((r, i) => React.createElement('div', { className: 'imput-rec', key: i }, React.createElement('i', { className: 'fas fa-lightbulb' }), r)))), React.createElement('section', { className: 'imput-card imput-calendar-card' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Calendario mensual'), React.createElement('p', null, getImputMonthLabel(monthFilter))), React.createElement('div', { className: 'imput-calendar-actions no-print' }, React.createElement('button', { type: 'button', onClick: () => setMonth(addImputMonths(monthFilter, -1)) }, React.createElement('i', { className: 'fas fa-chevron-left' })), React.createElement('button', { type: 'button', onClick: () => { setMonthFilter(getImputMonthKey()); setSelectedDate(getCurrentDateInput()); } }, 'Mes actual'), React.createElement('button', { type: 'button', onClick: () => setMonth(addImputMonths(monthFilter, 1)) }, React.createElement('i', { className: 'fas fa-chevron-right' })))), React.createElement('div', { className: 'imput-calendar-weekdays' }, ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => React.createElement('span', { key: d }, d))), React.createElement('div', { className: 'imput-calendar-grid' }, getImputMonthDays(monthFilter).map((date, idx) => {
+        const day = date ? dayMap[date] : null;
+        const hours = day ? day.hours : 0;
+        const tone = !date ? 'empty' : hours > 10 ? 'red' : hours > 8 ? 'amber' : hours >= 6 ? 'green' : hours > 0 ? 'blue' : 'neutral';
+        return React.createElement('button', { type: 'button', key: date || `empty-${idx}`, disabled: !date, onClick: () => setSelectedDate(date), className: `imput-day imput-day--${tone} ${selectedDate === date ? 'active' : ''}` }, date && React.createElement('strong', null, Number(date.slice(-2))), date && day && React.createElement(React.Fragment, null, React.createElement('span', null, `${hours.toLocaleString('es-ES')} h`), React.createElement('small', null, `${day.rows.length} registro${day.rows.length === 1 ? '' : 's'}`), React.createElement('em', null, day.km > 0 && React.createElement('i', { className: 'fas fa-car', title: 'Con kilometraje' }), day.allowance > 0 && React.createElement('i', { className: 'fas fa-utensils', title: 'Con dietas' }))));
+    }))), React.createElement('section', { className: 'imput-card imput-day-panel' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones del dia'), React.createElement('p', null, selectedDate ? (window.formatFechaES ? window.formatFechaES(selectedDate) : selectedDate) : 'Selecciona un dia')), React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: () => onCreate(null, null, selectedDate) }, React.createElement('i', { className: 'fas fa-plus' }), ' Añadir imputacion en este dia')), React.createElement('div', { className: 'imput-project-totals' }, React.createElement('span', null, React.createElement('strong', null, selectedTotals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, selectedTotals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, `${selectedTotals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), ' dietas')), React.createElement(AdvancedTimeEntriesTable, { rows: selectedRows, onEdit: onEdit, onDelete: onDelete, emptyText: 'No hay imputaciones registradas para este dia.' })), React.createElement('section', { className: 'imput-card' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Listado de imputaciones'), React.createElement('p', null, `${filteredRows.length} registro${filteredRows.length === 1 ? '' : 's'} filtrado${filteredRows.length === 1 ? '' : 's'}`))), React.createElement(AdvancedTimeEntriesTable, { rows: filteredRows, onEdit: onEdit, onDelete: onDelete, emptyText: rowsAll.length ? 'No hay imputaciones que coincidan con los filtros seleccionados.' : 'No hay imputaciones registradas todavia.' })));
+};
+const ProjectTimeEntriesPanelV2 = ({ project, onAdd, onEdit, onDelete }) => {
+    const rows = flattenTimeEntries([project]).slice(0, 8);
+    const allRows = flattenTimeEntries([project]);
+    const totals = allRows.reduce((acc, row) => {
+        acc.hours += toNumberOrZero(row.hours);
+        acc.km += toNumberOrZero(row.mileageKm);
+        if ((row.allowanceType && row.allowanceType !== 'Ninguna') || toNumberOrZero(row.allowanceAmount) > 0)
+            acc.allowanceCount += 1;
+        acc.allowance += toNumberOrZero(row.allowanceAmount);
+        return acc;
+    }, { hours: 0, km: 0, allowance: 0, allowanceCount: 0 });
+    return React.createElement('section', { className: 'imput-card project-imput-card no-print' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones'), React.createElement('p', null, 'Ultimas horas, dietas y kilometraje del proyecto.')), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onAdd(project.id) }, React.createElement('i', { className: 'fas fa-plus' }), ' Añadir imputacion')), React.createElement('div', { className: 'imput-project-totals imput-project-totals--cards' }, React.createElement('span', null, React.createElement('strong', null, totals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, totals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, totals.allowanceCount.toLocaleString('es-ES')), ' dietas'), React.createElement('span', null, React.createElement('strong', null, `${totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), ' importe dietas')), React.createElement(AdvancedTimeEntriesTable, { rows: rows, compact: true, onEdit: onEdit, onDelete: onDelete, emptyText: 'No hay imputaciones registradas todavia en este proyecto.' }));
+};
 const ProfileView = () => {
     const userLabel = getUserLabel();
     const claims = (() => {
@@ -2989,8 +3196,8 @@ const MainApp = () => {
         currentList.splice(insertIdx, 0, moving);
         await saveProjectsLocal(currentList);
     };
-    const openTimeEntryModal = (projectId, entry) => {
-        setTimeEntryModal({ projectId: projectId || null, entry: entry || null });
+    const openTimeEntryModal = (projectId, entry, initialDate) => {
+        setTimeEntryModal({ projectId: projectId || null, entry: entry || null, initialDate: initialDate || null });
     };
     const saveTimeEntry = async ({ projectId, previousProjectId, entryId, values }) => {
         const nowIso = new Date().toISOString();
@@ -3071,15 +3278,16 @@ const MainApp = () => {
         onClick: function () { setSidebarOpen(true); },
         "aria-label": "Abrir menú",
         "aria-expanded": sidebarOpen
-    }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })), view === 'workload' && (React.createElement(WorkloadDashboardView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'imputations' && (React.createElement(ImputationsView, { projects: projects, onBack: () => { setView('home'); setRoute('#/home'); }, onCreate: openTimeEntryModal, onEdit: (entry) => openTimeEntryModal(entry.projectId, entry), onDelete: deleteTimeEntry })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'users' && React.createElement(UsersView, null), view === 'import' && React.createElement(ImportView, { onImport: openImportPicker }), view === 'profile' && React.createElement(ProfileView, null), view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }), view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })), view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme, onAddTimeEntry: openTimeEntryModal, onEditTimeEntry: (entry) => openTimeEntryModal(entry.projectId, entry), onDeleteTimeEntry: deleteTimeEntry })), view === 'wiki' && currentProject && (React.createElement(ProjectWiki, {
+    }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })), view === 'workload' && (React.createElement(WorkloadDashboardView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'imputations' && (React.createElement(AdvancedImputationsView, { projects: projects, onBack: () => { setView('home'); setRoute('#/home'); }, onCreate: openTimeEntryModal, onEdit: (entry) => openTimeEntryModal(entry.projectId, entry), onDelete: deleteTimeEntry })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'users' && React.createElement(UsersView, null), view === 'import' && React.createElement(ImportView, { onImport: openImportPicker }), view === 'profile' && React.createElement(ProfileView, null), view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }), view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })), view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme, onAddTimeEntry: openTimeEntryModal, onEditTimeEntry: (entry) => openTimeEntryModal(entry.projectId, entry), onDeleteTimeEntry: deleteTimeEntry })), view === 'wiki' && currentProject && (React.createElement(ProjectWiki, {
         project: currentProject,
         onSave: saveProject,
         onBack: () => { setView('editor'); setRoute(`#/project/${currentProject.id}`); },
         isSaving: isSaving
-    })), timeEntryModal && React.createElement(TimeEntryModal, {
+    })), timeEntryModal && React.createElement(AdvancedTimeEntryModal, {
         projects: projects,
         entry: timeEntryModal.entry,
         lockedProjectId: timeEntryModal.projectId && !timeEntryModal.entry ? timeEntryModal.projectId : null,
+        initialDate: timeEntryModal.initialDate,
         onClose: () => setTimeEntryModal(null),
         onSave: saveTimeEntry
     }), importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" }, React.createElement("div", { className: "modal-card" }, React.createElement("div", { className: "modal-title" }, "Importar backup"), React.createElement("div", { className: "modal-subtitle" }, "Esta acci\u00F3n sobrescribe los datos actuales para evitar duplicados."), React.createElement("div", { className: "modal-meta" }, React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Proyectos:"), " ", Array.isArray(importCandidate.projects) ? importCandidate.projects.length : 0), React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Logos:"), " ", importCandidate.clientLogoMap ? Object.keys(importCandidate.clientLogoMap).length : 0), importCandidate.meta && importCandidate.meta.exportedAt && (React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Backup:"), " ", new Date(importCandidate.meta.exportedAt).toLocaleString('es-ES')))), React.createElement("div", { className: "modal-actions" }, React.createElement("button", { type: "button", className: "btn-apple", onClick: () => { setImportConfirmOpen(false); setImportCandidate(null); } }, "Cancelar"), React.createElement("button", { type: "button", className: "btn-apple-danger", onClick: confirmImport }, "Importar y sobrescribir"))))), importToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-arrow-up" })), React.createElement("div", { className: "min-w-[220px]" }, React.createElement("div", { className: "font-semibold leading-tight" }, "Importaci\u00F3n completada"), React.createElement("div", { className: "text-xs text-white/70" }, "Datos restaurados (proyectos y logos).")))), projectToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+18px)] left-1/2 -translate-x-1/2 bg-black/60 text-white px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none" }, React.createElement("div", { className: "bg-green-500 rounded-full p-1" }, React.createElement("i", { className: "fas fa-check text-white" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Proyecto creado"), React.createElement("div", { className: "text-sm text-white/75 leading-tight" }, "Guardado y a\u00F1adido al Dashboard.")))), csvToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+80px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-csv" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "CSV generado"), React.createElement("div", { className: "text-xs text-white/70" }, "Archivo descargado. Ábrelo con Excel.")))), storageWarning && (React.createElement("div", { className: "fixed bottom-16 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[9998] no-print cursor-pointer", onClick: () => setStorageWarning(false) }, React.createElement("i", { className: "fas fa-triangle-exclamation text-lg" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Almacenamiento casi lleno (", storagePercent, "%)"), React.createElement("div", { className: "text-xs text-white/90" }, "Haz un backup y borra proyectos completados. Pulsa para cerrar.")), React.createElement("i", { className: "fas fa-xmark ml-2 text-white/60" }))), backupToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-arrow-down" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Backup generado"), React.createElement("div", { className: "text-xs text-white/70" }, "Archivo .json descargado con proyectos y logos.")))), React.createElement("button", { type: "button", onClick: toggleTheme, className: `theme-fab no-print sidebar-hide-fab ${theme === 'dark' ? 'night' : 'day'}`, title: theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche', "aria-label": theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche' }, theme === 'dark' ? (React.createElement("i", { className: "fas fa-moon" })) : (React.createElement("i", { className: "fas fa-sun" })))) /* cierre main */)); /* cierre app-layout + return */
