@@ -406,46 +406,64 @@
         ctx.restore();
       },
 
-      /* Gradientes en barras + colores de prioridad */
-      beforeDatasetDraw: function (chart, args) {
+      /* Gradientes en barras + colores de prioridad.
+         afterUpdate: Chart.js ya resolvió los colores en los elementos,
+         así que modificamos el.options directamente para que persistan
+         en hover, resize y cualquier redibujado. */
+      afterUpdate: function (chart) {
         if (chart.config.type !== 'bar') return;
 
-        var ctx  = chart.ctx;
-        var area = chart.chartArea;
+        var ctx   = chart.ctx;
+        var area  = chart.chartArea;
         if (!area) return;
 
-        var dataset = chart.data.datasets[args.index];
-        if (!dataset) return;
+        var labels = chart.data.labels || [];
+        var isDark = document.documentElement.classList.contains('theme-dark');
+        var isPrio = isPrioChart(labels);
 
-        var labels   = chart.data.labels || [];
-        var isDark   = document.documentElement.classList.contains('theme-dark');
+        /* Degradado reutilizable (uno por chart, no por barra) */
+        var gradient = null;
+        if (!isPrio) {
+          gradient = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+          if (isDark) {
+            gradient.addColorStop(0,   'rgba(56,189,248,.90)');
+            gradient.addColorStop(0.5, 'rgba(99,102,241,.82)');
+            gradient.addColorStop(1,   'rgba(139,92,246,.72)');
+          } else {
+            gradient.addColorStop(0,   'rgba(14,165,233,.90)');
+            gradient.addColorStop(0.5, 'rgba(99,102,241,.82)');
+            gradient.addColorStop(1,   'rgba(139,92,246,.74)');
+          }
+        }
 
-        /* Prioridades: color semántico por barra */
-        if (isPrioChart(labels)) {
-          dataset.backgroundColor = labels.map(function (l) {
-            return (PRIO_COLORS[l] && PRIO_COLORS[l].bg) || 'rgba(99,102,241,.78)';
-          });
+        var metas = chart._metasets;
+        if (!metas) return;
+
+        for (var i = 0; i < metas.length; i++) {
+          var meta = metas[i];
+          if (!meta || !meta.data) continue;
+          var dataset = chart.data.datasets[i];
+          if (!dataset) continue;
+
           dataset.borderWidth   = 0;
           dataset.borderRadius  = 8;
           dataset.borderSkipped = false;
-          return;
-        }
 
-        /* Resto de gráficos de barras: degradado brand → accent */
-        var g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
-        if (isDark) {
-          g.addColorStop(0,   'rgba(56,189,248,.90)');
-          g.addColorStop(0.5, 'rgba(99,102,241,.82)');
-          g.addColorStop(1,   'rgba(139,92,246,.72)');
-        } else {
-          g.addColorStop(0,   'rgba(14,165,233,.90)');
-          g.addColorStop(0.5, 'rgba(99,102,241,.82)');
-          g.addColorStop(1,   'rgba(139,92,246,.74)');
+          for (var j = 0; j < meta.data.length; j++) {
+            var el = meta.data[j];
+            if (!el || !el.options) continue;
+
+            if (isPrio) {
+              var lbl = labels[j];
+              el.options.backgroundColor = (PRIO_COLORS[lbl] && PRIO_COLORS[lbl].bg) || 'rgba(99,102,241,.78)';
+            } else {
+              el.options.backgroundColor = gradient;
+            }
+            el.options.borderWidth   = 0;
+            el.options.borderRadius  = 8;
+            el.options.borderSkipped = false;
+          }
         }
-        dataset.backgroundColor = g;
-        dataset.borderWidth   = 0;
-        dataset.borderRadius  = 8;
-        dataset.borderSkipped = false;
       }
     });
   }
