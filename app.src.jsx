@@ -187,6 +187,7 @@ const computeExecutiveMetrics = (projects) => {
     let urgentTasks = 0;
     let criticalTasks = 0;
     let overdueTasks = 0;
+    const overdueProjectIds = new Set();
     const workloadMap = {};
     const deadlines = [];
     const incidents = [];
@@ -231,10 +232,21 @@ const computeExecutiveMetrics = (projects) => {
             if (blocked) blockedTasks += 1;
             if (urgent) urgentTasks += 1;
             if (critical) criticalTasks += 1;
-            if (overdue) overdueTasks += 1;
+            if (overdue) {
+                overdueTasks += 1;
+                overdueProjectIds.add(String(p.id || projectTitle));
+            }
 
-            if (due && due >= today && due <= soon) {
-                deadlines.push({ project: projectTitle, task: title, date: t.fechaLimite, owner: t.asignadoA || meta.responsableProyecto || 'Sin asignar' });
+            if (due && due <= soon) {
+                const daysLeft = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+                deadlines.push({
+                    project: projectTitle,
+                    task: title,
+                    date: t.fechaLimite,
+                    owner: t.asignadoA || meta.responsableProyecto || 'Sin asignar',
+                    status: overdue ? 'Vencida' : daysLeft <= 3 ? 'Cercana' : 'Planificada',
+                    tone: overdue ? 'critical' : daysLeft <= 3 ? 'warning' : 'normal'
+                });
             }
 
             if (blocked || urgent || critical || overdue) {
@@ -265,6 +277,32 @@ const computeExecutiveMetrics = (projects) => {
         .sort((a, b) => b.count - a.count)
         .slice(0, 6);
     const maxWorkload = Math.max(1, ...workload.map(x => x.count));
+    const workloadWithState = workload.map(item => {
+        const pct = Math.round((item.count / maxWorkload) * 100);
+        const state = pct >= 90 && item.count >= 3 ? 'Alta carga' : (pct >= 55 || item.count >= 2) ? 'Carga media' : 'Disponible';
+        const tone = pct >= 90 && item.count >= 3 ? 'high' : (pct >= 55 || item.count >= 2) ? 'medium' : 'low';
+        return { ...item, pct, state, tone };
+    });
+    const highLoadPeople = workloadWithState.filter(item => item.tone === 'high');
+    const recommendations = (() => {
+        const items = [];
+        if (statusCounts.review > 0) {
+            items.push({ icon: 'fa-magnifying-glass', title: 'Revisar proyectos en revisión', text: `${statusCounts.review} proyecto${statusCounts.review === 1 ? '' : 's'} esperando validación.`, tone: 'info', action: ['list', 'En Revisión'] });
+        }
+        if (totalIncidents > 0) {
+            items.push({ icon: 'fa-shield-halved', title: 'Atender incidencias abiertas', text: `${totalIncidents} señal${totalIncidents === 1 ? '' : 'es'} requieren seguimiento.`, tone: 'critical', action: ['alerts', null] });
+        }
+        if (overdueTasks > 0) {
+            items.push({ icon: 'fa-calendar-xmark', title: 'Revisar vencimientos superados', text: `${overdueTasks} tarea${overdueTasks === 1 ? '' : 's'} fuera de plazo.`, tone: 'warning', action: ['alerts', null] });
+        }
+        if (highLoadPeople.length > 0) {
+            items.push({ icon: 'fa-people-arrows', title: 'Redistribuir carga del equipo', text: `Carga concentrada en ${highLoadPeople[0].name}. Valorar redistribución.`, tone: 'warning', action: ['workload', null] });
+        }
+        if (!items.length) {
+            items.push({ icon: 'fa-circle-check', title: 'Planificación inmediata despejada', text: 'No hay vencimientos críticos ni incidencias urgentes en cartera.', tone: 'good', action: ['list', null] });
+        }
+        return items.slice(0, 4);
+    })();
 
     return {
         statusCounts,
@@ -277,10 +315,13 @@ const computeExecutiveMetrics = (projects) => {
         urgentTasks,
         criticalTasks,
         overdueTasks,
+        overdueProjects: overdueProjectIds.size,
         totalIncidents,
         health,
-        workload,
+        workload: workloadWithState,
         maxWorkload,
+        highLoadPeople,
+        recommendations,
         deadlines: deadlines.sort((a, b) => (parseDateOnly(a.date) || 0) - (parseDateOnly(b.date) || 0)).slice(0, 5),
         incidents: incidents.slice(0, 5)
     };
@@ -298,10 +339,11 @@ const EmptyMiniState = ({ icon, title, text }) => (
 
 const HomeView = ({ projects, onCreate, onNavigate }) => {
     const metrics = React.useMemo(() => computeExecutiveMetrics(projects), [projects]);
+    const highLoadLabel = metrics.highLoadPeople.length > 0 ? `${metrics.highLoadPeople.length} persona${metrics.highLoadPeople.length === 1 ? '' : 's'} al 100%` : 'Carga equilibrada';
     const kpis = [
         { label: 'Proyectos activos', value: metrics.activeProjects, note: `Ejecución ${metrics.statusCounts.active} · Revisión ${metrics.statusCounts.review} · Pausa ${metrics.statusCounts.paused}`, icon: 'fa-layer-group', tone: 'blue' },
         { label: 'Avance medio', value: `${metrics.avgProgress}%`, note: 'Calculado sobre tareas abiertas y completadas', icon: 'fa-chart-line', tone: 'green', progress: metrics.avgProgress },
-        { label: 'Carga / tareas abiertas', value: metrics.tasksOpen, note: `${metrics.tasksTotal} tareas totales`, icon: 'fa-list-check', tone: 'amber' },
+        { label: 'Tareas abiertas', value: metrics.tasksOpen, note: `${metrics.tasksTotal} tareas totales`, icon: 'fa-list-check', tone: 'amber' },
         { label: 'Incidencias', value: metrics.totalIncidents, note: `${metrics.blockedTasks} bloqueadas · ${metrics.urgentTasks + metrics.criticalTasks} urgentes/críticas`, icon: 'fa-shield-halved', tone: 'red' },
         { label: 'Próximos vencimientos', value: metrics.deadlines.length, note: 'En los próximos 14 días', icon: 'fa-calendar-day', tone: 'cyan' }
     ];
@@ -312,8 +354,8 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                 <div className="home-hero-brand">
                     <div className="home-logo-wrap"><img src={UNITECNIC_LOGO_BASE64} alt="Unitecnic" /></div>
                     <div>
-                        <h1>Dashboard Unitecnic</h1>
-                        <p>Resumen ejecutivo</p>
+                        <h1>Resumen ejecutivo</h1>
+                        <p>Vista global de proyectos, carga de trabajo e incidencias.</p>
                     </div>
                 </div>
                 <div className="home-hero-actions no-print">
@@ -340,15 +382,16 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                 <div className="home-health-score">
                     <i className={`fas ${metrics.health.icon}`}></i>
                     <div>
-                        <span>Salud general de proyectos</span>
-                        <strong>{metrics.health.label}</strong>
+                        <span>Salud general</span>
+                        <strong>{metrics.health.label === 'Bien' ? 'Correcto' : metrics.health.label === 'Atención' ? 'Atención requerida' : 'Crítico'}</strong>
                     </div>
                 </div>
                 <p>{metrics.health.text}</p>
                 <div className="home-health-metrics">
-                    <span>{metrics.overdueTasks} vencidas</span>
-                    <span>{metrics.blockedTasks} bloqueadas</span>
+                    <span>{metrics.overdueProjects} vencido{metrics.overdueProjects === 1 ? '' : 's'}</span>
+                    <span>{metrics.totalIncidents} incidencia{metrics.totalIncidents === 1 ? '' : 's'}</span>
                     <span>{metrics.avgProgress}% avance</span>
+                    <span>{highLoadLabel}</span>
                 </div>
             </section>
 
@@ -361,13 +404,16 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                     {metrics.deadlines.length ? (
                         <div className="home-list">
                             {metrics.deadlines.map((item, idx) => (
-                                <button className="home-list-row" key={`${item.project}-${item.task}-${idx}`} onClick={() => onNavigate('alerts', null)}>
+                                <button className={`home-list-row home-list-row--${item.tone}`} key={`${item.project}-${item.task}-${idx}`} onClick={() => onNavigate('alerts', null)}>
                                     <div><strong>{item.task}</strong><span>{item.project} · {item.owner}</span></div>
-                                    <time>{window.formatFechaES ? window.formatFechaES(item.date) : item.date}</time>
+                                    <div className="home-deadline-meta">
+                                        <span>{item.status}</span>
+                                        <time>{window.formatFechaES ? window.formatFechaES(item.date) : item.date}</time>
+                                    </div>
                                 </button>
                             ))}
                         </div>
-                    ) : <EmptyMiniState icon="fa-calendar-plus" title="Sin vencimientos cercanos" text="No hay tareas con fecha límite en los próximos días." />}
+                    ) : <EmptyMiniState icon="fa-calendar-plus" title="Sin vencimientos próximos" text="No hay vencimientos en los próximos 14 días. La planificación inmediata está despejada." />}
                 </article>
 
                 <article className="home-panel home-panel--workload">
@@ -378,12 +424,11 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                     {metrics.workload.length ? (
                         <div className="home-workload-list">
                             {metrics.workload.map(item => {
-                                const pct = Math.round((item.count / metrics.maxWorkload) * 100);
                                 return (
-                                    <div className="home-workload-row" key={item.name}>
-                                        <div><strong>{item.name}</strong><span>{pct}%</span></div>
-                                        <div className="home-workload-bar"><span style={{ width: `${pct}%` }}></span></div>
-                                        <small>{item.count} tareas abiertas</small>
+                                    <div className={`home-workload-row home-workload-row--${item.tone}`} key={item.name}>
+                                        <div><strong>{item.name}</strong><span>{item.pct}%</span></div>
+                                        <div className="home-workload-bar"><span style={{ width: `${item.pct}%` }}></span></div>
+                                        <small>{item.count} tareas abiertas · {item.state}</small>
                                     </div>
                                 );
                             })}
@@ -408,16 +453,18 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                     ) : <EmptyMiniState icon="fa-shield-heart" title="Sin incidencias relevantes" text="No hay tareas críticas, urgentes, bloqueadas o vencidas." />}
                 </article>
 
-                <article className="home-panel home-panel--quick">
+                <article className="home-panel home-panel--recommendations">
                     <div className="home-panel-head">
-                        <div><span>Acción</span><h2>Accesos rápidos</h2></div>
+                        <div><span>Decisión</span><h2>Acciones recomendadas</h2></div>
                         <i className="fas fa-bolt"></i>
                     </div>
-                    <div className="home-quick-grid">
-                        <button onClick={onCreate}><i className="fas fa-plus"></i><span>Nuevo proyecto</span></button>
-                        <button onClick={() => onNavigate('list', null)}><i className="fas fa-layer-group"></i><span>Ver todos</span></button>
-                        <button onClick={() => onNavigate('list', 'En Ejecución')}><i className="fas fa-circle-play"></i><span>En ejecución</span></button>
-                        <button onClick={() => onNavigate('charts', null)}><i className="fas fa-chart-bar"></i><span>Gráficos</span></button>
+                    <div className="home-recommendation-list">
+                        {metrics.recommendations.map((item, idx) => (
+                            <button className={`home-recommendation home-recommendation--${item.tone}`} key={`${item.title}-${idx}`} onClick={() => onNavigate(item.action[0], item.action[1])}>
+                                <i className={`fas ${item.icon}`}></i>
+                                <div><strong>{item.title}</strong><span>{item.text}</span></div>
+                            </button>
+                        ))}
                     </div>
                 </article>
             </section>
@@ -3092,10 +3139,12 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
         ),
         // NAVEGACIÓN
         React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'Menú' },
+            React.createElement('div', { className: 'sidebar-section-label' }, 'Principal'),
             ni('fa-house', 'Home', () => { onNavigate('home', null); onClose(); }, null,
                 isActive('home'), false),
 
             // Grupo Proyectos
+            React.createElement('div', { className: 'sidebar-section-label' }, 'Proyectos'),
             React.createElement('div', { className: 'sidebar-group' },
                 React.createElement('button', {
                     className: 'sidebar-group-btn' + (isActive(['list', 'editor', 'wiki']) ? ' active' : ''),
@@ -3125,6 +3174,7 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
                 )
             ),
 
+            React.createElement('div', { className: 'sidebar-section-label' }, 'Análisis'),
             ni('fa-chart-bar', 'Gráficos',
                 () => { onNavigate('charts', null); onClose(); },
                 null, isActive('charts'), false),
@@ -3137,12 +3187,16 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
 
             React.createElement('div', { className: 'sidebar-divider' }),
 
+            React.createElement('div', { className: 'sidebar-section-label' }, 'Administración'),
             ni('fa-user-group', 'Usuarios',
                 () => { onNavigate('users', null); onClose(); },
                 null, isActive('users'), false),
             ni('fa-file-arrow-up', 'Importar',
                 () => { onNavigate('import', null); onClose(); },
-                null, isActive('import'), false)
+                null, isActive('import'), false),
+            ni('fa-gear', 'Ajustes',
+                () => { onNavigate('settings', null); onClose(); },
+                null, isActive('settings'), false)
         ),
         // PIE
         React.createElement('div', { className: 'sidebar-foot' },
@@ -3160,11 +3214,6 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
                     onClick: () => { onNavigate('profile', null); onClose(); },
                     title: 'Perfil'
                 }, React.createElement('i', { className: 'fas fa-circle-user' })),
-                React.createElement('button', {
-                    className: 'sfab' + (isActive('settings') ? ' active' : ''),
-                    onClick: () => { onNavigate('settings', null); onClose(); },
-                    title: 'Ajustes'
-                }, React.createElement('i', { className: 'fas fa-gear' })),
                 React.createElement('button', {
                     className: 'sfab',
                     onClick: onToggleTheme,

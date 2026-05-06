@@ -160,6 +160,7 @@ const computeExecutiveMetrics = (projects) => {
     let urgentTasks = 0;
     let criticalTasks = 0;
     let overdueTasks = 0;
+    const overdueProjectIds = new Set();
     const workloadMap = {};
     const deadlines = [];
     const incidents = [];
@@ -205,10 +206,20 @@ const computeExecutiveMetrics = (projects) => {
                 urgentTasks += 1;
             if (critical)
                 criticalTasks += 1;
-            if (overdue)
+            if (overdue) {
                 overdueTasks += 1;
-            if (due && due >= today && due <= soon) {
-                deadlines.push({ project: projectTitle, task: title, date: t.fechaLimite, owner: t.asignadoA || meta.responsableProyecto || 'Sin asignar' });
+                overdueProjectIds.add(String(p.id || projectTitle));
+            }
+            if (due && due <= soon) {
+                const daysLeft = Math.ceil((due.getTime() - today.getTime()) / 86400000);
+                deadlines.push({
+                    project: projectTitle,
+                    task: title,
+                    date: t.fechaLimite,
+                    owner: t.asignadoA || meta.responsableProyecto || 'Sin asignar',
+                    status: overdue ? 'Vencida' : daysLeft <= 3 ? 'Cercana' : 'Planificada',
+                    tone: overdue ? 'critical' : daysLeft <= 3 ? 'warning' : 'normal'
+                });
             }
             if (blocked || urgent || critical || overdue) {
                 incidents.push({
@@ -237,6 +248,32 @@ const computeExecutiveMetrics = (projects) => {
         .sort((a, b) => b.count - a.count)
         .slice(0, 6);
     const maxWorkload = Math.max(1, ...workload.map(x => x.count));
+    const workloadWithState = workload.map(item => {
+        const pct = Math.round((item.count / maxWorkload) * 100);
+        const state = pct >= 90 && item.count >= 3 ? 'Alta carga' : (pct >= 55 || item.count >= 2) ? 'Carga media' : 'Disponible';
+        const tone = pct >= 90 && item.count >= 3 ? 'high' : (pct >= 55 || item.count >= 2) ? 'medium' : 'low';
+        return { ...item, pct, state, tone };
+    });
+    const highLoadPeople = workloadWithState.filter(item => item.tone === 'high');
+    const recommendations = (() => {
+        const items = [];
+        if (statusCounts.review > 0) {
+            items.push({ icon: 'fa-magnifying-glass', title: 'Revisar proyectos en revisión', text: `${statusCounts.review} proyecto${statusCounts.review === 1 ? '' : 's'} esperando validación.`, tone: 'info', action: ['list', 'En Revisión'] });
+        }
+        if (totalIncidents > 0) {
+            items.push({ icon: 'fa-shield-halved', title: 'Atender incidencias abiertas', text: `${totalIncidents} señal${totalIncidents === 1 ? '' : 'es'} requieren seguimiento.`, tone: 'critical', action: ['alerts', null] });
+        }
+        if (overdueTasks > 0) {
+            items.push({ icon: 'fa-calendar-xmark', title: 'Revisar vencimientos superados', text: `${overdueTasks} tarea${overdueTasks === 1 ? '' : 's'} fuera de plazo.`, tone: 'warning', action: ['alerts', null] });
+        }
+        if (highLoadPeople.length > 0) {
+            items.push({ icon: 'fa-people-arrows', title: 'Redistribuir carga del equipo', text: `Carga concentrada en ${highLoadPeople[0].name}. Valorar redistribución.`, tone: 'warning', action: ['workload', null] });
+        }
+        if (!items.length) {
+            items.push({ icon: 'fa-circle-check', title: 'Planificación inmediata despejada', text: 'No hay vencimientos críticos ni incidencias urgentes en cartera.', tone: 'good', action: ['list', null] });
+        }
+        return items.slice(0, 4);
+    })();
     return {
         statusCounts,
         activeProjects,
@@ -248,10 +285,13 @@ const computeExecutiveMetrics = (projects) => {
         urgentTasks,
         criticalTasks,
         overdueTasks,
+        overdueProjects: overdueProjectIds.size,
         totalIncidents,
         health,
-        workload,
+        workload: workloadWithState,
         maxWorkload,
+        highLoadPeople,
+        recommendations,
         deadlines: deadlines.sort((a, b) => (parseDateOnly(a.date) || 0) - (parseDateOnly(b.date) || 0)).slice(0, 5),
         incidents: incidents.slice(0, 5)
     };
@@ -263,10 +303,11 @@ const EmptyMiniState = ({ icon, title, text }) => (React.createElement("div", { 
         React.createElement("span", null, text))));
 const HomeView = ({ projects, onCreate, onNavigate }) => {
     const metrics = React.useMemo(() => computeExecutiveMetrics(projects), [projects]);
+    const highLoadLabel = metrics.highLoadPeople.length > 0 ? `${metrics.highLoadPeople.length} persona${metrics.highLoadPeople.length === 1 ? '' : 's'} al 100%` : 'Carga equilibrada';
     const kpis = [
         { label: 'Proyectos activos', value: metrics.activeProjects, note: `Ejecución ${metrics.statusCounts.active} · Revisión ${metrics.statusCounts.review} · Pausa ${metrics.statusCounts.paused}`, icon: 'fa-layer-group', tone: 'blue' },
         { label: 'Avance medio', value: `${metrics.avgProgress}%`, note: 'Calculado sobre tareas abiertas y completadas', icon: 'fa-chart-line', tone: 'green', progress: metrics.avgProgress },
-        { label: 'Carga / tareas abiertas', value: metrics.tasksOpen, note: `${metrics.tasksTotal} tareas totales`, icon: 'fa-list-check', tone: 'amber' },
+        { label: 'Tareas abiertas', value: metrics.tasksOpen, note: `${metrics.tasksTotal} tareas totales`, icon: 'fa-list-check', tone: 'amber' },
         { label: 'Incidencias', value: metrics.totalIncidents, note: `${metrics.blockedTasks} bloqueadas · ${metrics.urgentTasks + metrics.criticalTasks} urgentes/críticas`, icon: 'fa-shield-halved', tone: 'red' },
         { label: 'Próximos vencimientos', value: metrics.deadlines.length, note: 'En los próximos 14 días', icon: 'fa-calendar-day', tone: 'cyan' }
     ];
@@ -276,8 +317,8 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                 React.createElement("div", { className: "home-logo-wrap" },
                     React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic" })),
                 React.createElement("div", null,
-                    React.createElement("h1", null, "Dashboard Unitecnic"),
-                    React.createElement("p", null, "Resumen ejecutivo"))),
+                    React.createElement("h1", null, "Resumen ejecutivo"),
+                    React.createElement("p", null, "Vista global de proyectos, carga de trabajo e incidencias."))),
             React.createElement("div", { className: "home-hero-actions no-print" },
                 React.createElement("button", { className: "home-action primary", onClick: onCreate },
                     React.createElement("i", { className: "fas fa-plus" }),
@@ -297,19 +338,22 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
             React.createElement("div", { className: "home-health-score" },
                 React.createElement("i", { className: `fas ${metrics.health.icon}` }),
                 React.createElement("div", null,
-                    React.createElement("span", null, "Salud general de proyectos"),
-                    React.createElement("strong", null, metrics.health.label))),
+                    React.createElement("span", null, "Salud general"),
+                    React.createElement("strong", null, metrics.health.label === 'Bien' ? 'Correcto' : metrics.health.label === 'Atención' ? 'Atención requerida' : 'Crítico'))),
             React.createElement("p", null, metrics.health.text),
             React.createElement("div", { className: "home-health-metrics" },
                 React.createElement("span", null,
-                    metrics.overdueTasks,
-                    " vencidas"),
+                    metrics.overdueProjects,
+                    " vencido",
+                    metrics.overdueProjects === 1 ? '' : 's'),
                 React.createElement("span", null,
-                    metrics.blockedTasks,
-                    " bloqueadas"),
+                    metrics.totalIncidents,
+                    " incidencia",
+                    metrics.totalIncidents === 1 ? '' : 's'),
                 React.createElement("span", null,
                     metrics.avgProgress,
-                    "% avance"))),
+                    "% avance"),
+                React.createElement("span", null, highLoadLabel))),
         React.createElement("section", { className: "home-content-grid" },
             React.createElement("article", { className: "home-panel home-panel--deadlines" },
                 React.createElement("div", { className: "home-panel-head" },
@@ -317,14 +361,16 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                         React.createElement("span", null, "Agenda"),
                         React.createElement("h2", null, "Pr\u00F3ximos vencimientos")),
                     React.createElement("i", { className: "fas fa-calendar-check" })),
-                metrics.deadlines.length ? (React.createElement("div", { className: "home-list" }, metrics.deadlines.map((item, idx) => (React.createElement("button", { className: "home-list-row", key: `${item.project}-${item.task}-${idx}`, onClick: () => onNavigate('alerts', null) },
+                metrics.deadlines.length ? (React.createElement("div", { className: "home-list" }, metrics.deadlines.map((item, idx) => (React.createElement("button", { className: `home-list-row home-list-row--${item.tone}`, key: `${item.project}-${item.task}-${idx}`, onClick: () => onNavigate('alerts', null) },
                     React.createElement("div", null,
                         React.createElement("strong", null, item.task),
                         React.createElement("span", null,
                             item.project,
                             " \u00B7 ",
                             item.owner)),
-                    React.createElement("time", null, window.formatFechaES ? window.formatFechaES(item.date) : item.date)))))) : React.createElement(EmptyMiniState, { icon: "fa-calendar-plus", title: "Sin vencimientos cercanos", text: "No hay tareas con fecha l\u00EDmite en los pr\u00F3ximos d\u00EDas." })),
+                    React.createElement("div", { className: "home-deadline-meta" },
+                        React.createElement("span", null, item.status),
+                        React.createElement("time", null, window.formatFechaES ? window.formatFechaES(item.date) : item.date))))))) : React.createElement(EmptyMiniState, { icon: "fa-calendar-plus", title: "Sin vencimientos pr\u00F3ximos", text: "No hay vencimientos en los pr\u00F3ximos 14 d\u00EDas. La planificaci\u00F3n inmediata est\u00E1 despejada." })),
             React.createElement("article", { className: "home-panel home-panel--workload" },
                 React.createElement("div", { className: "home-panel-head" },
                     React.createElement("div", null,
@@ -332,18 +378,18 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                         React.createElement("h2", null, "Carga por persona")),
                     React.createElement("i", { className: "fas fa-users" })),
                 metrics.workload.length ? (React.createElement("div", { className: "home-workload-list" }, metrics.workload.map(item => {
-                    const pct = Math.round((item.count / metrics.maxWorkload) * 100);
-                    return (React.createElement("div", { className: "home-workload-row", key: item.name },
+                    return (React.createElement("div", { className: `home-workload-row home-workload-row--${item.tone}`, key: item.name },
                         React.createElement("div", null,
                             React.createElement("strong", null, item.name),
                             React.createElement("span", null,
-                                pct,
+                                item.pct,
                                 "%")),
                         React.createElement("div", { className: "home-workload-bar" },
-                            React.createElement("span", { style: { width: `${pct}%` } })),
+                            React.createElement("span", { style: { width: `${item.pct}%` } })),
                         React.createElement("small", null,
                             item.count,
-                            " tareas abiertas")));
+                            " tareas abiertas \u00B7 ",
+                            item.state)));
                 }))) : React.createElement(EmptyMiniState, { icon: "fa-user-check", title: "Sin carga asignada", text: "Cuando existan tareas abiertas aparecer\u00E1n aqu\u00ED." })),
             React.createElement("article", { className: "home-panel home-panel--incidents" },
                 React.createElement("div", { className: "home-panel-head" },
@@ -356,25 +402,17 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                     React.createElement("div", null,
                         React.createElement("strong", null, item.task),
                         React.createElement("small", null, item.project))))))) : React.createElement(EmptyMiniState, { icon: "fa-shield-heart", title: "Sin incidencias relevantes", text: "No hay tareas cr\u00EDticas, urgentes, bloqueadas o vencidas." })),
-            React.createElement("article", { className: "home-panel home-panel--quick" },
+            React.createElement("article", { className: "home-panel home-panel--recommendations" },
                 React.createElement("div", { className: "home-panel-head" },
                     React.createElement("div", null,
-                        React.createElement("span", null, "Acci\u00F3n"),
-                        React.createElement("h2", null, "Accesos r\u00E1pidos")),
+                        React.createElement("span", null, "Decisi\u00F3n"),
+                        React.createElement("h2", null, "Acciones recomendadas")),
                     React.createElement("i", { className: "fas fa-bolt" })),
-                React.createElement("div", { className: "home-quick-grid" },
-                    React.createElement("button", { onClick: onCreate },
-                        React.createElement("i", { className: "fas fa-plus" }),
-                        React.createElement("span", null, "Nuevo proyecto")),
-                    React.createElement("button", { onClick: () => onNavigate('list', null) },
-                        React.createElement("i", { className: "fas fa-layer-group" }),
-                        React.createElement("span", null, "Ver todos")),
-                    React.createElement("button", { onClick: () => onNavigate('list', 'En Ejecución') },
-                        React.createElement("i", { className: "fas fa-circle-play" }),
-                        React.createElement("span", null, "En ejecuci\u00F3n")),
-                    React.createElement("button", { onClick: () => onNavigate('charts', null) },
-                        React.createElement("i", { className: "fas fa-chart-bar" }),
-                        React.createElement("span", null, "Gr\u00E1ficos")))))));
+                React.createElement("div", { className: "home-recommendation-list" }, metrics.recommendations.map((item, idx) => (React.createElement("button", { className: `home-recommendation home-recommendation--${item.tone}`, key: `${item.title}-${idx}`, onClick: () => onNavigate(item.action[0], item.action[1]) },
+                    React.createElement("i", { className: `fas ${item.icon}` }),
+                    React.createElement("div", null,
+                        React.createElement("strong", null, item.title),
+                        React.createElement("span", null, item.text))))))))));
 };
 const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement("div", { className: "relative", onClick: (e) => e.stopPropagation() }, React.createElement("button", { type: "button", onClick: onToggle, className: "w-10 h-10 rounded-xl border border-[color:var(--border)] bg-white/80 hover:bg-white flex items-center justify-center text-[color:var(--brand-dark)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)]", title: "Cambiar icono" }, Icons[value] || Icons.monitor), open && (React.createElement("div", { className: "absolute z-50 mt-2 w-56 rounded-2xl border border-[color:var(--border)] bg-white shadow-2xl p-2" }, React.createElement("div", { className: "grid grid-cols-4 gap-2" }, IconOptions.map(opt => (React.createElement("button", { key: opt.id, type: "button", onClick: () => onChange(opt.id), className: `h-11 rounded-xl border flex items-center justify-center transition-colors ${opt.id === value
         ? "border-[color:rgba(8,136,200,0.35)] bg-[color:rgba(8,136,200,0.10)] text-[color:var(--brand-dark)]"
@@ -2001,23 +2039,19 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
         'aria-label': 'Cerrar menú'
     }, React.createElement('i', { className: 'fas fa-xmark' }))),
     // NAVEGACIÓN
-    React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'Menú' }, ni('fa-house', 'Home', () => { onNavigate('home', null); onClose(); }, null, isActive('home'), false),
+    React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'Menú' }, React.createElement('div', { className: 'sidebar-section-label' }, 'Principal'), ni('fa-house', 'Home', () => { onNavigate('home', null); onClose(); }, null, isActive('home'), false),
     // Grupo Proyectos
-    React.createElement('div', { className: 'sidebar-group' }, React.createElement('button', {
+    React.createElement('div', { className: 'sidebar-section-label' }, 'Proyectos'), React.createElement('div', { className: 'sidebar-group' }, React.createElement('button', {
         className: 'sidebar-group-btn' + (isActive(['list', 'editor', 'wiki']) ? ' active' : ''),
         onClick: () => setProyectosOpen(function (o) { return !o; }),
         'aria-expanded': proyectosOpen
-    }, React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Proyectos'), React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })), proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' }, ni('fa-layer-group', 'Todos', () => { onNavigate('list', null); onClose(); }, counts.total, isActive('list', null), true), ni('fa-circle-play', 'En Ejecución', () => { onNavigate('list', 'En Ejecución'); onClose(); }, counts.active, isActive('list', 'En Ejecución'), true), ni('fa-magnifying-glass', 'En Revisión', () => { onNavigate('list', 'En Revisión'); onClose(); }, counts.review, isActive('list', 'En Revisión'), true), ni('fa-circle-check', 'Completados', () => { onNavigate('list', 'Completado'); onClose(); }, counts.completed, isActive('list', 'Completado'), true), ni('fa-circle-pause', 'En Pausa', () => { onNavigate('list', 'En Pausa'); onClose(); }, counts.paused, isActive('list', 'En Pausa'), true))), ni('fa-chart-bar', 'Gráficos', () => { onNavigate('charts', null); onClose(); }, null, isActive('charts'), false), ni('fa-shield-halved', 'Incidencias', () => { onNavigate('alerts', null); onClose(); }, null, isActive('alerts'), false), ni('fa-users', 'Carga de trabajo', () => { onNavigate('workload', null); onClose(); }, null, isActive('workload'), false), React.createElement('div', { className: 'sidebar-divider' }), ni('fa-user-group', 'Usuarios', () => { onNavigate('users', null); onClose(); }, null, isActive('users'), false), ni('fa-file-arrow-up', 'Importar', () => { onNavigate('import', null); onClose(); }, null, isActive('import'), false)),
+    }, React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Proyectos'), React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })), proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' }, ni('fa-layer-group', 'Todos', () => { onNavigate('list', null); onClose(); }, counts.total, isActive('list', null), true), ni('fa-circle-play', 'En Ejecución', () => { onNavigate('list', 'En Ejecución'); onClose(); }, counts.active, isActive('list', 'En Ejecución'), true), ni('fa-magnifying-glass', 'En Revisión', () => { onNavigate('list', 'En Revisión'); onClose(); }, counts.review, isActive('list', 'En Revisión'), true), ni('fa-circle-check', 'Completados', () => { onNavigate('list', 'Completado'); onClose(); }, counts.completed, isActive('list', 'Completado'), true), ni('fa-circle-pause', 'En Pausa', () => { onNavigate('list', 'En Pausa'); onClose(); }, counts.paused, isActive('list', 'En Pausa'), true))), React.createElement('div', { className: 'sidebar-section-label' }, 'Análisis'), ni('fa-chart-bar', 'Gráficos', () => { onNavigate('charts', null); onClose(); }, null, isActive('charts'), false), ni('fa-shield-halved', 'Incidencias', () => { onNavigate('alerts', null); onClose(); }, null, isActive('alerts'), false), ni('fa-users', 'Carga de trabajo', () => { onNavigate('workload', null); onClose(); }, null, isActive('workload'), false), React.createElement('div', { className: 'sidebar-divider' }), React.createElement('div', { className: 'sidebar-section-label' }, 'Administración'), ni('fa-user-group', 'Usuarios', () => { onNavigate('users', null); onClose(); }, null, isActive('users'), false), ni('fa-file-arrow-up', 'Importar', () => { onNavigate('import', null); onClose(); }, null, isActive('import'), false), ni('fa-gear', 'Ajustes', () => { onNavigate('settings', null); onClose(); }, null, isActive('settings'), false)),
     // PIE
     React.createElement('div', { className: 'sidebar-foot' }, React.createElement('div', { className: 'sidebar-user-row' }, React.createElement('div', { className: 'sidebar-avatar' }, (userLabel || 'U').charAt(0).toUpperCase()), React.createElement('div', { className: 'sidebar-user-info' }, React.createElement('div', { className: 'sidebar-user-name', title: userLabel }, userLabel), React.createElement('div', { className: 'sidebar-user-role' }, 'Administrador'))), React.createElement('div', { className: 'sidebar-foot-actions' }, React.createElement('button', {
         className: 'sfab' + (isActive('profile') ? ' active' : ''),
         onClick: () => { onNavigate('profile', null); onClose(); },
         title: 'Perfil'
     }, React.createElement('i', { className: 'fas fa-circle-user' })), React.createElement('button', {
-        className: 'sfab' + (isActive('settings') ? ' active' : ''),
-        onClick: () => { onNavigate('settings', null); onClose(); },
-        title: 'Ajustes'
-    }, React.createElement('i', { className: 'fas fa-gear' })), React.createElement('button', {
         className: 'sfab',
         onClick: onToggleTheme,
         title: theme === 'dark' ? 'Modo día' : 'Modo noche'
