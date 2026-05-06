@@ -200,7 +200,8 @@
     -webkit-backdrop-filter: var(--v4-blur-md);
     padding: 22px 28px !important;
     margin-bottom: 30px !important;
-    overflow: hidden;
+    /* SIN overflow:hidden para que el popover de acciones no quede cortado */
+    overflow: visible !important;
   }
 
   /* Franja de acento superior degradada */
@@ -218,18 +219,19 @@
     opacity: .9;
   }
 
-  /* Resplandor decorativo de fondo en la cabecera */
+  /* Resplandor decorativo de fondo en la cabecera — contenido dentro del elemento */
   #root .max-w-7xl > .flex.flex-col.md\:flex-row.justify-between.items-start.md\:items-center.mb-10::after {
     content: "";
     position: absolute;
-    right: -60px; top: -80px;
-    width: 380px; height: 280px;
-    background: radial-gradient(ellipse at center,
-      rgba(8,136,200,.07) 0%,
-      rgba(99,102,241,.05) 50%,
-      transparent 70%);
-    border-radius: 50%;
+    right: 0; top: 0;
+    width: 50%; height: 100%;
+    background: radial-gradient(ellipse at right center,
+      rgba(8,136,200,.06) 0%,
+      rgba(99,102,241,.04) 50%,
+      transparent 75%);
+    border-radius: inherit;
     pointer-events: none;
+    z-index: 0;
   }
 
   .theme-dark #root .max-w-7xl > .flex.flex-col.md\:flex-row.justify-between.items-start.md\:items-center.mb-10 {
@@ -1146,8 +1148,9 @@
     align-items: center !important;
     gap: 8px !important;
     position: fixed !important;
-    bottom: 22px !important;
-    right: 22px !important;
+    /* Sube lo suficiente para no solapar el badge de login (bottom:12px + ~38px alto + 8px gap) */
+    bottom: 72px !important;
+    right: 18px !important;
     z-index: 9999 !important;
     overflow: hidden !important;
     backdrop-filter: blur(18px) saturate(1.25) !important;
@@ -1457,15 +1460,15 @@
    28. VISTA DE GRÁFICOS — CONTENEDORES Y CANVAS
    ========================================================== */
 @media screen {
-  /* Paneles de gráfico */
-  .section-tapiz.p-6.rounded-2xl.border {
+  /* Paneles de gráfico: excluimos exec-summary que tiene las mismas clases */
+  .section-tapiz.p-6.rounded-2xl.border:not(.exec-summary) {
     padding: 24px !important;
     display: flex !important;
     flex-direction: column !important;
   }
 
-  /* Título del gráfico */
-  .section-tapiz > .font-bold.mb-3 {
+  /* Título del gráfico (solo hijos directos de paneles de gráfico, no del exec-summary) */
+  .section-tapiz:not(.exec-summary) > .font-bold.mb-3 {
     font-size: 14px !important;
     font-weight: 800 !important;
     letter-spacing: -.02em !important;
@@ -1474,7 +1477,7 @@
   }
 
   /* Canvas: ajustamos el contenedor para dar aire */
-  .section-tapiz > div[style*="height"] {
+  .section-tapiz:not(.exec-summary) > div[style*="height"] {
     flex: 1 !important;
     min-height: 240px !important;
   }
@@ -1485,5 +1488,198 @@
     font-weight: 800 !important;
     letter-spacing: -.03em !important;
     color: var(--v4-t0) !important;
+  }
+}
+
+/* ==========================================================
+   29. VISTA INCIDENCIAS / ALERTAS — ESTILO PREMIUM HOMOGÉNEO
+   ========================================================== */
+@media screen {
+
+  /* Contenedor de sección de alerta (h3 con icono + badge) */
+  .max-w-7xl .space-y-10 > div > h3.text-lg.font-bold {
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -.025em !important;
+    color: var(--v4-t0) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* ── Tarjeta de proyecto en alertas ── */
+  .wl-person-card.alert-critical-card,
+  .wl-person-card.alert-urgent-card,
+  .wl-person-card {
+    border-radius: var(--v4-r-xl) !important;
+    border: 1px solid var(--v4-b0) !important;
+    background: var(--v4-s0) !important;
+    box-shadow: var(--v4-sh-md) !important;
+    transition: transform var(--v4-t-spring), box-shadow var(--v4-t-base) !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+  }
+
+  .wl-person-card.alert-critical-card {
+    border-top: 3px solid rgba(239,68,68,.65) !important;
+  }
+
+  .wl-person-card.alert-urgent-card {
+    border-top: 3px solid rgba(245,158,11,.65) !important;
+  }
+
+  /* Vencimientos: borde cian inline del bundle lo mantenemos */
+  .wl-person-card[style*="borderLeft"] {
+    border-radius: var(--v4-r-xl) !important;
+    background: var(--v4-s0) !important;
+    box-shadow: var(--v4-sh-md) !important;
+  }
+
+  .wl-person-card:hover {
+    transform: translateY(-4px) scale(1.005) !important;
+    box-shadow: var(--v4-sh-xl) !important;
+  }
+
+  /* Título y cliente dentro de la tarjeta */
+  .wl-person-card .font-bold.text-gray-800 {
+    color: var(--v4-t0) !important;
+    font-size: .975rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -.015em !important;
+  }
+
+  .wl-person-card .text-xs.text-gray-500 {
+    color: var(--v4-t2) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    letter-spacing: .04em !important;
+    text-transform: uppercase !important;
+  }
+
+  /* ── Items de alerta crítica ── */
+  .alert-critical-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    padding: 9px 12px !important;
+    border-radius: var(--v4-r-md) !important;
+    background: rgba(239,68,68,.08) !important;
+    border: 1px solid rgba(239,68,68,.18) !important;
+    color: var(--v4-t0) !important;
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+    letter-spacing: .04em !important;
+  }
+
+  .theme-dark .alert-critical-item {
+    background: rgba(239,68,68,.10) !important;
+    border-color: rgba(239,68,68,.22) !important;
+    color: #fca5a5 !important;
+  }
+
+  .alert-critical-item i {
+    color: #ef4444 !important;
+    font-size: 13px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ── Items urgentes ── */
+  .alert-urgent-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    padding: 9px 12px !important;
+    border-radius: var(--v4-r-md) !important;
+    background: rgba(245,158,11,.08) !important;
+    border: 1px solid rgba(245,158,11,.18) !important;
+    color: var(--v4-t0) !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+  }
+
+  .theme-dark .alert-urgent-item {
+    background: rgba(245,158,11,.10) !important;
+    border-color: rgba(245,158,11,.22) !important;
+    color: #fde68a !important;
+  }
+
+  .alert-urgent-item i {
+    color: #f59e0b !important;
+    font-size: 12px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ── Bloqueos (naranja) ── */
+  .wl-person-card .text-xs.bg-orange-50 {
+    background: rgba(245,158,11,.08) !important;
+    color: var(--v4-t1) !important;
+    border-radius: var(--v4-r-sm) !important;
+    border: 1px solid rgba(245,158,11,.15) !important;
+  }
+
+  .theme-dark .wl-person-card .text-xs.bg-orange-50 {
+    color: #fde68a !important;
+    background: rgba(245,158,11,.10) !important;
+  }
+
+  /* ── Vencimientos (cian) ── */
+  .wl-person-card .text-xs.bg-cyan-50\/50 {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 8px 11px !important;
+    border-radius: var(--v4-r-sm) !important;
+    background: rgba(6,182,212,.06) !important;
+    border: 1px solid rgba(6,182,212,.14) !important;
+    color: var(--v4-t1) !important;
+  }
+
+  .theme-dark .wl-person-card .text-xs.bg-cyan-50\/50 {
+    color: #a5f3fc !important;
+    background: rgba(6,182,212,.10) !important;
+    border-color: rgba(6,182,212,.18) !important;
+  }
+
+  /* Badge de conteo de vencimientos */
+  .wl-person-card .text-xs.font-bold.text-cyan-700.bg-cyan-50 {
+    background: rgba(6,182,212,.12) !important;
+    border: 1px solid rgba(6,182,212,.20) !important;
+    color: #0891b2 !important;
+    border-radius: var(--v4-r-sm) !important;
+    font-weight: 800 !important;
+  }
+
+  .theme-dark .wl-person-card .text-xs.font-bold.text-cyan-700.bg-cyan-50 {
+    color: #67e8f9 !important;
+  }
+
+  /* ── Estado vacío dentro de alertas ── */
+  .p-6.text-center.text-gray-400.bg-white.rounded-xl.border.border-dashed,
+  .p-6.text-center.text-gray-400.bg-white.rounded-xl.border-dashed {
+    background: var(--v4-s1) !important;
+    border-radius: var(--v4-r-xl) !important;
+    border: 1.5px dashed var(--v4-b2) !important;
+    color: var(--v4-t3) !important;
+    box-shadow: none !important;
+  }
+
+  /* ── Alert count badge ── */
+  .alert-count-badge {
+    background: var(--v4-s1) !important;
+    border: 1px solid var(--v4-b1) !important;
+    color: var(--v4-t2) !important;
+    border-radius: var(--v4-r-pill) !important;
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+  }
+
+  /* ── Barra de búsqueda en alertas ── */
+  .flex.flex-col.sm\:flex-row.gap-3.bg-gray-50.p-2.rounded-lg {
+    background: var(--v4-s1) !important;
+    border: 1px solid var(--v4-b0) !important;
+    border-radius: var(--v4-r-lg) !important;
+    padding: 8px !important;
+    gap: 8px !important;
   }
 }
