@@ -281,7 +281,7 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
 };
 
 // --- COMPONENTE: DASHBOARD (PROJECT LIST) ---
-const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, onBackup, onExportCSV, onImport, theme, onToggleTheme, storagePercent }) => {
+const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, onBackup, onExportCSV, onImport, theme, onToggleTheme, storagePercent, statusFilter }) => {
     const normClient = (p) => ((p.meta && p.meta.cliente) ? p.meta.cliente : 'Sin cliente').trim() || 'Sin cliente';
     const clients = Array.from(new Set(projects.map(normClient))).sort((a, b) => a.localeCompare(b, 'es'));
     const [clientFilter, setClientFilter] = useState('Todos');
@@ -373,6 +373,13 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
     const reviewProjects = filteredProjects.filter(p => normalizeProjectEstado(p?.meta?.estado) === 'En Revisión');
     const completedProjects = filteredProjects.filter(p => normalizeProjectEstado(p?.meta?.estado) === 'Completado');
     const nonCompletedProjects = filteredProjects.filter(p => normalizeProjectEstado(p?.meta?.estado) !== 'Completado');
+
+    // Visibilidad de secciones según filtro de sidebar
+    const showAllSections = !statusFilter;
+    const showSectionActive    = showAllSections || statusFilter === 'En Ejecución';
+    const showSectionPaused    = showAllSections || statusFilter === 'En Pausa';
+    const showSectionReview    = showAllSections || statusFilter === 'En Revisión';
+    const showSectionCompleted = showAllSections || statusFilter === 'Completado';
 
     // --- CÁLCULO RESUMEN EJECUTIVO ---
     const executiveSummary = (() => {
@@ -698,7 +705,7 @@ React.createElement("div", {
             ),
 
             // SECCIONES DE PROYECTOS
-            React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
+            showSectionActive && React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
                 React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }),
                     " En Ejecuci\u00F3n",
@@ -713,7 +720,7 @@ React.createElement("div", {
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en curso.")),
 
-            React.createElement("div", { className: "section-tapiz section--pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
+            showSectionPaused && React.createElement("div", { className: "section-tapiz section--pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
                 React.createElement("h2", { className: "text-lg font-bold text-slate-800 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-slate-500 w-2 h-2 rounded-full" }),
                     " En Pausa",
@@ -728,7 +735,7 @@ React.createElement("div", {
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en pausa.")),
 
-            React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
+            showSectionReview && React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
                 React.createElement("h2", { className: "text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" },
                     React.createElement("span", { className: "bg-violet-500 w-2 h-2 rounded-full" }),
                     " En Revisi\u00F3n",
@@ -743,7 +750,7 @@ React.createElement("div", {
                         blockClickRef
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en revisi\u00F3n.")),
 
-            completedProjects.length > 0 && (React.createElement("div", { className: "section-tapiz section--completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
+            completedProjects.length > 0 && showSectionCompleted && (React.createElement("div", { className: "section-tapiz section--completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
                 React.createElement("h2", { className: "text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 opacity-75" },
                     React.createElement("span", { className: "bg-green-500 w-2 h-2 rounded-full" }),
                     " Hist\u00F3rico / Completados"),
@@ -2653,6 +2660,244 @@ quillRef.current.root.addEventListener("mouseup", () => {
   );
 };
 
+// ─── VISTA: USUARIOS ─────────────────────────────────────────────────────────
+const UsersView = () =>
+    React.createElement('div', { className: 'sb-page' },
+        React.createElement('div', { className: 'sb-page-header' },
+            React.createElement('h1', { className: 'sb-page-title' }, 'Usuarios'),
+            React.createElement('p', { className: 'sb-page-sub' }, 'Gestión de accesos y roles del equipo')
+        ),
+        React.createElement('div', { className: 'sb-placeholder' },
+            React.createElement('div', { className: 'sb-placeholder-icon' },
+                React.createElement('i', { className: 'fas fa-user-group' })),
+            React.createElement('h2', { className: 'sb-placeholder-title' }, 'Gestión de usuarios'),
+            React.createElement('p', { className: 'sb-placeholder-text' },
+                'La administración de usuarios y roles estará disponible próximamente. Aquí podrás gestionar el acceso al panel, asignar permisos y ver la actividad por persona.'),
+            React.createElement('span', { className: 'sb-placeholder-badge' }, 'Próximamente')
+        )
+    );
+
+// ─── VISTA: PERFIL ────────────────────────────────────────────────────────────
+const ProfileView = () => {
+    const userLabel = getUserLabel();
+    const claims = (() => {
+        try {
+            const s = JSON.parse(localStorage.getItem('unitecnic_auth_session') || 'null');
+            return (s && s.claims) ? s.claims : {};
+        } catch (e) { return {}; }
+    })();
+    const email = claims.email || '';
+    const username = claims['cognito:username'] || claims.preferred_username || claims.username || claims.sub || '';
+    return React.createElement('div', { className: 'sb-page' },
+        React.createElement('div', { className: 'sb-page-header' },
+            React.createElement('h1', { className: 'sb-page-title' }, 'Perfil'),
+            React.createElement('p', { className: 'sb-page-sub' }, 'Información de tu cuenta')
+        ),
+        React.createElement('div', { className: 'profile-card' },
+            React.createElement('div', { className: 'profile-avatar-xl' }, (userLabel || 'U').charAt(0).toUpperCase()),
+            React.createElement('div', { className: 'profile-details' },
+                React.createElement('div', { className: 'profile-name' }, userLabel),
+                email && React.createElement('div', { className: 'profile-email' },
+                    React.createElement('i', { className: 'fas fa-envelope' }), ' ', email),
+                username && username !== email && React.createElement('div', { className: 'profile-username' },
+                    React.createElement('i', { className: 'fas fa-at' }), ' ', username)
+            ),
+            React.createElement('div', { className: 'profile-meta' },
+                React.createElement('div', { className: 'profile-meta-row' },
+                    React.createElement('span', { className: 'profile-meta-label' }, 'Rol'),
+                    React.createElement('span', { className: 'profile-meta-value' }, 'Administrador')),
+                React.createElement('div', { className: 'profile-meta-row' },
+                    React.createElement('span', { className: 'profile-meta-label' }, 'Empresa'),
+                    React.createElement('span', { className: 'profile-meta-value' }, 'Unitecnic'))
+            )
+        )
+    );
+};
+
+// ─── VISTA: AJUSTES ───────────────────────────────────────────────────────────
+const SettingsView = ({ theme, onToggleTheme }) =>
+    React.createElement('div', { className: 'sb-page' },
+        React.createElement('div', { className: 'sb-page-header' },
+            React.createElement('h1', { className: 'sb-page-title' }, 'Ajustes'),
+            React.createElement('p', { className: 'sb-page-sub' }, 'Preferencias de la aplicación')
+        ),
+        React.createElement('div', { className: 'settings-group' },
+            React.createElement('h2', { className: 'settings-group-title' }, 'Apariencia'),
+            React.createElement('div', { className: 'settings-row' },
+                React.createElement('div', { className: 'settings-row-info' },
+                    React.createElement('div', { className: 'settings-row-label' }, 'Tema de la interfaz'),
+                    React.createElement('div', { className: 'settings-row-sub' },
+                        theme === 'dark' ? 'Modo oscuro activo' : 'Modo claro activo')),
+                React.createElement('button', {
+                    className: `theme-fab ${theme === 'dark' ? 'night' : 'day'} settings-theme-inline`,
+                    onClick: onToggleTheme,
+                    title: theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche',
+                    'aria-label': theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche'
+                }, React.createElement('i', { className: `fas ${theme === 'dark' ? 'fa-moon' : 'fa-sun'}` }))
+            )
+        ),
+        React.createElement('div', { className: 'settings-group' },
+            React.createElement('h2', { className: 'settings-group-title' }, 'Próximas funcionalidades'),
+            React.createElement('div', { className: 'sb-placeholder sb-placeholder--compact' },
+                React.createElement('p', { className: 'sb-placeholder-text' },
+                    'Notificaciones, idioma, formato de fechas e integración con calendario estarán disponibles próximamente.'),
+                React.createElement('span', { className: 'sb-placeholder-badge' }, 'En desarrollo')
+            )
+        )
+    );
+
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
+const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClose, theme, onToggleTheme, onImport }) => {
+    const [proyectosOpen, setProyectosOpen] = useState(true);
+    const counts = React.useMemo(() => ({
+        total:     projects.length,
+        active:    projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'En Ejecución').length,
+        review:    projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'En Revisión').length,
+        completed: projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'Completado').length,
+        paused:    projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'En Pausa').length,
+    }), [projects]);
+    const userLabel = getUserLabel();
+
+    const isActive = (v, sf) => {
+        if (sf !== undefined) return view === 'list' && statusFilter === sf;
+        if (Array.isArray(v)) return v.indexOf(view) !== -1;
+        return view === v;
+    };
+
+    const ni = (icon, label, onClick, badge, active, indent) =>
+        React.createElement('button', {
+            key: label,
+            className: 'sidebar-nav-item' + (active ? ' active' : '') + (indent ? ' indent' : ''),
+            onClick: onClick
+        },
+            React.createElement('i', { className: 'fas ' + icon + ' snav-icon', 'aria-hidden': 'true' }),
+            React.createElement('span', { className: 'snav-label' }, label),
+            (badge != null && badge > 0) ? React.createElement('span', { className: 'snav-badge' }, badge) : null
+        );
+
+    return React.createElement('aside', {
+        className: 'sidebar' + (sidebarOpen ? ' sidebar--open' : ''),
+        'aria-label': 'Navegación principal'
+    },
+        // CABECERA
+        React.createElement('div', { className: 'sidebar-head' },
+            React.createElement('button', {
+                className: 'sidebar-brand',
+                onClick: () => { onNavigate('list', null); onClose(); },
+                title: 'Ir al inicio'
+            },
+                React.createElement('img', { src: UNITECNIC_LOGO_BASE64, alt: 'Unitecnic', className: 'sidebar-brand-img' }),
+                React.createElement('div', { className: 'sidebar-brand-text' },
+                    React.createElement('span', { className: 'sidebar-brand-name' }, 'Unitecnic'),
+                    React.createElement('span', { className: 'sidebar-brand-sub' }, 'Project Manager')
+                )
+            ),
+            React.createElement('button', {
+                className: 'sidebar-close-btn',
+                onClick: onClose,
+                'aria-label': 'Cerrar menú'
+            }, React.createElement('i', { className: 'fas fa-xmark' }))
+        ),
+        // NAVEGACIÓN
+        React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'Menú' },
+            ni('fa-house', 'Home', () => { onNavigate('list', null); onClose(); }, null,
+                isActive('list', null), false),
+
+            // Grupo Proyectos
+            React.createElement('div', { className: 'sidebar-group' },
+                React.createElement('button', {
+                    className: 'sidebar-group-btn' + (isActive(['list', 'editor', 'wiki']) ? ' active' : ''),
+                    onClick: () => setProyectosOpen(function(o) { return !o; }),
+                    'aria-expanded': proyectosOpen
+                },
+                    React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }),
+                    React.createElement('span', { className: 'snav-label' }, 'Proyectos'),
+                    React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })
+                ),
+                proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' },
+                    ni('fa-layer-group', 'Todos',
+                        () => { onNavigate('list', null); onClose(); },
+                        counts.total, isActive('list', null), true),
+                    ni('fa-circle-play', 'En Ejecución',
+                        () => { onNavigate('list', 'En Ejecución'); onClose(); },
+                        counts.active, isActive('list', 'En Ejecución'), true),
+                    ni('fa-magnifying-glass', 'En Revisión',
+                        () => { onNavigate('list', 'En Revisión'); onClose(); },
+                        counts.review, isActive('list', 'En Revisión'), true),
+                    ni('fa-circle-check', 'Completados',
+                        () => { onNavigate('list', 'Completado'); onClose(); },
+                        counts.completed, isActive('list', 'Completado'), true),
+                    ni('fa-circle-pause', 'En Pausa',
+                        () => { onNavigate('list', 'En Pausa'); onClose(); },
+                        counts.paused, isActive('list', 'En Pausa'), true)
+                )
+            ),
+
+            ni('fa-chart-bar', 'Gráficos',
+                () => { onNavigate('charts', null); onClose(); },
+                null, isActive('charts'), false),
+            ni('fa-shield-halved', 'Incidencias',
+                () => { onNavigate('alerts', null); onClose(); },
+                null, isActive('alerts'), false),
+            ni('fa-users', 'Carga de trabajo',
+                () => { onNavigate('workload', null); onClose(); },
+                null, isActive('workload'), false),
+
+            React.createElement('div', { className: 'sidebar-divider' }),
+
+            ni('fa-user-group', 'Usuarios',
+                () => { onNavigate('users', null); onClose(); },
+                null, isActive('users'), false),
+            React.createElement('button', {
+                className: 'sidebar-nav-item',
+                onClick: () => { onImport(); onClose(); }
+            },
+                React.createElement('i', { className: 'fas fa-file-arrow-up snav-icon', 'aria-hidden': 'true' }),
+                React.createElement('span', { className: 'snav-label' }, 'Importar')
+            )
+        ),
+        // PIE
+        React.createElement('div', { className: 'sidebar-foot' },
+            React.createElement('div', { className: 'sidebar-user-row' },
+                React.createElement('div', { className: 'sidebar-avatar' },
+                    (userLabel || 'U').charAt(0).toUpperCase()),
+                React.createElement('div', { className: 'sidebar-user-info' },
+                    React.createElement('div', { className: 'sidebar-user-name', title: userLabel }, userLabel),
+                    React.createElement('div', { className: 'sidebar-user-role' }, 'Administrador')
+                )
+            ),
+            React.createElement('div', { className: 'sidebar-foot-actions' },
+                React.createElement('button', {
+                    className: 'sfab' + (isActive('profile') ? ' active' : ''),
+                    onClick: () => { onNavigate('profile', null); onClose(); },
+                    title: 'Perfil'
+                }, React.createElement('i', { className: 'fas fa-circle-user' })),
+                React.createElement('button', {
+                    className: 'sfab' + (isActive('settings') ? ' active' : ''),
+                    onClick: () => { onNavigate('settings', null); onClose(); },
+                    title: 'Ajustes'
+                }, React.createElement('i', { className: 'fas fa-gear' })),
+                React.createElement('button', {
+                    className: 'sfab',
+                    onClick: onToggleTheme,
+                    title: theme === 'dark' ? 'Modo día' : 'Modo noche'
+                }, React.createElement('i', { className: 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon') })),
+                React.createElement('button', {
+                    className: 'sfab sfab--danger',
+                    onClick: function() {
+                        try {
+                            if (typeof window.gpLogout === 'function') { window.gpLogout(); return; }
+                            if (typeof window.logout === 'function') { window.logout(); return; }
+                            if (typeof window.signOut === 'function') { window.signOut(); return; }
+                        } catch(e) {}
+                    },
+                    title: 'Cerrar sesión'
+                }, React.createElement('i', { className: 'fas fa-right-from-bracket' }))
+            )
+        )
+    );
+};
+
 
 
 const MainApp = () => {
@@ -2670,6 +2915,8 @@ const MainApp = () => {
 
     const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'));
     const [view, setView] = useState('loading');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [statusFilter, setStatusFilter] = useState(null);
     const [projects, setProjects] = useState([]);
     const projectsRef = React.useRef([]);
     useEffect(() => { projectsRef.current = projects || []; }, [projects]);
@@ -2802,16 +3049,38 @@ const makeDraftProject = () => ({
 
             if (parts[0] === 'workload') {
                 setCurrentProject(null);
-                setView('workload'); // Definiremos este estado ahora
+                setView('workload');
                 return;
             }
             if (parts[0] === 'charts') {
-  setCurrentProject(null);
-  setView('charts');
-  return;
-}
+                setCurrentProject(null);
+                setView('charts');
+                return;
+            }
+            if (parts[0] === 'users') {
+                setCurrentProject(null);
+                setView('users');
+                return;
+            }
+            if (parts[0] === 'profile') {
+                setCurrentProject(null);
+                setView('profile');
+                return;
+            }
+            if (parts[0] === 'settings') {
+                setCurrentProject(null);
+                setView('settings');
+                return;
+            }
+            if (parts[0] === 'proj' && parts[1]) {
+                setCurrentProject(null);
+                setView('list');
+                setStatusFilter(decodeURIComponent(parts[1]));
+                return;
+            }
             if (!parts.length || parts[0] === 'list' || parts[0] === 'dashboard') {
                 setCurrentProject(null);
+                setStatusFilter(null);
                 setView('list');
                 return;
             }
@@ -3010,6 +3279,21 @@ const normalized = (effectiveList || []).map(p => {
         }
     };
 
+    // --- NAVEGACIÓN DESDE SIDEBAR ---
+    const handleSidebarNavigate = (targetView, targetFilter) => {
+        setStatusFilter(targetFilter || null);
+        if (targetView === 'list') {
+            setCurrentProject(null);
+            setView('list');
+            const hash = targetFilter ? '#/proj/' + encodeURIComponent(targetFilter) : '#/list';
+            setRoute(hash);
+        } else {
+            setCurrentProject(null);
+            setView(targetView);
+            setRoute('#/' + targetView);
+        }
+    };
+
     const createProject = async () => {
         const draftProject = makeDraftProject();
         setCurrentProject(draftProject);
@@ -3109,14 +3393,45 @@ const normalized = (effectiveList || []).map(p => {
     if (view === 'loading')
         return React.createElement("div", { className: "h-screen flex items-center justify-center bg-gray-50" },
             React.createElement("div", { className: "loader" }));
-    return (React.createElement("div", null,
-        React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
-        view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
-        view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
-        view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
-        view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent })),
-        view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
-        view === 'wiki' && currentProject && (
+    return (React.createElement("div", { className: "app-layout" },
+        // Overlay fondo (mobile)
+        React.createElement("div", {
+            className: "sidebar-overlay" + (sidebarOpen ? " sidebar-overlay--on" : ""),
+            onClick: function() { setSidebarOpen(false); },
+            "aria-hidden": "true"
+        }),
+        // Sidebar principal
+        React.createElement(Sidebar, {
+            view: view,
+            projects: projects,
+            statusFilter: statusFilter,
+            onNavigate: handleSidebarNavigate,
+            sidebarOpen: sidebarOpen,
+            onClose: function() { setSidebarOpen(false); },
+            theme: theme,
+            onToggleTheme: toggleTheme,
+            onImport: openImportPicker
+        }),
+        // Contenido principal
+        React.createElement("main", { className: "sidebar-main" },
+            // Botón hamburguesa (solo mobile)
+            React.createElement("button", {
+                className: "sidebar-hamburger no-print",
+                onClick: function() { setSidebarOpen(true); },
+                "aria-label": "Abrir menú",
+                "aria-expanded": sidebarOpen
+            }, React.createElement("i", { className: "fas fa-bars" })),
+
+            React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }),
+            view === 'workload' && (React.createElement(WorkloadView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+            view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+            view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })),
+            view === 'users' && React.createElement(UsersView, null),
+            view === 'profile' && React.createElement(ProfileView, null),
+            view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }),
+            view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })),
+            view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme })),
+            view === 'wiki' && currentProject && (
   React.createElement(ProjectWiki, {
     project: currentProject,
     onSave: saveProject,
@@ -3175,7 +3490,9 @@ const normalized = (effectiveList || []).map(p => {
             React.createElement("div", null,
                 React.createElement("div", { className: "font-semibold leading-tight" }, "Backup generado"),
                 React.createElement("div", { className: "text-xs text-white/70" }, "Archivo .json descargado con proyectos y logos.")))),
-        React.createElement("button", { type: "button", onClick: toggleTheme, className: `theme-fab no-print ${theme === 'dark' ? 'night' : 'day'}`, title: theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche', "aria-label": theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche' }, theme === 'dark' ? (React.createElement("i", { className: "fas fa-moon" })) : (React.createElement("i", { className: "fas fa-sun" })))));
+        React.createElement("button", { type: "button", onClick: toggleTheme, className: `theme-fab no-print sidebar-hide-fab ${theme === 'dark' ? 'night' : 'day'}`, title: theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche', "aria-label": theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche' }, theme === 'dark' ? (React.createElement("i", { className: "fas fa-moon" })) : (React.createElement("i", { className: "fas fa-sun" })))
+        )  /* cierre main */
+    )); /* cierre app-layout + return */
 };
 class ErrorBoundary extends React.Component {
     constructor(props) {
