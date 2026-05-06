@@ -6513,3 +6513,292 @@ html:not(.theme-dark) .imput-day--red { background: rgba(244, 63, 94, 0.12); bor
     display: none;
   }
 }
+
+/* Imputaciones: ajuste visual compacto y profesional */
+.imput-page {
+  max-width: 1360px;
+  padding-top: 22px;
+}
+.imput-header {
+  align-items: center;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.46);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+.imput-header .btn-apple {
+  margin-bottom: 0;
+}
+.imput-header .sb-page-title {
+  margin: 6px 0 3px;
+  letter-spacing: 0;
+}
+.imput-header .sb-page-sub {
+  margin: 0;
+  max-width: 560px;
+}
+.imput-header-actions {
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.imput-header-actions .btn-apple,
+.imput-header-actions .btn-apple-primary {
+  min-height: 40px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+.imput-card {
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 14px 36px rgba(2, 6, 23, 0.14);
+}
+.imput-card-head {
+  margin-bottom: 10px;
+}
+.imput-card-head h2 {
+  font-size: 16px;
+}
+.imput-card-head p {
+  margin: 0;
+}
+.imput-filters {
+  grid-template-columns: 0.75fr 1.25fr 1fr 1fr 1.2fr auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  margin: 0 0 14px;
+}
+.imput-filters label {
+  gap: 5px;
+  min-width: 0;
+  font-size: 11px;
+}
+.imput-filters input,
+.imput-filters select {
+  min-height: 38px;
+  height: 38px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+.imput-filters .btn-apple {
+  height: 38px;
+  min-height: 38px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.imput-kpis {
+  gap: 10px;
+  margin: 0 0 14px;
+}
+.imput-kpis--six {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.imput-kpi {
+  min-height: 116px;
+  padding: 13px;
+  gap: 5px;
+  align-content: start;
+  overflow: hidden;
+}
+.imput-kpi i {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 13px;
+  background: rgba(56, 189, 248, 0.10);
+}
+.imput-kpi span {
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.imput-kpi strong {
+  min-width: 0;
+  max-width: 100%;
+  font-size: clamp(18px, 1.45vw, 24px);
+  line-height: 1.12;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.imput-kpi small {
+  min-width: 0;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.imput-kpi:nth-child(5) strong,
+.imput-kpi:nth-child(6) strong {
+  font-size: 15px;
+  line-height: 1.25;
+}
+.imput-analysis {
+  margin-bottom: 14px;
+}
+.imput-analysis .imput-card-head {
+  margin-bottom: 8px;
+}
+.imput-recs {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+}
+.imput-rec {
+  min-height: 44px;
+  padding: 9px 10px;
+  align-items: center;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.imput-rec i {
+  margin-top: 0;
+  font-size: 12px;
+}
+.imput-calendar-card,
+.imput-day-panel {
+  margin-bottom: 14px;
+}
+.imput-calendar-actions button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.imput-calendar-grid {
+  gap: 6px;
+}
+.imput-calendar-weekdays {
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.imput-day {
+  min-height: 86px;
+  gap: 3px;
+  padding: 8px;
+  border-radius: 12px;
+}
+.imput-day strong {
+  font-size: 12px;
+}
+.imput-day span {
+  font-size: 14px;
+}
+.imput-day small {
+  max-width: 100%;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.imput-day em {
+  gap: 6px;
+  font-size: 11px;
+}
+.imput-project-totals {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.imput-project-totals span {
+  padding: 7px 9px;
+  font-size: 12px;
+}
+.imput-project-totals strong {
+  font-size: 14px;
+}
+.imput-table {
+  font-size: 12.5px;
+}
+.imput-table th {
+  padding: 10px;
+}
+.imput-table td {
+  padding: 10px;
+}
+.imput-table td[data-label="Proyecto"],
+.imput-table td[data-label="Persona"],
+.imput-table td[data-label="Observaciones"] {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.imput-actions button {
+  width: 30px;
+  height: 30px;
+}
+html:not(.theme-dark) .imput-header {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(15, 23, 42, 0.10);
+}
+@media (max-width: 1280px) {
+  .imput-kpis--six {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .imput-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 860px) {
+  .imput-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .imput-header-actions {
+    justify-content: flex-start;
+  }
+  .imput-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .imput-kpis--six {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .imput-recs {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 540px) {
+  .imput-page {
+    padding-top: 14px;
+  }
+  .imput-header,
+  .imput-card {
+    border-radius: 14px;
+  }
+  .imput-header-actions,
+  .imput-calendar-actions {
+    width: 100%;
+  }
+  .imput-header-actions .btn-apple,
+  .imput-header-actions .btn-apple-primary {
+    flex: 1;
+    justify-content: center;
+  }
+  .imput-filters,
+  .imput-kpis--six {
+    grid-template-columns: 1fr;
+  }
+  .imput-day {
+    min-height: 72px;
+    padding: 6px;
+  }
+  .imput-day span {
+    font-size: 12px;
+  }
+  .imput-day small {
+    display: none;
+  }
+  .imput-table td[data-label="Proyecto"],
+  .imput-table td[data-label="Persona"],
+  .imput-table td[data-label="Observaciones"] {
+    max-width: none;
+    white-space: normal;
+  }
+}
