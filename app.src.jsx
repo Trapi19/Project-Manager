@@ -3174,6 +3174,7 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
                     className: 'sfab sfab--danger',
                     onClick: function() {
                         try {
+                            if (typeof window.unitecnicLogout === 'function') { window.unitecnicLogout(); return; }
                             if (typeof window.gpLogout === 'function') { window.gpLogout(); return; }
                             if (typeof window.logout === 'function') { window.logout(); return; }
                             if (typeof window.signOut === 'function') { window.signOut(); return; }

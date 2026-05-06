@@ -131,52 +131,8 @@
   function addAuthBadge(session) {
     try {
       const id = 'unitecnic-auth-badge';
-      let el = document.getElementById(id);
-      if (!el) {
-        el = document.createElement('div');
-        el.id = id;
-        el.style.position = 'fixed';
-        el.style.right = '12px';
-        el.style.bottom = '12px';
-        el.style.zIndex = '9999';
-        el.style.padding = '10px 14px';
-        el.style.borderRadius = '9999px';
-        el.style.fontSize = '13px';
-        el.style.fontFamily = 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
-        el.style.userSelect = 'none';
-        el.style.cursor = 'pointer';
-        el.title = 'Clic para cerrar sesión';
-
-        const applyTheme = () => {
-          const dark = (document.documentElement && document.documentElement.classList.contains('theme-dark')) ||
-                       (document.body && document.body.classList.contains('theme-dark'));
-          if (dark) {
-            el.style.color = '#ffffff';
-            el.style.border = '1px solid rgba(255,255,255,0.18)';
-            el.style.background = 'rgba(15,23,42,0.82)'; // slate-900-ish
-            el.style.boxShadow = '0 10px 24px rgba(0,0,0,0.45)';
-          } else {
-            el.style.color = '#0f172a';
-            el.style.border = '1px solid rgba(0,0,0,0.12)';
-            el.style.background = 'rgba(255,255,255,0.92)';
-            el.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
-          }
-          el.style.backdropFilter = 'blur(8px)';
-        };
-
-        // Apply now and keep in sync with theme changes
-        applyTheme();
-        try {
-          const obs = new MutationObserver(() => applyTheme());
-          if (document.documentElement) obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-          if (document.body) obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-        } catch (e) {}
-
-        el.addEventListener('click', () => window.unitecnicLogout && window.unitecnicLogout());
-        document.body.appendChild(el);
-      }
-      const email = session?.claims?.email || 'Sesión activa';
-      el.textContent = `Acceso: ${email} (clic para salir)`;
+      const el = document.getElementById(id);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
     } catch (e) {}
   }
 

@@ -2025,6 +2025,10 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
         className: 'sfab sfab--danger',
         onClick: function () {
             try {
+                if (typeof window.unitecnicLogout === 'function') {
+                    window.unitecnicLogout();
+                    return;
+                }
                 if (typeof window.gpLogout === 'function') {
                     window.gpLogout();
                     return;
