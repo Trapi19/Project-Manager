@@ -2310,7 +2310,7 @@ const MainApp = () => {
             }
             catch (e) { }
             if (!window.location.hash)
-                setRoute('#/list');
+                setRoute('#/home');
             applyRouteFromHash(normalized);
             if (navigator.onLine)
                 await flushPendingToAWS();

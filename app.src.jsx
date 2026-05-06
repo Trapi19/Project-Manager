@@ -3433,7 +3433,7 @@ const normalized = (effectiveList || []).map(p => {
                 setStoragePercent(pct);
                 if (pct >= 80) setStorageWarning(true);
             } catch(e) {}
-            if (!window.location.hash) setRoute('#/list');
+            if (!window.location.hash) setRoute('#/home');
             applyRouteFromHash(normalized);
 
             if (navigator.onLine) await flushPendingToAWS();
