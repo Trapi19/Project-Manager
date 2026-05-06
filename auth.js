@@ -73,6 +73,15 @@
 
   function nowEpoch() { return Math.floor(Date.now() / 1000); }
 
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function getStoredSession() {
     try {
       const raw = localStorage.getItem('unitecnic_auth_session');
@@ -344,7 +353,7 @@
 
     if (error) {
       clearSession();
-      document.body.innerHTML = `<div style="font-family: Inter, system-ui; padding: 24px;">Error de login: ${error}</div>`;
+      document.body.innerHTML = `<div style="font-family: Inter, system-ui; padding: 24px;">Error de login: ${escapeHtml(error)}</div>`;
       return;
     }
 
@@ -363,7 +372,7 @@
         return;
       } catch (e) {
         clearSession();
-        document.body.innerHTML = `<div style="font-family: Inter, system-ui; padding: 24px;">No se ha podido completar el login. ${String(e.message || e)}</div>`;
+        document.body.innerHTML = `<div style="font-family: Inter, system-ui; padding: 24px;">No se ha podido completar el login. ${escapeHtml(e && e.message ? e.message : e)}</div>`;
         return;
       }
     }

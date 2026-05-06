@@ -2373,6 +2373,42 @@ if (donutRef.current) {
   );
 };
 
+
+// --- Seguridad: saneado básico de HTML antes de mostrar/guardar la Wiki ---
+// Evita que un backup manipulado o contenido pegado en Quill pueda ejecutar scripts.
+const sanitizeWikiHtml = (html) => {
+    try {
+        const raw = String(html || "");
+        if (!raw) return "";
+        const template = document.createElement('template');
+        template.innerHTML = raw;
+        const blockedTags = new Set(['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta', 'base', 'form', 'input', 'button']);
+        const walk = (node) => {
+            const children = Array.from(node.children || []);
+            children.forEach((el) => {
+                const tag = String(el.tagName || '').toLowerCase();
+                if (blockedTags.has(tag)) {
+                    el.remove();
+                    return;
+                }
+                Array.from(el.attributes || []).forEach((attr) => {
+                    const name = String(attr.name || '').toLowerCase();
+                    const value = String(attr.value || '').trim().toLowerCase();
+                    if (name.startsWith('on')) el.removeAttribute(attr.name);
+                    if ((name === 'href' || name === 'src') && (value.startsWith('javascript:') || value.startsWith('data:text/html'))) {
+                        el.removeAttribute(attr.name);
+                    }
+                });
+                walk(el);
+            });
+        };
+        walk(template.content);
+        return template.innerHTML;
+    } catch (e) {
+        return "";
+    }
+};
+
 // --- VISTA: WIKI DE PROYECTO (VER / EDITAR como ProjectEditor) ---
 const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
   // "view" = solo lectura, "edit" = editable
@@ -2389,7 +2425,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
     const html = (project && project.wiki && typeof project.wiki.content === "string")
       ? project.wiki.content
       : "";
-    return html || "";
+    return sanitizeWikiHtml(html || "");
   };
 
   // Inicializar Quill una sola vez
@@ -2478,7 +2514,7 @@ quillRef.current.root.addEventListener("mouseup", () => {
   };
 
   const handleSave = async () => {
-    const html = quillRef.current ? quillRef.current.root.innerHTML : "";
+    const html = sanitizeWikiHtml(quillRef.current ? quillRef.current.root.innerHTML : "");
     const updated = {
       ...project,
       wiki: { ...(project.wiki || {}), content: html }
