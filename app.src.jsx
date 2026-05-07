@@ -2855,231 +2855,316 @@ React.createElement("div", null,
     );
 };
 
-// --- VISTA: GRAFICOS / ANALITICA ---
+// --- VISTA: GRÁFICOS (Charts) ---
 const ChartsView = ({ projects, onBack }) => {
-    const [filters, setFilters] = React.useState({ status: 'Todos', client: 'Todos', owner: 'Todos', month: new Date().toISOString().slice(0, 7) });
-    const [themeTick, setThemeTick] = React.useState(0);
-    const tasksRef = React.useRef(null);
-    const progressRef = React.useRef(null);
-    const workloadRef = React.useRef(null);
-    const imputationRef = React.useRef(null);
-    const chartsRef = React.useRef([]);
+const didAnimateRef = React.useRef(false);
+const [themeTick, setThemeTick] = React.useState(0);
+  const donutRef = React.useRef(null);
+  const byAreaRef = React.useRef(null);
+  const byPriorityRef = React.useRef(null);
+  const byAssigneeRef = React.useRef(null);
 
-    const splitPeople = (raw) => {
-        const value = String(raw || '').trim();
-        if (!value) return ['Sin asignar'];
-        const names = value.split(/[\\/,;&]|\s+y\s+/).map(v => v.trim()).filter(Boolean);
-        return names.length ? names : ['Sin asignar'];
-    };
-    const monthMatches = (dateValue) => !filters.month || String(dateValue || '').slice(0, 7) === filters.month;
-    const formatDate = (value) => value ? (window.formatFechaES ? window.formatFechaES(value) : value) : 'Sin fecha';
-    const openProject = (id) => { if (id != null) window.location.hash = '#/project/' + encodeURIComponent(String(id)); };
+  // Guardamos instancias para destruirlas al salir de la vista
+  const chartsRef = React.useRef([]);
 
-    const model = React.useMemo(() => {
-        const allProjects = Array.isArray(projects) ? projects : [];
-        const clients = Array.from(new Set(allProjects.map(p => getProjectClient(p) || 'Sin cliente'))).sort((a, b) => a.localeCompare(b, 'es'));
-        const owners = Array.from(new Set(allProjects.map(p => ((p && p.meta && (p.meta.responsableProyecto || p.meta.ejecutorProyecto)) || 'Sin responsable')).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
-        const filteredProjects = allProjects.filter(p => {
-            const status = getProjectStatus(p);
-            const client = getProjectClient(p) || 'Sin cliente';
-            const owner = (p && p.meta && (p.meta.responsableProyecto || p.meta.ejecutorProyecto)) || 'Sin responsable';
-            return (filters.status === 'Todos' || status === filters.status) &&
-                (filters.client === 'Todos' || client === filters.client) &&
-                (filters.owner === 'Todos' || owner === filters.owner);
-        });
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const soon = new Date(today);
-        soon.setDate(today.getDate() + 21);
-        const taskCounts = { pendiente: 0, curso: 0, completada: 0, bloqueada: 0, vencida: 0 };
-        const progressRows = [];
-        const peopleMap = {};
-        const timeMap = {};
-        const incidentRows = [];
-        const deadlineRows = [];
-        const healthRows = [];
-        let totalTasks = 0;
-        let openTasks = 0;
-        let incidentCount = 0;
-        let hoursMonth = 0;
-        let kmMonth = 0;
-        let progressSum = 0;
+  const flattenTasks = () => {
+    const list = Array.isArray(projects) ? projects : [];
+    const all = [];
+    for (const p of list) {
+      const tasks = (p && Array.isArray(p.tasks)) ? p.tasks : [];
+      for (const t of tasks) all.push(t);
+    }
+    return all;
+  };
 
-        filteredProjects.forEach(project => {
-            const tasks = Array.isArray(project && project.tasks) ? project.tasks : [];
-            const stats = computeProjectStats(tasks);
-            const title = getProjectTitle(project);
-            const status = getProjectStatus(project);
-            const owner = (project && project.meta && (project.meta.responsableProyecto || project.meta.ejecutorProyecto)) || 'Sin responsable';
-            const rows = getProjectTimeEntries(project).filter(row => monthMatches(row.date));
-            const totals = rows.reduce((acc, row) => {
-                acc.hours += toNumberOrZero(row.hours);
-                acc.km += toNumberOrZero(row.mileageKm);
-                acc.allowance += toNumberOrZero(row.allowanceAmount);
-                return acc;
-            }, { hours: 0, km: 0, allowance: 0 });
-            hoursMonth += totals.hours;
-            kmMonth += totals.km;
-            timeMap[title] = (timeMap[title] || 0) + totals.hours;
-            totalTasks += tasks.length;
-            progressSum += stats.progress || 0;
-            let pOpen = 0, pInc = 0, pOverdue = 0, pBlocked = 0;
-            tasks.forEach(task => {
-                const effective = effectiveEstado(task, stats.idx);
-                const done = effective === 'Completado';
-                const blocked = !done && isTaskBlocked(task, stats.idx);
-                const due = parseDateOnly(task.fechaLimite);
-                const overdue = !done && due && due < today;
-                if (done) taskCounts.completada += 1;
-                else if (blocked) taskCounts.bloqueada += 1;
-                else if (overdue) taskCounts.vencida += 1;
-                else if (effective === 'En Curso') taskCounts.curso += 1;
-                else taskCounts.pendiente += 1;
-                if (!done) {
-                    openTasks += 1;
-                    pOpen += 1;
-                    splitPeople(task.asignadoA).forEach(name => {
-                        peopleMap[name] = peopleMap[name] || { name, tasks: 0, hours: 0 };
-                        peopleMap[name].tasks += 1;
-                    });
-                }
-                if (blocked || overdue || ['Urgente', 'Alta'].includes(task.prioridad || '')) {
-                    incidentCount += 1;
-                    pInc += 1;
-                    if (blocked) pBlocked += 1;
-                    if (overdue) pOverdue += 1;
-                }
-                if (!done && due && due >= today && due <= soon) {
-                    deadlineRows.push({ project, projectTitle: title, task: task.tarea || 'Tarea', date: task.fechaLimite, state: effective, owner: task.asignadoA || 'Sin asignar' });
-                }
-            });
-            rows.forEach(row => {
-                splitPeople(row.user || owner).forEach(name => {
-                    peopleMap[name] = peopleMap[name] || { name, tasks: 0, hours: 0 };
-                    peopleMap[name].hours += toNumberOrZero(row.hours);
-                });
-            });
-            progressRows.push({ project, title, progress: stats.progress || 0 });
-            if (pInc > 0) incidentRows.push({ project, title, incidents: pInc, blocked: pBlocked, overdue: pOverdue });
-            let health = 'Correcto';
-            if (status === 'Completado') health = 'Completado';
-            else if (status === 'En Pausa') health = 'En pausa';
-            else if (pOverdue || pBlocked > 1) health = 'Critico';
-            else if (pInc || pOpen > 0 && (stats.progress || 0) < 45) health = 'Atencion';
-            healthRows.push({ project, title, status, health, progress: stats.progress || 0, open: pOpen, incidents: pInc, nextDue: deadlineRows.filter(d => d.project === project).sort((a, b) => String(a.date).localeCompare(String(b.date)))[0]?.date || '' });
-        });
-        const peopleRows = Object.values(peopleMap).sort((a, b) => (b.tasks - a.tasks) || (b.hours - a.hours)).slice(0, 8);
-        const imputationRows = Object.entries(timeMap).map(([title, hours]) => ({ title, hours })).filter(r => r.hours > 0).sort((a, b) => b.hours - a.hours).slice(0, 8);
-        return {
-            clients, owners, projects: filteredProjects, totalTasks, openTasks, incidentCount, hoursMonth, kmMonth,
-            avgProgress: filteredProjects.length ? Math.round(progressSum / filteredProjects.length) : 0,
-            taskCounts,
-            progressRows: progressRows.sort((a, b) => a.progress - b.progress).slice(0, 10),
-            peopleRows,
-            imputationRows,
-            incidentRows: incidentRows.sort((a, b) => b.incidents - a.incidents).slice(0, 8),
-            deadlineRows: deadlineRows.sort((a, b) => String(a.date).localeCompare(String(b.date))).slice(0, 5),
-            healthRows: healthRows.sort((a, b) => b.incidents - a.incidents || a.progress - b.progress).slice(0, 12)
-        };
-    }, [projects, filters]);
+  const countBy = (items, getter, fallbackLabel) => {
+    const map = {};
+    for (const it of items) {
+      const kRaw = getter(it);
+      const k = (kRaw == null || String(kRaw).trim() === "") ? fallbackLabel : String(kRaw).trim();
+      map[k] = (map[k] || 0) + 1;
+    }
+    // orden por cantidad desc
+    return Object.entries(map).sort((a,b) => b[1]-a[1]);
+  };
 
-    React.useEffect(() => {
-        const el = document.documentElement;
-        const obs = new MutationObserver(() => setThemeTick(t => t + 1));
-        obs.observe(el, { attributes: true, attributeFilter: ['class'] });
-        return () => obs.disconnect();
-    }, []);
+  React.useEffect(() => {
+  // Esto detecta cuando el <html> cambia de clase (por ejemplo: se añade o quita "theme-dark")
+  const el = document.documentElement;
+  const obs = new MutationObserver(() => {
+    setThemeTick(t => t + 1);
+  });
+  obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+  return () => obs.disconnect();
+}, []);
 
-    React.useEffect(() => {
-        chartsRef.current.forEach(ch => { try { ch.destroy(); } catch(e) {} });
-        chartsRef.current = [];
-        const ChartJS = window && window.Chart;
-        if (!ChartJS) return;
-        const isDark = document.documentElement.classList.contains('theme-dark');
-        const colors = {
-            text: isDark ? '#e5e7eb' : '#111827',
-            muted: isDark ? '#94a3b8' : '#64748b',
-            grid: isDark ? 'rgba(148,163,184,.18)' : 'rgba(148,163,184,.26)',
-            surface: isDark ? 'rgba(15,23,42,.94)' : 'rgba(255,255,255,.96)',
-            border: isDark ? 'rgba(255,255,255,.12)' : 'rgba(15,23,42,.10)'
-        };
-        const common = {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: colors.text, boxWidth: 12, boxHeight: 10, padding: 12 } },
-                tooltip: { backgroundColor: colors.surface, titleColor: colors.text, bodyColor: colors.text, borderColor: colors.border, borderWidth: 1 }
-            },
-            scales: {
-                x: { ticks: { color: colors.muted }, grid: { color: colors.grid } },
-                y: { ticks: { color: colors.muted }, grid: { display: false } }
-            }
-        };
-        const taskData = [model.taskCounts.pendiente, model.taskCounts.curso, model.taskCounts.completada, model.taskCounts.bloqueada, model.taskCounts.vencida];
-        if (tasksRef.current && taskData.some(Boolean)) chartsRef.current.push(new ChartJS(tasksRef.current, {
-            type: 'doughnut',
-            data: { labels: ['Pendiente', 'En curso', 'Completada', 'Bloqueada', 'Vencida'], datasets: [{ data: taskData, backgroundColor: ['#64748b', '#0888C8', '#10b981', '#f59e0b', '#ef4444'], borderColor: colors.border, borderWidth: 2 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: common.plugins }
-        }));
-        if (progressRef.current && model.progressRows.length) chartsRef.current.push(new ChartJS(progressRef.current, {
-            type: 'bar',
-            data: { labels: model.progressRows.map(r => r.title), datasets: [{ label: 'Progreso %', data: model.progressRows.map(r => r.progress), backgroundColor: '#0888C8', borderRadius: 8, barThickness: 14 }] },
-            options: { ...common, indexAxis: 'y', scales: { ...common.scales, x: { ...common.scales.x, max: 100 } }, plugins: { ...common.plugins, legend: { display: false } } }
-        }));
-        if (workloadRef.current && model.peopleRows.length) chartsRef.current.push(new ChartJS(workloadRef.current, {
-            type: 'bar',
-            data: { labels: model.peopleRows.map(r => r.name), datasets: [{ label: 'Tareas abiertas', data: model.peopleRows.map(r => r.tasks), backgroundColor: '#0888C8', borderRadius: 8 }, { label: 'Horas', data: model.peopleRows.map(r => r.hours), backgroundColor: '#10b981', borderRadius: 8 }] },
-            options: { ...common, indexAxis: 'y' }
-        }));
-        if (imputationRef.current && model.imputationRows.length) chartsRef.current.push(new ChartJS(imputationRef.current, {
-            type: 'bar',
-            data: { labels: model.imputationRows.map(r => r.title), datasets: [{ label: 'Horas imputadas', data: model.imputationRows.map(r => r.hours), backgroundColor: '#0888C8', borderRadius: 8, barThickness: 18 }] },
-            options: { ...common, indexAxis: 'y', plugins: { ...common.plugins, legend: { display: false } } }
-        }));
-        return () => { chartsRef.current.forEach(ch => { try { ch.destroy(); } catch(e) {} }); chartsRef.current = []; };
-    }, [model, themeTick]);
+  React.useEffect(() => {
+    // Limpia charts anteriores (si los hubiese)
+    for (const ch of chartsRef.current) {
+      try { ch.destroy(); } catch(e) {}
+    }
+    chartsRef.current = [];
+    // Solo animar la primera vez que entras en Gráficos
+const anim = didAnimateRef.current ? false : { duration: 650 };
 
-    const resetFilters = () => setFilters({ status: 'Todos', client: 'Todos', owner: 'Todos', month: new Date().toISOString().slice(0, 7) });
-    const Empty = ({ icon, title, text }) => <div className="charts-empty"><i className={"fas " + icon}></i><strong>{title}</strong><span>{text}</span></div>;
-    const ChartCard = ({ title, subtitle, children, wide }) => <section className={"charts-card" + (wide ? ' charts-card--wide' : '')}><div className="charts-card-head"><div><span>{subtitle}</span><h2>{title}</h2></div></div>{children}</section>;
 
-    return <div className="charts-page">
-        <header className="charts-header">
-            <button type="button" className="app-btn app-btn-ghost" onClick={onBack}><i className="fas fa-arrow-left"></i>Volver</button>
-            <div><h1>Analitica de proyectos</h1><p>Seguimiento visual de progreso, carga, incidencias e imputaciones.</p></div>
-            <div className="charts-header-actions"><button type="button" className="app-btn app-btn-secondary" onClick={() => window.location.hash = '#/list'}>Ver proyectos</button></div>
-        </header>
-        <section className="charts-kpis">
-            <article><i className="fas fa-folder-open"></i><div><strong>{model.projects.filter(p => getProjectStatus(p) !== 'Completado').length}</strong><span>Proyectos activos</span></div></article>
-            <article><i className="fas fa-list-check"></i><div><strong>{model.openTasks}</strong><span>Tareas abiertas</span></div></article>
-            <article><i className="fas fa-shield-halved"></i><div><strong>{model.incidentCount}</strong><span>Incidencias abiertas</span></div></article>
-            <article><i className="fas fa-clock"></i><div><strong>{model.hoursMonth.toLocaleString('es-ES')}</strong><span>Horas del mes</span></div></article>
-            <article><i className="fas fa-route"></i><div><strong>{model.kmMonth.toLocaleString('es-ES')}</strong><span>Kilometros del mes</span></div></article>
-            <article><i className="fas fa-gauge-high"></i><div><strong>{model.avgProgress}%</strong><span>Progreso medio</span></div></article>
-        </section>
-        <section className="charts-filters">
-            <label>Estado<select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}><option>Todos</option><option value="En Ejecución">En Ejecucion</option><option value="En Revisión">En Revision</option><option>Completado</option><option>En Pausa</option></select></label>
-            <label>Cliente<select value={filters.client} onChange={e => setFilters(f => ({ ...f, client: e.target.value }))}><option>Todos</option>{model.clients.map(c => <option key={c}>{c}</option>)}</select></label>
-            <label>Responsable<select value={filters.owner} onChange={e => setFilters(f => ({ ...f, owner: e.target.value }))}><option>Todos</option>{model.owners.map(o => <option key={o}>{o}</option>)}</select></label>
-            <label>Mes<input type="month" value={filters.month} onChange={e => setFilters(f => ({ ...f, month: e.target.value }))} /></label>
-            <button type="button" onClick={resetFilters}>Limpiar filtros</button>
-        </section>
-        {model.projects.length === 0 ? <Empty icon="fa-filter-circle-xmark" title="No hay proyectos con estos filtros" text="Ajusta los filtros para volver a ver datos de cartera." /> : <React.Fragment>
-            <main className="charts-grid">
-                <ChartCard title="Estado de tareas" subtitle="Distribucion global">{model.totalTasks ? <div className="charts-canvas"><canvas ref={tasksRef}></canvas></div> : <Empty icon="fa-chart-pie" title="No hay tareas suficientes" text="No hay tareas suficientes para generar este grafico." />}</ChartCard>
-                <ChartCard title="Progreso por proyecto" subtitle="Top 10 ordenado por menor avance" wide>{model.progressRows.length ? <div className="charts-canvas"><canvas ref={progressRef}></canvas></div> : <Empty icon="fa-chart-bar" title="No hay proyectos" text="No hay proyectos suficientes para calcular progreso." />}</ChartCard>
-                <ChartCard title="Carga de trabajo por persona" subtitle="Tareas abiertas y horas" wide>{model.peopleRows.length ? <div className="charts-canvas"><canvas ref={workloadRef}></canvas></div> : <Empty icon="fa-users" title="No hay tareas asignadas" text="Asigna tareas o imputa horas para visualizar carga por persona." />}</ChartCard>
-                <ChartCard title="Imputaciones por proyecto" subtitle="Horas del periodo">{model.imputationRows.length ? <div className="charts-canvas"><canvas ref={imputationRef}></canvas></div> : <Empty icon="fa-clock" title="Sin imputaciones" text="No hay imputaciones registradas en el periodo." />}</ChartCard>
-                <ChartCard title="Incidencias por proyecto" subtitle="Riesgo operativo"><div className="charts-rank-list">{model.incidentRows.length ? model.incidentRows.map(row => <button key={row.title} onClick={() => openProject(row.project.id)}><strong>{row.title}</strong><span>{row.incidents} incidencias - {row.blocked} bloqueadas - {row.overdue} vencidas</span></button>) : <Empty icon="fa-shield-heart" title="Sin incidencias" text="No hay incidencias registradas." />}</div></ChartCard>
-                <ChartCard title="Proximos vencimientos" subtitle="Maximo 5 hitos"><div className="charts-deadlines">{model.deadlineRows.length ? model.deadlineRows.map((row, i) => <button key={i} onClick={() => openProject(row.project.id)}><time>{formatDate(row.date)}</time><div><strong>{row.task}</strong><span>{row.projectTitle} - {row.owner} - {row.state}</span></div></button>) : <Empty icon="fa-calendar-check" title="Sin vencimientos proximos" text="No hay vencimientos proximos." />}</div></ChartCard>
-            </main>
-            <section className="charts-health-table">
-                <div className="charts-card-head"><div><span>Cartera</span><h2>Salud de proyectos</h2></div></div>
-                <div className="charts-table-wrap"><table><thead><tr><th>Proyecto</th><th>Estado</th><th>Salud</th><th>Progreso</th><th>Abiertas</th><th>Incidencias</th><th>Proximo vencimiento</th></tr></thead><tbody>{model.healthRows.map(row => <tr key={row.title} onClick={() => openProject(row.project.id)}><td>{row.title}</td><td>{row.status}</td><td><span className={'charts-health-pill charts-health-pill--' + row.health.toLowerCase().replace(/\s+/g, '-')}>{row.health}</span></td><td>{row.progress}%</td><td>{row.open}</td><td>{row.incidents}</td><td>{formatDate(row.nextDue)}</td></tr>)}</tbody></table></div>
-            </section>
-        </React.Fragment>}
-    </div>;
+    const tasks = flattenTasks();
+
+    // 1) Donut por Estado
+    const byEstado = countBy(tasks, t => t.estado, "Pendiente");
+    const donutLabels = byEstado.map(x => x[0]);
+    const donutData = byEstado.map(x => x[1]);
+
+    // Colores por estado (fijos)
+const estadoColor = (label) => {
+  const low = String(label || '').toLowerCase();
+  if (low === 'pendiente') return '#ef4444';   // rojo
+  if (low === 'en curso' || low === 'en-curso') return '#f59e0b'; // amarillo
+  if (low === 'completado') return '#10b981';  // verde
+  return '#64748b'; // gris fallback
 };
+const donutColors = donutLabels.map(estadoColor);
+
+
+    // 2) Barras por Área
+    const byArea = countBy(tasks, t => t.area, "Sin área");
+    const areaLabels = byArea.slice(0, 15).map(x => x[0]);   // top 15 para que no se sature
+    const areaData   = byArea.slice(0, 15).map(x => x[1]);
+
+    // 3) Barras por Prioridad
+    // Orden lógico: Urgente, Alta, Media, Baja
+    const prioOrder = ["Urgente", "Alta", "Media", "Baja"];
+    const prioMap = {};
+    for (const t of tasks) {
+      const p = (t.prioridad || "Media");
+      prioMap[p] = (prioMap[p] || 0) + 1;
+    }
+    const prioLabels = prioOrder.filter(p => prioMap[p] != null);
+    const prioData = prioLabels.map(p => prioMap[p] || 0);
+
+    // 4) Barras por Asignado
+    // 4) Barras por Asignado (CORREGIDO: separa múltiples nombres)
+const byAssignee = (() => {
+  const map = {};
+  for (const t of tasks) {
+    let raw = (t.asignadoA || '').trim();
+    if (!raw) raw = "Sin asignar";
+
+    // Separa por: / , ; &  o por " y " (con espacios)
+    const names = raw
+      .split(/[\/,;&]|\s+y\s+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const finalNames = names.length ? names : ["Sin asignar"];
+
+    // Cuenta 1 tarea para cada persona
+    for (const n of finalNames) {
+      map[n] = (map[n] || 0) + 1;
+    }
+  }
+  return Object.entries(map).sort((a, b) => b[1] - a[1]);
+})();
+
+const assLabels = byAssignee.slice(0, 20).map(x => x[0]); // top 20
+const assData   = byAssignee.slice(0, 20).map(x => x[1]);
+
+
+    // Chart.js (UMD) disponible como window.Chart
+    const ChartJS = (window && window.Chart) ? window.Chart : null;
+    if (!ChartJS) {
+      console.error("Chart.js no está cargado. Revisa el PASO 1 (index.html).");
+      return;
+    }
+
+const isDark = document.documentElement.classList.contains('theme-dark');
+
+const theme = {
+  text: isDark ? '#e5e7eb' : '#111827',
+  grid: isDark ? 'rgba(148,163,184,0.22)' : 'rgba(148,163,184,0.35)',
+  tooltipBg: isDark ? 'rgba(15,23,42,0.92)' : 'rgba(255,255,255,0.96)',
+  border: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)'
+};
+
+
+const commonOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { labels: { color: theme.text } },
+    tooltip: {
+      backgroundColor: theme.tooltipBg,
+      titleColor: theme.text,
+      bodyColor: theme.text
+    }
+  },
+  scales: {
+    x: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+    y: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+  }
+};
+
+// Donut
+if (donutRef.current) {
+  const isDark = document.documentElement.classList.contains('theme-dark');
+  const textColor = isDark ? '#e5e7eb' : '#111827';
+  const borderColor = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)';
+
+  const ch = new ChartJS(donutRef.current, {
+    type: 'doughnut',
+    data: {
+      labels: donutLabels,
+      datasets: [{
+        data: donutData,
+        backgroundColor: donutColors,
+        borderColor: borderColor,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: anim,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: textColor,
+            boxWidth: 14,
+            boxHeight: 10,
+            padding: 14
+          }
+        },
+        tooltip: {
+          titleColor: textColor,
+          bodyColor: textColor
+        }
+      }
+    }
+  });
+
+  chartsRef.current.push(ch);
+}
+    // Área
+    if (byAreaRef.current) {
+      const ch = new ChartJS(byAreaRef.current, {
+        type: 'bar',
+        data: {
+          labels: areaLabels,
+          datasets: [{ label: 'Tareas', data: areaData }]
+        },
+        options: {
+          ...commonOptions,
+          animation: anim,
+          plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+      });
+      chartsRef.current.push(ch);
+    }
+
+    // Prioridad
+    if (byPriorityRef.current) {
+      const ch = new ChartJS(byPriorityRef.current, {
+        type: 'bar',
+        data: {
+          labels: prioLabels,
+          datasets: [{ label: 'Tareas', data: prioData }]
+        },
+        options: {
+          ...commonOptions,
+          animation: anim,
+          plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+      });
+      chartsRef.current.push(ch);
+    }
+
+    // Asignado
+    if (byAssigneeRef.current) {
+      const ch = new ChartJS(byAssigneeRef.current, {
+        type: 'bar',
+        data: {
+          labels: assLabels,
+          datasets: [{ label: 'Tareas', data: assData }]
+        },
+        options: {
+          ...commonOptions,
+          animation: anim,
+          plugins: { ...commonOptions.plugins, legend: { display: false } }
+        }
+      });
+      chartsRef.current.push(ch);
+    }
+
+    didAnimateRef.current = true;
+
+    return () => {
+      for (const ch of chartsRef.current) {
+        try { ch.destroy(); } catch(e) {}
+      }
+      chartsRef.current = [];
+    };
+  }, [projects, themeTick]);
+
+  const total = flattenTasks().length;
+
+  return React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" },
+    React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } },
+      React.createElement("div", { className: "max-w-7xl mx-auto px-6 py-4 flex items-center justify-between" },
+        React.createElement("div", { className: "flex items-center gap-3" },
+          React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
+            React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"
+          ),
+          React.createElement("div", null,
+            React.createElement("div", { className: "text-xl font-extrabold" }, "Gráficos"),
+            React.createElement("div", { className: "text-xs opacity-70" }, `Resumen global · ${total} tareas`)
+          )
+        )
+      )
+    ),
+
+    React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-6" },
+      React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6" },
+
+        // Donut
+        React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
+          React.createElement("div", { className: "font-bold mb-3" }, "Estado"),
+          React.createElement("div", { style: { height: '260px' } },
+            React.createElement("canvas", { ref: donutRef })
+          )
+        ),
+
+        // Área
+        React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border lg:col-span-2" },
+          React.createElement("div", { className: "font-bold mb-3" }, "Áreas (Top 15)"),
+          React.createElement("div", { style: { height: '260px' } },
+            React.createElement("canvas", { ref: byAreaRef })
+          )
+        )
+      ),
+
+      React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
+
+        // Prioridad
+        React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
+          React.createElement("div", { className: "font-bold mb-3" }, "Prioridad"),
+          React.createElement("div", { style: { height: '260px' } },
+            React.createElement("canvas", { ref: byPriorityRef })
+          )
+        ),
+
+        // Asignado
+        React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" },
+          React.createElement("div", { className: "font-bold mb-3" }, "Tareas por Persona"),
+          React.createElement("div", { style: { height: '260px' } },
+            React.createElement("canvas", { ref: byAssigneeRef })
+          )
+        )
+      )
+    )
+  );
+};
+
 
 // --- Seguridad: saneado básico de HTML antes de mostrar/guardar la Wiki ---
 // Evita que un backup manipulado o contenido pegado en Quill pueda ejecutar scripts.
