@@ -9071,3 +9071,607 @@ html:not(.theme-dark) .imput-header {
     white-space: normal;
   }
 }
+
+
+/* =========================================================
+   FASE 2 - ESTRUCTURA GLOBAL UNIFICADA
+   ---------------------------------------------------------
+   Capa visual transversal: sidebar, headers, contenedores,
+   botones, filtros y estados vacios. No cambia la logica ni
+   reestructura pantallas internas de cada modulo.
+   ========================================================= */
+
+/* Shell global */
+.app-layout {
+  background:
+    radial-gradient(900px circle at 18% -10%, rgba(var(--app-brand-rgb), 0.12), transparent 42%),
+    var(--app-bg);
+  color: var(--app-text);
+}
+
+.sidebar-main {
+  min-height: 100vh;
+  background: transparent;
+}
+
+.sidebar-main > .min-h-screen,
+.wl-view-container,
+.wiki-global-page,
+.workload-page,
+.home-dashboard,
+.project-detail-page,
+.project-editor-screen,
+.imput-page,
+.sb-page {
+  color: var(--app-text);
+}
+
+.sidebar-main > .min-h-screen.bg-gray-50,
+.wl-view-container.bg-gray-50 {
+  background: transparent !important;
+}
+
+.sb-page,
+.imput-page,
+.wiki-global-page,
+.workload-page,
+.home-dashboard {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+  padding: clamp(18px, 2.4vw, 32px);
+}
+
+/* Sidebar V4 */
+.sidebar {
+  --sb-bg: color-mix(in srgb, var(--app-surface) 92%, #020617 8%);
+  --sb-bg2: color-mix(in srgb, var(--app-surface-soft) 88%, #020617 12%);
+  --sb-border: var(--app-border);
+  --sb-text: var(--app-text);
+  --sb-text2: var(--app-muted);
+  --sb-hover: rgba(var(--app-brand-rgb), 0.08);
+  --sb-active: var(--app-brand);
+  --sb-active-bg: rgba(var(--app-brand-rgb), 0.13);
+  --sb-badge-bg: rgba(var(--app-brand-rgb), 0.12);
+  --sb-badge: var(--app-brand);
+  border-right-color: var(--app-border);
+  background:
+    linear-gradient(180deg, rgba(var(--app-brand-rgb), 0.06), transparent 220px),
+    var(--sb-bg);
+  box-shadow: 8px 0 28px rgba(2, 6, 23, 0.08);
+}
+
+.theme-dark .sidebar {
+  --sb-bg: rgba(8, 13, 26, 0.96);
+  --sb-bg2: rgba(15, 23, 42, 0.72);
+  box-shadow: 10px 0 34px rgba(0, 0, 0, 0.24);
+}
+
+.sidebar-head {
+  min-height: 68px;
+  height: auto;
+  padding: 14px 14px 12px 16px;
+}
+
+.sidebar-brand {
+  gap: 11px;
+  padding: 8px;
+  border: 1px solid transparent;
+}
+
+.sidebar-brand:hover {
+  border-color: rgba(var(--app-brand-rgb), 0.16);
+}
+
+.sidebar-brand-img {
+  width: 38px;
+  height: 38px;
+  padding: 4px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-soft);
+}
+
+.sidebar-brand-name {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.sidebar-brand-sub {
+  color: var(--app-muted);
+  font-size: 10.5px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.sidebar-section-label {
+  margin: 15px 8px 7px;
+  color: color-mix(in srgb, var(--app-muted) 82%, var(--app-text) 18%);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sidebar-nav {
+  padding: 10px 9px 8px;
+}
+
+.sidebar-nav-item,
+.sidebar-group-btn {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-md);
+  color: var(--app-muted);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.sidebar-nav-item:hover,
+.sidebar-group-btn:hover {
+  border-color: rgba(var(--app-brand-rgb), 0.12);
+  background: rgba(var(--app-brand-rgb), 0.08);
+  color: var(--app-text);
+}
+
+.sidebar-nav-item.active,
+.sidebar-group-btn.active {
+  border-color: rgba(var(--app-brand-rgb), 0.24);
+  background: linear-gradient(135deg, rgba(var(--app-brand-rgb), 0.18), rgba(var(--app-brand-rgb), 0.08));
+  color: var(--app-brand);
+  box-shadow: inset 3px 0 0 var(--app-brand);
+}
+
+.sidebar-nav-item.indent {
+  margin-left: 8px;
+  padding-left: 20px;
+  font-size: 0.82rem;
+}
+
+.snav-icon {
+  width: 20px;
+  color: inherit;
+}
+
+.snav-badge {
+  min-width: 22px;
+  padding: 2px 7px;
+  border: 1px solid rgba(var(--app-brand-rgb), 0.16);
+  background: rgba(var(--app-brand-rgb), 0.10);
+  color: var(--app-brand);
+  font-size: 0.68rem;
+}
+
+.sidebar-divider {
+  margin: 12px 7px;
+  background: var(--app-border);
+}
+
+.sidebar-foot {
+  padding: 13px 14px;
+  background: var(--sb-bg2);
+}
+
+.sidebar-user-row {
+  padding: 8px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg);
+  background: rgba(var(--app-brand-rgb), 0.05);
+}
+
+.sidebar-avatar {
+  background: var(--app-brand);
+  box-shadow: 0 8px 18px rgba(var(--app-brand-rgb), 0.22);
+}
+
+.sidebar-foot-actions {
+  gap: 8px;
+}
+
+.sfab,
+.sidebar-close-btn,
+.sidebar-hamburger {
+  border-color: var(--app-border);
+  background: var(--app-surface);
+  color: var(--app-muted);
+}
+
+.sfab:hover,
+.sidebar-close-btn:hover,
+.sidebar-hamburger:hover {
+  border-color: rgba(var(--app-brand-rgb), 0.24);
+  background: rgba(var(--app-brand-rgb), 0.10);
+  color: var(--app-brand);
+}
+
+/* Headers globales */
+.sb-page-header,
+.imput-header,
+.wiki-global-header,
+.workload-hero,
+.wl-header-sticky > .max-w-7xl,
+.home-hero {
+  border: 1px solid var(--app-border) !important;
+  border-radius: var(--app-radius-xl) !important;
+  background:
+    linear-gradient(135deg, rgba(var(--app-brand-rgb), 0.10), transparent 36%),
+    color-mix(in srgb, var(--app-surface) 88%, transparent) !important;
+  box-shadow: var(--app-shadow-sm) !important;
+}
+
+.sb-page-header,
+.imput-header,
+.wiki-global-header,
+.workload-hero,
+.wl-header-sticky > .max-w-7xl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-space-4);
+  margin-bottom: var(--app-space-5);
+  padding: clamp(16px, 2vw, 22px) !important;
+}
+
+.wl-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 0 !important;
+  background: color-mix(in srgb, var(--app-bg) 78%, transparent) !important;
+  backdrop-filter: blur(14px);
+}
+
+.sb-page-title,
+.wiki-global-header h1,
+.workload-hero h1,
+.wl-title,
+.wl-header-sticky .text-xl.font-extrabold,
+.imput-header .sb-page-title {
+  margin: 0;
+  color: var(--app-text) !important;
+  font-size: clamp(1.35rem, 1.6vw, 1.75rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.15;
+  letter-spacing: 0 !important;
+}
+
+.sb-page-sub,
+.wiki-global-header p,
+.workload-hero p,
+.wl-header-sticky .text-xs.opacity-70,
+.imput-header .sb-page-sub {
+  max-width: 720px;
+  margin: 5px 0 0;
+  color: var(--app-muted) !important;
+  font-size: 0.92rem !important;
+  line-height: 1.45;
+}
+
+/* Botones globales legacy alineados al sistema */
+.btn-apple,
+.btn-apple-secondary,
+.wiki-clear-btn,
+.wiki-open-btn,
+.workload-back,
+.home-action,
+.imput-calendar-actions button {
+  min-height: var(--app-control-height);
+  border: 1px solid var(--app-border) !important;
+  border-radius: var(--app-radius-md) !important;
+  background: var(--app-surface-soft) !important;
+  color: var(--app-text-soft) !important;
+  font-weight: 750 !important;
+  box-shadow: none !important;
+}
+
+.btn-apple:hover,
+.btn-apple-secondary:hover,
+.wiki-clear-btn:hover,
+.wiki-open-btn:hover,
+.workload-back:hover,
+.home-action:hover,
+.imput-calendar-actions button:hover {
+  border-color: rgba(var(--app-brand-rgb), 0.25) !important;
+  background: rgba(var(--app-brand-rgb), 0.10) !important;
+  color: var(--app-brand) !important;
+}
+
+.btn-apple-primary,
+.home-action.primary,
+.imput-header-actions .btn-apple-primary {
+  min-height: var(--app-control-height);
+  border: 1px solid var(--app-brand) !important;
+  border-radius: var(--app-radius-md) !important;
+  background: var(--app-brand) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px rgba(var(--app-brand-rgb), 0.22) !important;
+}
+
+.btn-apple-primary:hover,
+.home-action.primary:hover,
+.imput-header-actions .btn-apple-primary:hover {
+  background: var(--app-brand-dark) !important;
+  border-color: var(--app-brand-dark) !important;
+}
+
+.btn-apple-danger {
+  border-radius: var(--app-radius-md) !important;
+  background: var(--app-danger) !important;
+  border-color: var(--app-danger) !important;
+  color: #fff !important;
+}
+
+/* Filtros, buscadores y controles */
+.wiki-search-panel,
+.imput-filters,
+.workload-filters,
+.wl-header-sticky .bg-gray-50.p-2 {
+  border: 1px solid var(--app-border) !important;
+  border-radius: var(--app-radius-lg) !important;
+  background: var(--app-surface) !important;
+  box-shadow: var(--app-shadow-sm);
+}
+
+.wiki-search-box,
+.wiki-filter-grid select,
+.wiki-clear-btn,
+.imput-filters input,
+.imput-filters select,
+.workload-filters select,
+.wl-header-sticky input,
+.wl-header-sticky select,
+.apple-select-filter {
+  min-height: var(--app-control-height) !important;
+  border: 1px solid var(--app-border) !important;
+  border-radius: var(--app-radius-md) !important;
+  background: var(--app-surface-soft) !important;
+  color: var(--app-text) !important;
+}
+
+.wiki-search-box:focus-within,
+.wiki-filter-grid select:focus,
+.imput-filters input:focus,
+.imput-filters select:focus,
+.workload-filters select:focus,
+.wl-header-sticky input:focus,
+.wl-header-sticky select:focus,
+.apple-select-filter:focus {
+  border-color: var(--app-brand) !important;
+  box-shadow: var(--app-focus) !important;
+  outline: none !important;
+}
+
+/* Tarjetas y bloques transversales */
+.home-kpi,
+.home-health,
+.home-panel,
+.wiki-kpi-card,
+.wiki-search-panel,
+.wiki-card,
+.wiki-no-results,
+.workload-kpi,
+.workload-panel,
+.workload-empty,
+.imput-kpi,
+.imput-card,
+.section-tapiz,
+.wl-person-card,
+.sb-placeholder {
+  border: 1px solid var(--app-border) !important;
+  border-radius: var(--app-radius-lg) !important;
+  background: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  box-shadow: var(--app-shadow-sm) !important;
+}
+
+.home-kpi,
+.wiki-kpi-card,
+.workload-kpi,
+.imput-kpi {
+  min-height: 94px;
+  padding: var(--app-space-4) !important;
+}
+
+.home-kpi-top span,
+.wiki-kpi-card span,
+.workload-kpi span,
+.imput-kpi span {
+  color: var(--app-muted) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.home-kpi strong,
+.wiki-kpi-card strong,
+.workload-kpi strong,
+.imput-kpi strong {
+  color: var(--app-text) !important;
+  font-size: clamp(1.25rem, 1.8vw, 1.7rem) !important;
+}
+
+.home-panel-head span,
+.workload-panel-head span,
+.imput-card-head p,
+.wiki-card-eyebrow {
+  color: var(--app-muted) !important;
+}
+
+.home-panel-head h2,
+.workload-panel-head h2,
+.imput-card-head h2,
+.wiki-card h2,
+.sb-placeholder-title {
+  color: var(--app-text) !important;
+}
+
+.home-list-row,
+.home-incident,
+.home-recommendation,
+.workload-person-row,
+.workload-alert,
+.workload-rec,
+.workload-positive,
+.workload-detail-card,
+.workload-project-list button,
+.imput-rec,
+.imput-project-totals span,
+.wl-person-card .text-xs.bg-orange-50,
+.wl-person-card .text-xs.bg-cyan-50\/50,
+.alert-critical-item,
+.alert-urgent-item {
+  border: 1px solid var(--app-border) !important;
+  border-radius: var(--app-radius-md) !important;
+  background: var(--app-surface-soft) !important;
+  color: var(--app-text-soft) !important;
+}
+
+.home-list-row:hover,
+.home-incident:hover,
+.home-recommendation:hover,
+.workload-person-row:hover,
+.workload-project-list button:hover,
+.wl-person-card:hover {
+  border-color: rgba(var(--app-brand-rgb), 0.24) !important;
+  transform: translateY(-1px);
+}
+
+/* Estados vacios comunes */
+.home-empty,
+.wiki-no-results,
+.workload-empty,
+.imput-empty,
+.sb-placeholder,
+.project-empty-state,
+.p-6.text-center.text-gray-400.bg-white.rounded-xl.border.border-dashed.text-sm {
+  display: grid;
+  justify-items: center;
+  gap: var(--app-space-2);
+  padding: clamp(22px, 4vw, 40px) !important;
+  border: 1px dashed var(--app-border-strong) !important;
+  border-radius: var(--app-radius-lg) !important;
+  background: var(--app-surface-muted) !important;
+  color: var(--app-muted) !important;
+  text-align: center;
+}
+
+.home-empty i,
+.wiki-no-results i,
+.workload-empty i,
+.imput-empty i,
+.sb-placeholder-icon,
+.project-empty-state i {
+  color: var(--app-brand) !important;
+  background: rgba(var(--app-brand-rgb), 0.12) !important;
+}
+
+/* Centro de Control */
+.wl-view-container {
+  max-width: none;
+  padding-bottom: 48px;
+}
+
+.wl-view-container > .max-w-7xl,
+.wl-view-container .max-w-7xl {
+  max-width: 1440px;
+}
+
+.wl-view-container h3 {
+  color: var(--app-text) !important;
+}
+
+.alert-count-badge,
+.wl-view-container .bg-gray-100.text-gray-600 {
+  border: 1px solid var(--app-border) !important;
+  background: rgba(var(--app-brand-rgb), 0.10) !important;
+  color: var(--app-brand) !important;
+}
+
+.alert-critical-card {
+  border-left: 4px solid var(--app-danger) !important;
+}
+
+.alert-urgent-card {
+  border-left: 4px solid var(--app-warning) !important;
+}
+
+/* Modo claro: superficies mas limpias */
+html:not(.theme-dark) .app-layout {
+  background:
+    radial-gradient(900px circle at 12% -10%, rgba(var(--app-brand-rgb), 0.12), transparent 42%),
+    #f5f7fb;
+}
+
+html:not(.theme-dark) .sidebar {
+  --sb-bg: rgba(255, 255, 255, 0.96);
+  --sb-bg2: rgba(248, 250, 252, 0.92);
+}
+
+html:not(.theme-dark) .home-dashboard,
+html:not(.theme-dark) .workload-page,
+html:not(.theme-dark) .wiki-global-page,
+html:not(.theme-dark) .imput-page {
+  background: transparent !important;
+}
+
+/* Responsive global */
+@media (max-width: 1023px) {
+  .sidebar-main {
+    padding-top: 56px;
+  }
+
+  .sidebar-hamburger {
+    top: 12px;
+    left: 12px;
+  }
+}
+
+@media (max-width: 860px) {
+  .sb-page,
+  .imput-page,
+  .wiki-global-page,
+  .workload-page,
+  .home-dashboard {
+    padding: 16px;
+  }
+
+  .sb-page-header,
+  .imput-header,
+  .wiki-global-header,
+  .workload-hero,
+  .wl-header-sticky > .max-w-7xl,
+  .home-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .home-hero-actions,
+  .wiki-global-actions,
+  .imput-header-actions,
+  .workload-filters {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 540px) {
+  .sb-page,
+  .imput-page,
+  .wiki-global-page,
+  .workload-page,
+  .home-dashboard {
+    padding: 12px;
+  }
+
+  .home-action,
+  .btn-apple,
+  .btn-apple-primary,
+  .btn-apple-danger,
+  .wiki-open-btn,
+  .wiki-clear-btn {
+    justify-content: center;
+  }
+}
