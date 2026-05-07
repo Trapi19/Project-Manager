@@ -7780,3 +7780,250 @@ html:not(.theme-dark) .imput-header {
   .project-task-card-meta { grid-template-columns: 1fr 1fr; gap: 7px 10px; }
   .task-due { justify-content: flex-start; }
 }
+
+/* =========================================================
+   Ficha y edición · logo cliente y edición más limpia
+   ========================================================= */
+.project-detail-side {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+.project-client-logo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 86px;
+  min-height: 78px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 92%, #0888C8 8%);
+  overflow: hidden;
+}
+.project-client-logo span {
+  color: #0888C8;
+  font-size: 18px;
+  font-weight: 850;
+}
+.project-client-logo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+  background: var(--surface);
+}
+.project-detail-side .project-detail-meta {
+  height: 100%;
+}
+.project-editor-screen > .bg-white.sticky {
+  gap: 14px;
+  flex-wrap: wrap;
+  border-bottom-color: var(--border) !important;
+  background: color-mix(in srgb, var(--surface) 96%, #0888C8 4%) !important;
+}
+.project-editor-screen > .bg-white.sticky > .flex:first-child,
+.project-editor-screen > .bg-white.sticky > .flex:nth-child(2) {
+  flex-wrap: wrap;
+}
+.project-edit-toolbar-title {
+  display: grid;
+  min-width: 180px;
+  padding-left: 2px;
+}
+.project-edit-toolbar-title strong {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.1;
+}
+.project-edit-toolbar-title span {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-editor-screen .max-w-6xl {
+  max-width: 1180px;
+}
+.project-editor-screen .max-w-6xl > .bg-white {
+  border-color: color-mix(in srgb, var(--border) 86%, transparent 14%) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.06) !important;
+}
+.project-editor-screen .max-w-6xl > .bg-white:first-child {
+  overflow: hidden;
+}
+.project-editor-screen .max-w-6xl > .bg-white:first-child > .flex:first-child {
+  background: color-mix(in srgb, var(--surface) 96%, #0888C8 4%);
+  margin: -24px -24px 22px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+.project-editor-screen .max-w-6xl > .bg-white:first-child h3::after {
+  content: " · Datos generales, cliente, logo y documentación";
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: none;
+}
+.project-editor-screen label {
+  color: var(--muted) !important;
+  letter-spacing: 0 !important;
+}
+.project-editor-screen input,
+.project-editor-screen select,
+.project-editor-screen textarea {
+  border-color: color-mix(in srgb, var(--border) 88%, transparent 12%) !important;
+  box-shadow: none !important;
+}
+.project-edit-logo-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.project-edit-logo-preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 90%, #0888C8 10%);
+  overflow: hidden;
+}
+.project-edit-logo-preview span {
+  color: #0888C8;
+  font-size: 17px;
+  font-weight: 850;
+}
+.project-edit-logo-preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+  background: var(--surface);
+}
+.project-edit-logo-controls {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.project-edit-logo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.project-editor-screen .max-w-6xl > .bg-white:nth-child(2) {
+  border-radius: 14px !important;
+}
+.project-editor-screen .max-w-6xl > .bg-white:nth-child(2) > .px-6 {
+  background: color-mix(in srgb, var(--surface) 96%, #0888C8 4%) !important;
+  padding: 16px 18px !important;
+}
+.project-editor-screen .max-w-6xl > .bg-white:nth-child(2) h2::after {
+  content: " · tareas, subtareas y dependencias";
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.project-editor-screen table {
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+  padding: 6px 10px 14px;
+}
+.project-editor-screen thead tr {
+  background: transparent !important;
+  border: 0 !important;
+}
+.project-editor-screen thead th {
+  padding-top: 8px !important;
+  padding-bottom: 6px !important;
+  color: var(--muted) !important;
+  font-size: 10.5px !important;
+  letter-spacing: 0 !important;
+}
+.project-editor-screen tbody {
+  background: transparent !important;
+}
+.project-editor-screen tbody tr {
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 86%, transparent 14%);
+}
+.project-editor-screen tbody td {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  border: 0 !important;
+}
+.project-editor-screen tbody td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+.project-editor-screen tbody td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.project-editor-screen .subtasks-container {
+  margin-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 82%, transparent 18%);
+  padding-top: 8px;
+}
+.project-editor-screen .subtask-item {
+  background: color-mix(in srgb, var(--surface) 94%, #0888C8 6%);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.project-editor-screen .btn-add-subtask {
+  margin-top: 7px;
+  border-radius: 8px;
+}
+.theme-dark .project-client-logo,
+.theme-dark .project-client-logo img,
+.theme-dark .project-edit-logo-preview,
+.theme-dark .project-edit-logo-preview img,
+.theme-dark .project-editor-screen tbody tr {
+  background: var(--surface-2);
+}
+@media (max-width: 900px) {
+  .project-detail-side {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+  .project-client-logo {
+    width: 72px;
+    min-height: 72px;
+  }
+}
+@media (max-width: 640px) {
+  .project-detail-side,
+  .project-edit-logo-row {
+    grid-template-columns: 1fr;
+  }
+  .project-client-logo,
+  .project-edit-logo-preview {
+    width: 84px;
+    height: 70px;
+    min-height: 70px;
+  }
+  .project-editor-screen > .bg-white.sticky {
+    align-items: stretch;
+  }
+  .project-editor-screen > .bg-white.sticky > .flex:first-child,
+  .project-editor-screen > .bg-white.sticky > .flex:nth-child(2) {
+    width: 100%;
+  }
+  .project-edit-toolbar-title {
+    width: 100%;
+  }
+  .project-editor-screen table {
+    border-spacing: 0 10px !important;
+    padding: 4px;
+  }
+}

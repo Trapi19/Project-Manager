@@ -60,6 +60,18 @@ const normalizeDataImage = (value) => {
         return v;
     return "data:image/png;base64," + v.replace(/^base64,?/i, "");
 };
+const getClientLogoSrc = (projectOrData) => {
+    const meta = (projectOrData && projectOrData.meta) || {};
+    const url = String(meta.clientLogoUrl || meta.clientLogo || meta.logo || '').trim();
+    if (url) return url;
+    return normalizeDataImage(meta.clientLogoData || '');
+};
+const getClientInitials = (projectOrData) => {
+    const client = getProjectClient(projectOrData) || ((projectOrData && projectOrData.meta && projectOrData.meta.cliente) || '');
+    const clean = String(client || 'Cliente').trim();
+    const words = clean.split(/\s+/).filter(Boolean);
+    return (words.length > 1 ? `${words[0][0]}${words[1][0]}` : clean.slice(0, 2)).toUpperCase();
+};
 const IconOptions = [
     { id: 'wifi', label: 'Wifi' }, { id: 'server', label: 'Server' },
     { id: 'monitor', label: 'Monitor' }, { id: 'tv', label: 'TV' },
@@ -1361,6 +1373,8 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
     const title = getProjectTitle(project);
     const client = getProjectClient(project) || 'Sin cliente';
     const meta = (project && project.meta) || {};
+    const clientLogoSrc = getClientLogoSrc(project);
+    const clientInitials = getClientInitials(project);
     const assignees = React.useMemo(() => Array.from(new Set(model.tasks.map(t => t.asignadoA || '').filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es')), [model.tasks]);
     const filteredTasks = React.useMemo(() => {
         const q = taskQuery.trim().toLowerCase();
@@ -1475,10 +1489,16 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                 <h1>{title}</h1>
                 <p>{client} · Responsable: {meta.responsableProyecto || meta.ejecutorProyecto || 'Sin asignar'}</p>
             </div>
-            <div className="project-detail-meta">
-                <span><strong>Inicio</strong>{model.tasks.find(t => t.fechaInicio)?.fechaInicio ? (window.formatFechaES ? window.formatFechaES(model.tasks.find(t => t.fechaInicio).fechaInicio) : model.tasks.find(t => t.fechaInicio).fechaInicio) : 'Sin datos'}</span>
-                <span><strong>Fin / vencimiento</strong>{model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos'}</span>
-                <span><strong>Progreso</strong>{model.progress}%</span>
+            <div className="project-detail-side">
+                <div className="project-client-logo" title={client}>
+                    <span>{clientInitials}</span>
+                    {clientLogoSrc && <img src={clientLogoSrc} alt={`Logo ${client}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                </div>
+                <div className="project-detail-meta">
+                    <span><strong>Inicio</strong>{model.tasks.find(t => t.fechaInicio)?.fechaInicio ? (window.formatFechaES ? window.formatFechaES(model.tasks.find(t => t.fechaInicio).fechaInicio) : model.tasks.find(t => t.fechaInicio).fechaInicio) : 'Sin datos'}</span>
+                    <span><strong>Fin / vencimiento</strong>{model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos'}</span>
+                    <span><strong>Progreso</strong>{model.progress}%</span>
+                </div>
             </div>
             <div className="project-detail-actions no-print">
                 <button type="button" onClick={onEdit}><i className="fas fa-pen"></i>Editar proyecto</button>
@@ -1675,6 +1695,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             responsableProyecto: 'Responsable',
             ejecutorProyecto: 'Ingeniero Asignado',
             pep: 'PEP',
+            clientLogoUrl: 'URL logo cliente',
+            clientLogoData: 'Logo cliente',
             sharepointUrl: 'Carpeta SharePoint'
         };
         setData(prev => {
@@ -1712,7 +1734,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         const v = (value || '').trim();
         updateMeta('cliente', value);
         // Si el proyecto aún no tiene logo, y existe uno guardado para ese cliente, lo aplica automáticamente.
-        const hasLogo = !!(data.meta.clientLogoData && String(data.meta.clientLogoData).trim());
+        const hasLogo = !!getClientLogoSrc(data);
         if (!hasLogo && v) {
             const map = getClientLogoMap();
             if (map[v])
@@ -1731,6 +1753,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             if (!dataUrl)
                 return;
             updateMeta('clientLogoData', dataUrl);
+            updateMeta('clientLogoUrl', '');
             const cliente = (data.meta.cliente || '').trim();
             if (cliente) {
                 const map = getClientLogoMap();
@@ -1742,6 +1765,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     };
     const handleClientLogoRemove = () => {
         updateMeta('clientLogoData', '');
+        updateMeta('clientLogoUrl', '');
         // Nota: no borramos el mapa global para no perder logos reutilizables.
     };
     const updateTask = (id, field, value) => {
@@ -1915,7 +1939,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setShowExportMenu(false);
         setTimeout(() => window.print(), 500);
     };
-    return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 relative" },
+    return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 relative project-editor-screen" },
         showAudit && (React.createElement("div", { className: "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9998] no-print", onClick: () => setShowAudit(false) },
             React.createElement("div", { className: "bg-white w-[min(760px,calc(100vw-24px))] max-h-[80vh] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden", onClick: (e) => e.stopPropagation() },
                 React.createElement("div", { className: "px-5 py-4 border-b flex items-center justify-between" },
@@ -1965,7 +1989,10 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                         ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         : 'bg-blue-600 text-white hover:bg-blue-700'}`, title: viewMode === 'edit' ? 'Ver vista previa' : 'Editar proyecto' },
                     React.createElement("i", { className: `fas ${viewMode === 'edit' ? 'fa-eye' : 'fa-pen'}` }),
-                    React.createElement("span", { className: "hidden sm:inline" }, viewMode === 'edit' ? 'Vista previa' : 'Editar proyecto'))),
+                    React.createElement("span", { className: "hidden sm:inline" }, viewMode === 'edit' ? 'Vista previa' : 'Editar proyecto')),
+                viewMode === 'edit' && React.createElement("div", { className: "project-edit-toolbar-title" },
+                    React.createElement("strong", null, "Editar proyecto"),
+                    React.createElement("span", null, data.meta.titulo || "Proyecto"))),
             React.createElement("div", { className: "flex gap-3 relative" },
                 isNewDraft && (React.createElement("button", { onClick: handleCancelNew, className: "px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white/90 border border-white/10 transition", title: "Descartar el nuevo proyecto" }, "Cancelar")),
 
@@ -2072,17 +2099,28 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         )
     ),
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Logo del cliente"),
-                            React.createElement("div", { className: "flex items-center gap-3" },
-                                React.createElement("div", { className: "h-12 w-12 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden" }, data.meta.clientLogoData ? (React.createElement("img", { src: data.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: "fas fa-image text-slate-400" }))),
-                                React.createElement("div", { className: "flex items-center gap-2" },
-                                    React.createElement("label", { className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer text-sm font-semibold text-gray-700 transition" },
-                                        React.createElement("i", { className: "fas fa-upload" }),
-                                        "Subir logo",
-                                        React.createElement("input", { type: "file", accept: "image/*", className: "hidden", onChange: (e) => { var _a; return handleClientLogoUpload((_a = e.target.files) === null || _a === void 0 ? void 0 : _a[0]); } })),
-                                    data.meta.clientLogoData && (React.createElement("button", { type: "button", className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-700 transition", onClick: handleClientLogoRemove, title: "Quitar logo" },
-                                        React.createElement("i", { className: "fas fa-trash" }),
-                                        "Quitar")))),
-                            React.createElement("p", { className: "text-xs text-gray-500 mt-2" }, "Consejo: al subir un logo se guarda para este cliente y se aplicar\u00E1 autom\u00E1ticamente en futuros proyectos cuando escribas el mismo nombre de cliente.")),
+                            React.createElement("div", { className: "project-edit-logo-row" },
+                                React.createElement("div", { className: "project-edit-logo-preview" },
+                                    React.createElement("span", null, getClientInitials(data)),
+                                    getClientLogoSrc(data) && React.createElement("img", { src: getClientLogoSrc(data), alt: "Logo cliente", onError: (e) => { e.currentTarget.style.display = 'none'; } })
+                                ),
+                                React.createElement("div", { className: "project-edit-logo-controls" },
+                                    React.createElement("input", {
+                                        type: "url",
+                                        className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow",
+                                        value: data.meta.clientLogoUrl || '',
+                                        onChange: (e) => updateMeta('clientLogoUrl', e.target.value),
+                                        placeholder: "URL del logo del cliente"
+                                    }),
+                                    React.createElement("div", { className: "project-edit-logo-actions" },
+                                        React.createElement("label", { className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer text-sm font-semibold text-gray-700 transition" },
+                                            React.createElement("i", { className: "fas fa-upload" }),
+                                            "Subir logo",
+                                            React.createElement("input", { type: "file", accept: "image/*", className: "hidden", onChange: (e) => { var _a; return handleClientLogoUpload((_a = e.target.files) === null || _a === void 0 ? void 0 : _a[0]); } })),
+                                        getClientLogoSrc(data) && (React.createElement("button", { type: "button", className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-700 transition", onClick: handleClientLogoRemove, title: "Quitar logo" },
+                                            React.createElement("i", { className: "fas fa-trash" }),
+                                            "Quitar"))))),
+                            React.createElement("p", { className: "text-xs text-gray-500 mt-2" }, "Puedes pegar una URL o subir una imagen. Si no hay logo, se mostrarán las iniciales del cliente.")),
                         React.createElement("div", null,
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Estado"),
                             React.createElement("select", { className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white", value: normalizeProjectEstado(data.meta.estado), onChange: (e) => updateMeta('estado', e.target.value) },
@@ -4454,6 +4492,7 @@ const makeDraftProject = () => ({
             subtitulo: "Informe de Inicio",
             cliente: "Sin cliente",
             clientLogoData: "",
+            clientLogoUrl: "",
             empresa: "UNITECNIC",
             estado: "En Ejecución",
             responsableProyecto: "",
