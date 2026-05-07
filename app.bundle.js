@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Fuente editable de la aplicaciÃ³n React.
+// Fuente editable de la aplicación React.
 // ---------------------------------------------------------
 // IMPORTANTE: edita este archivo y ejecuta ./build-precompile.sh
 // para regenerar app.bundle.js. No edites app.bundle.js a mano.
@@ -51,13 +51,13 @@ const IconOptions = [
     { id: 'users', label: 'Usuarios' }, { id: 'key', label: 'Llave' },
     { id: 'alert', label: 'Alerta' }, { id: 'lock', label: 'Candado' }
 ];
-// --- HELPERS: ESTADOS Y DEPENDENCIAS (SIN ESTADO PRÃ“XIMO) ---
+// --- HELPERS: ESTADOS Y DEPENDENCIAS (SIN ESTADO PRÓXIMO) ---
 const normalizeEstado = (estado) => {
     const raw = (estado !== null && estado !== void 0 ? estado : '').toString().trim();
     if (!raw)
         return 'Pendiente';
-    // Compatibilidad: estado antiguo "PrÃ³ximo" -> "Pendiente"
-    if (raw === 'PrÃ³ximo' || raw === 'Proximo')
+    // Compatibilidad: estado antiguo "Próximo" -> "Pendiente"
+    if (raw === 'Próximo' || raw === 'Proximo')
         return 'Pendiente';
     // Normaliza variantes
     if (raw.toLowerCase() === 'en curso' || raw.toLowerCase() === 'en-curso')
@@ -68,20 +68,20 @@ const normalizeEstado = (estado) => {
         return 'Pendiente';
     return raw;
 };
-// Normaliza el estado del PROYECTO (meta.estado) para evitar problemas por mayÃºsculas/minÃºsculas, tildes, etc.
+// Normaliza el estado del PROYECTO (meta.estado) para evitar problemas por mayúsculas/minúsculas, tildes, etc.
 const normalizeProjectEstado = (estado) => {
-    const raw = (estado !== null && estado !== void 0 ? estado : 'En EjecuciÃ³n').toString().trim();
+    const raw = (estado !== null && estado !== void 0 ? estado : 'En Ejecución').toString().trim();
     if (!raw)
-        return 'En EjecuciÃ³n';
+        return 'En Ejecución';
     const low = raw.toLowerCase();
-    if (low === 'en ejecucion' || low === 'en ejecuciÃ³n')
-        return 'En EjecuciÃ³n';
+    if (low === 'en ejecucion' || low === 'en ejecución')
+        return 'En Ejecución';
     if (low === 'completado')
         return 'Completado';
     if (low === 'en pausa')
         return 'En Pausa';
-    if (low === 'en revision' || low === 'en revisiÃ³n')
-        return 'En RevisiÃ³n';
+    if (low === 'en revision' || low === 'en revisión')
+        return 'En Revisión';
     return raw;
 };
 const buildTaskIndex = (tasks) => {
@@ -179,9 +179,9 @@ const computeExecutiveMetrics = (projects) => {
     list.forEach(p => {
         const meta = (p && p.meta) || {};
         const estadoProyecto = normalizeProjectEstado(meta.estado);
-        if (estadoProyecto === 'En EjecuciÃ³n')
+        if (estadoProyecto === 'En Ejecución')
             statusCounts.active += 1;
-        else if (estadoProyecto === 'En RevisiÃ³n')
+        else if (estadoProyecto === 'En Revisión')
             statusCounts.review += 1;
         else if (estadoProyecto === 'Completado')
             statusCounts.completed += 1;
@@ -192,7 +192,7 @@ const computeExecutiveMetrics = (projects) => {
         const tasks = Array.isArray(p && p.tasks) ? p.tasks : [];
         const stats = computeProjectStats(tasks);
         const taskIndex = buildTaskIndex(tasks);
-        const projectTitle = meta.titulo || 'Proyecto sin tÃ­tulo';
+        const projectTitle = meta.titulo || 'Proyecto sin título';
         tasksTotal += stats.total || 0;
         tasksCompleted += stats.completed || 0;
         tasksOpen += (stats.pending || 0) + (stats.inProgress || 0);
@@ -206,11 +206,11 @@ const computeExecutiveMetrics = (projects) => {
                 workloadMap[name] = (workloadMap[name] || 0) + 1;
             });
             const priority = String(t.prioridad || '').toLowerCase();
-            const title = t.tarea || 'Tarea sin tÃ­tulo';
+            const title = t.tarea || 'Tarea sin título';
             const due = parseDateOnly(t.fechaLimite);
             const blocked = isTaskBlocked(t, taskIndex);
             const urgent = priority.includes('urgente');
-            const critical = priority.includes('crÃ­tica') || priority.includes('critica') || priority.includes('critical');
+            const critical = priority.includes('crítica') || priority.includes('critica') || priority.includes('critical');
             const overdue = due && due < today;
             if (blocked)
                 blockedTasks += 1;
@@ -237,7 +237,7 @@ const computeExecutiveMetrics = (projects) => {
                 incidents.push({
                     project: projectTitle,
                     task: title,
-                    reason: blocked ? 'Bloqueada' : overdue ? 'Vencida' : critical ? 'CrÃ­tica' : 'Urgente',
+                    reason: blocked ? 'Bloqueada' : overdue ? 'Vencida' : critical ? 'Crítica' : 'Urgente',
                     tone: blocked || overdue || critical ? 'critical' : 'warning'
                 });
             }
@@ -248,12 +248,12 @@ const computeExecutiveMetrics = (projects) => {
     const totalIncidents = blockedTasks + urgentTasks + criticalTasks + overdueTasks;
     const health = (() => {
         if (overdueTasks > 2 || blockedTasks > 3 || criticalTasks > 0 || (tasksTotal > 0 && avgProgress < 35)) {
-            return { label: 'CrÃ­tico', className: 'critical', icon: 'fa-triangle-exclamation', text: 'Hay bloqueos, vencimientos o tareas crÃ­ticas que conviene revisar hoy.' };
+            return { label: 'Crítico', className: 'critical', icon: 'fa-triangle-exclamation', text: 'Hay bloqueos, vencimientos o tareas críticas que conviene revisar hoy.' };
         }
         if (overdueTasks > 0 || blockedTasks > 0 || urgentTasks > 0 || (tasksTotal > 0 && avgProgress < 55)) {
-            return { label: 'AtenciÃ³n', className: 'warning', icon: 'fa-circle-exclamation', text: 'La cartera avanza, pero hay seÃ±ales que requieren seguimiento.' };
+            return { label: 'Atención', className: 'warning', icon: 'fa-circle-exclamation', text: 'La cartera avanza, pero hay señales que requieren seguimiento.' };
         }
-        return { label: 'Bien', className: 'good', icon: 'fa-circle-check', text: 'La cartera estÃ¡ estable y sin incidencias relevantes.' };
+        return { label: 'Bien', className: 'good', icon: 'fa-circle-check', text: 'La cartera está estable y sin incidencias relevantes.' };
     })();
     const workload = Object.entries(workloadMap)
         .map(([name, count]) => ({ name, count }))
@@ -270,19 +270,19 @@ const computeExecutiveMetrics = (projects) => {
     const recommendations = (() => {
         const items = [];
         if (statusCounts.review > 0) {
-            items.push({ icon: 'fa-magnifying-glass', title: 'Revisar proyectos en revisiÃ³n', text: `${statusCounts.review} proyecto${statusCounts.review === 1 ? '' : 's'} esperando validaciÃ³n.`, tone: 'info', action: ['list', 'En RevisiÃ³n'] });
+            items.push({ icon: 'fa-magnifying-glass', title: 'Revisar proyectos en revisión', text: `${statusCounts.review} proyecto${statusCounts.review === 1 ? '' : 's'} esperando validación.`, tone: 'info', action: ['list', 'En Revisión'] });
         }
         if (totalIncidents > 0) {
-            items.push({ icon: 'fa-shield-halved', title: 'Atender incidencias abiertas', text: `${totalIncidents} seÃ±al${totalIncidents === 1 ? '' : 'es'} requieren seguimiento.`, tone: 'critical', action: ['alerts', null] });
+            items.push({ icon: 'fa-shield-halved', title: 'Atender incidencias abiertas', text: `${totalIncidents} señal${totalIncidents === 1 ? '' : 'es'} requieren seguimiento.`, tone: 'critical', action: ['alerts', null] });
         }
         if (overdueTasks > 0) {
             items.push({ icon: 'fa-calendar-xmark', title: 'Revisar vencimientos superados', text: `${overdueTasks} tarea${overdueTasks === 1 ? '' : 's'} fuera de plazo.`, tone: 'warning', action: ['alerts', null] });
         }
         if (highLoadPeople.length > 0) {
-            items.push({ icon: 'fa-people-arrows', title: 'Redistribuir carga del equipo', text: `Carga concentrada en ${highLoadPeople[0].name}. Valorar redistribuciÃ³n.`, tone: 'warning', action: ['workload', null] });
+            items.push({ icon: 'fa-people-arrows', title: 'Redistribuir carga del equipo', text: `Carga concentrada en ${highLoadPeople[0].name}. Valorar redistribución.`, tone: 'warning', action: ['workload', null] });
         }
         if (!items.length) {
-            items.push({ icon: 'fa-circle-check', title: 'PlanificaciÃ³n inmediata despejada', text: 'No hay vencimientos crÃ­ticos ni incidencias urgentes en cartera.', tone: 'good', action: ['list', null] });
+            items.push({ icon: 'fa-circle-check', title: 'Planificación inmediata despejada', text: 'No hay vencimientos críticos ni incidencias urgentes en cartera.', tone: 'good', action: ['list', null] });
         }
         return items.slice(0, 4);
     })();
@@ -317,11 +317,11 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
     const metrics = React.useMemo(() => computeExecutiveMetrics(projects), [projects]);
     const highLoadLabel = metrics.highLoadPeople.length > 0 ? `${metrics.highLoadPeople.length} persona${metrics.highLoadPeople.length === 1 ? '' : 's'} al 100%` : 'Carga equilibrada';
     const kpis = [
-        { label: 'Proyectos activos', value: metrics.activeProjects, note: `EjecuciÃ³n ${metrics.statusCounts.active} Â· RevisiÃ³n ${metrics.statusCounts.review} Â· Pausa ${metrics.statusCounts.paused}`, icon: 'fa-layer-group', tone: 'blue' },
+        { label: 'Proyectos activos', value: metrics.activeProjects, note: `Ejecución ${metrics.statusCounts.active} · Revisión ${metrics.statusCounts.review} · Pausa ${metrics.statusCounts.paused}`, icon: 'fa-layer-group', tone: 'blue' },
         { label: 'Avance medio', value: `${metrics.avgProgress}%`, note: 'Calculado sobre tareas abiertas y completadas', icon: 'fa-chart-line', tone: 'green', progress: metrics.avgProgress },
         { label: 'Tareas abiertas', value: metrics.tasksOpen, note: `${metrics.tasksTotal} tareas totales`, icon: 'fa-list-check', tone: 'amber' },
-        { label: 'Incidencias', value: metrics.totalIncidents, note: `${metrics.blockedTasks} bloqueadas Â· ${metrics.urgentTasks + metrics.criticalTasks} urgentes/crÃ­ticas`, icon: 'fa-shield-halved', tone: 'red' },
-        { label: 'PrÃ³ximos vencimientos', value: metrics.deadlines.length, note: 'En los prÃ³ximos 14 dÃ­as', icon: 'fa-calendar-day', tone: 'cyan' }
+        { label: 'Incidencias', value: metrics.totalIncidents, note: `${metrics.blockedTasks} bloqueadas · ${metrics.urgentTasks + metrics.criticalTasks} urgentes/críticas`, icon: 'fa-shield-halved', tone: 'red' },
+        { label: 'Próximos vencimientos', value: metrics.deadlines.length, note: 'En los próximos 14 días', icon: 'fa-calendar-day', tone: 'cyan' }
     ];
     return (React.createElement("div", { className: "home-dashboard" },
         React.createElement("section", { className: "home-hero" },
@@ -351,7 +351,7 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                 React.createElement("i", { className: `fas ${metrics.health.icon}` }),
                 React.createElement("div", null,
                     React.createElement("span", null, "Salud general"),
-                    React.createElement("strong", null, metrics.health.label === 'Bien' ? 'Correcto' : metrics.health.label === 'AtenciÃ³n' ? 'AtenciÃ³n requerida' : 'CrÃ­tico'))),
+                    React.createElement("strong", null, metrics.health.label === 'Bien' ? 'Correcto' : metrics.health.label === 'Atención' ? 'Atención requerida' : 'Crítico'))),
             React.createElement("p", null, metrics.health.text),
             React.createElement("div", { className: "home-health-metrics" },
                 React.createElement("span", null,
@@ -371,18 +371,18 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                 React.createElement("div", { className: "home-panel-head" },
                     React.createElement("div", null,
                         React.createElement("span", null, "Agenda"),
-                        React.createElement("h2", null, "Pr\u00C3\u00B3ximos vencimientos")),
+                        React.createElement("h2", null, "Pr\u00F3ximos vencimientos")),
                     React.createElement("i", { className: "fas fa-calendar-check" })),
                 metrics.deadlines.length ? (React.createElement("div", { className: "home-list" }, metrics.deadlines.map((item, idx) => (React.createElement("button", { className: `home-list-row home-list-row--${item.tone}`, key: `${item.project}-${item.task}-${idx}`, onClick: () => onNavigate('alerts', null) },
                     React.createElement("div", null,
                         React.createElement("strong", null, item.task),
                         React.createElement("span", null,
                             item.project,
-                            " \u00C2\u00B7 ",
+                            " \u00B7 ",
                             item.owner)),
                     React.createElement("div", { className: "home-deadline-meta" },
                         React.createElement("span", null, item.status),
-                        React.createElement("time", null, window.formatFechaES ? window.formatFechaES(item.date) : item.date))))))) : React.createElement(EmptyMiniState, { icon: "fa-calendar-plus", title: "Sin vencimientos pr\u00C3\u00B3ximos", text: "No hay vencimientos en los pr\u00C3\u00B3ximos 14 d\u00C3\u00ADas. La planificaci\u00C3\u00B3n inmediata est\u00C3\u00A1 despejada." })),
+                        React.createElement("time", null, window.formatFechaES ? window.formatFechaES(item.date) : item.date))))))) : React.createElement(EmptyMiniState, { icon: "fa-calendar-plus", title: "Sin vencimientos pr\u00F3ximos", text: "No hay vencimientos en los pr\u00F3ximos 14 d\u00EDas. La planificaci\u00F3n inmediata est\u00E1 despejada." })),
             React.createElement("article", { className: "home-panel home-panel--workload" },
                 React.createElement("div", { className: "home-panel-head" },
                     React.createElement("div", null,
@@ -400,9 +400,9 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                             React.createElement("span", { style: { width: `${item.pct}%` } })),
                         React.createElement("small", null,
                             item.count,
-                            " tareas abiertas \u00C2\u00B7 ",
+                            " tareas abiertas \u00B7 ",
                             item.state)));
-                }))) : React.createElement(EmptyMiniState, { icon: "fa-user-check", title: "Sin carga asignada", text: "Cuando existan tareas abiertas aparecer\u00C3\u00A1n aqu\u00C3\u00AD." })),
+                }))) : React.createElement(EmptyMiniState, { icon: "fa-user-check", title: "Sin carga asignada", text: "Cuando existan tareas abiertas aparecer\u00E1n aqu\u00ED." })),
             React.createElement("article", { className: "home-panel home-panel--incidents" },
                 React.createElement("div", { className: "home-panel-head" },
                     React.createElement("div", null,
@@ -413,11 +413,11 @@ const HomeView = ({ projects, onCreate, onNavigate }) => {
                     React.createElement("span", null, item.reason),
                     React.createElement("div", null,
                         React.createElement("strong", null, item.task),
-                        React.createElement("small", null, item.project))))))) : React.createElement(EmptyMiniState, { icon: "fa-shield-heart", title: "Sin incidencias relevantes", text: "No hay tareas cr\u00C3\u00ADticas, urgentes, bloqueadas o vencidas." })),
+                        React.createElement("small", null, item.project))))))) : React.createElement(EmptyMiniState, { icon: "fa-shield-heart", title: "Sin incidencias relevantes", text: "No hay tareas cr\u00EDticas, urgentes, bloqueadas o vencidas." })),
             React.createElement("article", { className: "home-panel home-panel--recommendations" },
                 React.createElement("div", { className: "home-panel-head" },
                     React.createElement("div", null,
-                        React.createElement("span", null, "Decisi\u00C3\u00B3n"),
+                        React.createElement("span", null, "Decisi\u00F3n"),
                         React.createElement("h2", null, "Acciones recomendadas")),
                     React.createElement("i", { className: "fas fa-bolt" })),
                 React.createElement("div", { className: "home-recommendation-list" }, metrics.recommendations.map((item, idx) => (React.createElement("button", { className: `home-recommendation home-recommendation--${item.tone}`, key: `${item.title}-${idx}`, onClick: () => onNavigate(item.action[0], item.action[1]) },
@@ -430,7 +430,7 @@ const IconPicker = ({ value, onChange, open, onToggle }) => (React.createElement
         ? "border-[color:rgba(8,136,200,0.35)] bg-[color:rgba(8,136,200,0.10)] text-[color:var(--brand-dark)]"
         : "border-slate-100 hover:border-[color:rgba(8,136,200,0.25)] hover:bg-[color:rgba(8,136,200,0.06)] text-slate-700"}`, title: opt.label }, Icons[opt.id] || Icons.monitor)))), React.createElement("div", { className: "mt-2 text-[11px] text-slate-500 px-1" }, "Selecciona un icono")))));
 // --- COMPONENTE: TARJETA DE PROYECTO ---
-// --- AUDITORÃA (actividad embebida en cada proyecto; sin coste AWS) ---
+// --- AUDITORÍA (actividad embebida en cada proyecto; sin coste AWS) ---
 const getUserLabel = () => {
     try {
         const s = JSON.parse(localStorage.getItem('unitecnic_auth_session') || 'null');
@@ -473,18 +473,18 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
             onSelect(p);
         } }, React.createElement("div", null, React.createElement("div", { className: "flex justify-between items-start" }, React.createElement("div", { className: `h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${projectEstado === 'Completado' ? 'bg-emerald-100 text-emerald-700'
             : projectEstado === 'En Pausa' ? 'bg-slate-100 text-slate-700'
-                : projectEstado === 'En RevisiÃ³n' ? 'bg-violet-100 text-violet-700'
-                    : 'bg-[color:rgba(8,136,200,0.12)] text-[color:var(--brand-dark)]'} overflow-hidden` }, p.meta.clientLogoData ? (React.createElement("img", { src: p.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: `fas ${projectEstado === 'Completado' ? 'fa-check-circle' : projectEstado === 'En Pausa' ? 'fa-pause-circle' : projectEstado === 'En RevisiÃ³n' ? 'fa-search' : 'fa-project-diagram'}` }))), React.createElement("button", { onClick: (e) => { e.stopPropagation(); onDelete(p.id); }, className: "text-gray-300 hover:text-red-500 p-2 transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar proyecto" }, React.createElement("i", { className: "fas fa-trash" }))), React.createElement("h3", { className: "font-bold text-lg text-gray-800 mb-1 truncate" }, p.meta.titulo || "Sin TÃ­tulo"), React.createElement("p", { className: "text-sm text-gray-500 truncate" }, p.meta.subtitulo || "Sin descripciÃ³n"), p.meta.cliente && (React.createElement("div", { className: "mt-2" }, React.createElement("span", { className: "apple-chip apple-chip--muted apple-chip--small" }, React.createElement("i", { className: "fas fa-building text-[10px]" }), p.meta.cliente))),
-    // SECCIÃ“N DE METADATOS (Responsable y PEP con etiquetas claras)
+                : projectEstado === 'En Revisión' ? 'bg-violet-100 text-violet-700'
+                    : 'bg-[color:rgba(8,136,200,0.12)] text-[color:var(--brand-dark)]'} overflow-hidden` }, p.meta.clientLogoData ? (React.createElement("img", { src: p.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: `fas ${projectEstado === 'Completado' ? 'fa-check-circle' : projectEstado === 'En Pausa' ? 'fa-pause-circle' : projectEstado === 'En Revisión' ? 'fa-search' : 'fa-project-diagram'}` }))), React.createElement("button", { onClick: (e) => { e.stopPropagation(); onDelete(p.id); }, className: "text-gray-300 hover:text-red-500 p-2 transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar proyecto" }, React.createElement("i", { className: "fas fa-trash" }))), React.createElement("h3", { className: "font-bold text-lg text-gray-800 mb-1 truncate" }, p.meta.titulo || "Sin Título"), React.createElement("p", { className: "text-sm text-gray-500 truncate" }, p.meta.subtitulo || "Sin descripción"), p.meta.cliente && (React.createElement("div", { className: "mt-2" }, React.createElement("span", { className: "apple-chip apple-chip--muted apple-chip--small" }, React.createElement("i", { className: "fas fa-building text-[10px]" }), p.meta.cliente))),
+    // SECCIÓN DE METADATOS (Responsable y PEP con etiquetas claras)
     (p.meta.responsableProyecto || p.meta.pep) && (React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" }, p.meta.responsableProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" }, React.createElement("i", { className: "fas fa-user-gear text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "Resp:"), p.meta.responsableProyecto)), p.meta.ejecutorProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" }, React.createElement("i", { className: "fas fa-hard-hat text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "Ejec:"), p.meta.ejecutorProyecto)), p.meta.pep && (React.createElement("span", { className: "apple-chip apple-chip--muted internal-only" }, React.createElement("i", { className: "fas fa-hashtag text-[10px]" }), React.createElement("span", { className: "font-semibold mr-1" }, "PEP:"), p.meta.pep)))),
-    // SECCIÃ“N DE DOCUMENTACIÃ“N (BotÃ³n independiente para evitar amontonamiento)
+    // SECCIÓN DE DOCUMENTACIÓN (Botón independiente para evitar amontonamiento)
     p.meta.sharepointUrl && (React.createElement("div", { className: "mt-3" }, React.createElement("a", {
         href: p.meta.sharepointUrl,
         target: "_blank",
         rel: "noopener noreferrer",
         onClick: (e) => e.stopPropagation(),
         className: "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 text-[11px] font-bold hover:bg-blue-100 transition-colors"
-    }, React.createElement("i", { className: "fas fa-folder-open" }), "DocumentaciÃ³n SharePoint"))), React.createElement("div", { className: "mt-5 space-y-2" }, React.createElement("div", { className: "flex items-center justify-between text-xs text-gray-500" }, React.createElement("span", { className: "font-semibold text-[color:var(--brand-dark)]" }, stats.progress, "%"), React.createElement("span", null, stats.total, " tareas")), React.createElement("div", { className: "w-full h-2 rounded-full bg-gray-100 overflow-hidden flex" }, React.createElement("div", { className: "h-full bg-emerald-500", style: { width: w(stats.completed) } }), React.createElement("div", { className: "h-full bg-amber-500", style: { width: w(stats.inProgress) } }), React.createElement("div", { className: "h-full bg-rose-500", style: { width: w(stats.pending) } })), React.createElement("div", { className: "flex flex-wrap gap-2 text-[11px] text-gray-500" }, React.createElement("span", { className: "inline-flex items-center gap-1" }, React.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500" }), "OK ", stats.completed), React.createElement("span", { className: "inline-flex items-center gap-1" }, React.createElement("span", { className: "h-2 w-2 rounded-full bg-amber-500" }), "En curso ", stats.inProgress), React.createElement("span", { className: "inline-flex items-center gap-1" }, React.createElement("span", { className: "h-2 w-2 rounded-full bg-rose-500" }), "Pend. ", stats.pending)))), React.createElement("div", { className: "mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500" }, React.createElement("span", { className: "apple-chip apple-chip--small" }, p.tasks.length, " Tareas"), React.createElement("span", { className: "apple-link" }, "Abrir ", React.createElement("i", { className: "fas fa-arrow-right" })))));
+    }, React.createElement("i", { className: "fas fa-folder-open" }), "Documentación SharePoint"))), React.createElement("div", { className: "mt-5 space-y-2" }, React.createElement("div", { className: "flex items-center justify-between text-xs text-gray-500" }, React.createElement("span", { className: "font-semibold text-[color:var(--brand-dark)]" }, stats.progress, "%"), React.createElement("span", null, stats.total, " tareas")), React.createElement("div", { className: "w-full h-2 rounded-full bg-gray-100 overflow-hidden flex" }, React.createElement("div", { className: "h-full bg-emerald-500", style: { width: w(stats.completed) } }), React.createElement("div", { className: "h-full bg-amber-500", style: { width: w(stats.inProgress) } }), React.createElement("div", { className: "h-full bg-rose-500", style: { width: w(stats.pending) } })), React.createElement("div", { className: "flex flex-wrap gap-2 text-[11px] text-gray-500" }, React.createElement("span", { className: "inline-flex items-center gap-1" }, React.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500" }), "OK ", stats.completed), React.createElement("span", { className: "inline-flex items-center gap-1" }, React.createElement("span", { className: "h-2 w-2 rounded-full bg-amber-500" }), "En curso ", stats.inProgress), React.createElement("span", { className: "inline-flex items-center gap-1" }, React.createElement("span", { className: "h-2 w-2 rounded-full bg-rose-500" }), "Pend. ", stats.pending)))), React.createElement("div", { className: "mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500" }, React.createElement("span", { className: "apple-chip apple-chip--small" }, p.tasks.length, " Tareas"), React.createElement("span", { className: "apple-link" }, "Abrir ", React.createElement("i", { className: "fas fa-arrow-right" })))));
 };
 // --- COMPONENTE: DASHBOARD (PROJECT LIST) ---
 const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, onBackup, onExportCSV, onImport, theme, onToggleTheme, storagePercent, statusFilter }) => {
@@ -496,7 +496,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
     const [draggingProjectId, setDraggingProjectId] = useState(null);
     const [dragOverProjectId, setDragOverProjectId] = useState(null);
     const blockClickRef = React.useRef(false);
-    // --- MENÃš DE ACCIONES ---
+    // --- MENÚ DE ACCIONES ---
     const [actionsOpen, setActionsOpen] = useState(false);
     const actionsRef = React.useRef(null);
     useEffect(() => {
@@ -580,18 +580,18 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
         const hay = ((m.titulo || '') + ' ' + (m.subtitulo || '') + ' ' + (m.cliente || '') + ' ' + (m.pep || '')).toLowerCase();
         return matchesClient && hay.includes(q);
     });
-    const activeProjects = filteredProjects.filter(p => { var _g; return normalizeProjectEstado((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.estado) === 'En EjecuciÃ³n'; });
+    const activeProjects = filteredProjects.filter(p => { var _g; return normalizeProjectEstado((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.estado) === 'En Ejecución'; });
     const pausedProjects = filteredProjects.filter(p => { var _g; return normalizeProjectEstado((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.estado) === 'En Pausa'; });
-    const reviewProjects = filteredProjects.filter(p => { var _g; return normalizeProjectEstado((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.estado) === 'En RevisiÃ³n'; });
+    const reviewProjects = filteredProjects.filter(p => { var _g; return normalizeProjectEstado((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.estado) === 'En Revisión'; });
     const completedProjects = filteredProjects.filter(p => { var _g; return normalizeProjectEstado((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.estado) === 'Completado'; });
     const nonCompletedProjects = filteredProjects.filter(p => { var _g; return normalizeProjectEstado((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.estado) !== 'Completado'; });
-    // Visibilidad de secciones segÃºn filtro de sidebar
+    // Visibilidad de secciones según filtro de sidebar
     const showAllSections = !statusFilter;
-    const showSectionActive = showAllSections || statusFilter === 'En EjecuciÃ³n';
+    const showSectionActive = showAllSections || statusFilter === 'En Ejecución';
     const showSectionPaused = showAllSections || statusFilter === 'En Pausa';
-    const showSectionReview = showAllSections || statusFilter === 'En RevisiÃ³n';
+    const showSectionReview = showAllSections || statusFilter === 'En Revisión';
     const showSectionCompleted = showAllSections || statusFilter === 'Completado';
-    // --- CÃLCULO RESUMEN EJECUTIVO ---
+    // --- CÁLCULO RESUMEN EJECUTIVO ---
     const executiveSummary = (() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -657,7 +657,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                 }
                 // Carga de trabajo por persona (ASIGNADO A): cuenta tareas abiertas (Pendiente/En curso).
                 if (est !== 'Completado') {
-                    // LÃ“GICA DE SEPARACIÃ“N DE NOMBRES
+                    // LÓGICA DE SEPARACIÓN DE NOMBRES
                     let raw = (t.asignadoA || '').trim();
                     if (!raw)
                         raw = "Sin asignar";
@@ -709,17 +709,17 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
             sortedDeadlines: upcomingDeadlines.sort((a, b) => new Date(a.fecha) - new Date(b.fecha)).slice(0, 3)
         };
     })();
-    const projectViewTitle = statusFilter ? `Proyectos Â· ${statusFilter}` : 'Proyectos';
-    const projectViewSubtitle = statusFilter ? 'Listado filtrado por estado' : 'GestiÃ³n y seguimiento de proyectos';
-    // AQUI ESTÃ LA CLAVE DEL MARGEN: 'max-w-7xl mx-auto'
+    const projectViewTitle = statusFilter ? `Proyectos · ${statusFilter}` : 'Proyectos';
+    const projectViewSubtitle = statusFilter ? 'Listado filtrado por estado' : 'Gestión y seguimiento de proyectos';
+    // AQUI ESTÁ LA CLAVE DEL MARGEN: 'max-w-7xl mx-auto'
     return (React.createElement("div", { className: "project-list-view max-w-7xl mx-auto p-6 md:p-10" }, React.createElement("div", { className: "flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4" }, React.createElement("div", { className: "flex items-start gap-4" }, React.createElement("div", { className: "w-14 h-14 rounded-2xl bg-white/70 border border-gray-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0" }, React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "w-full h-full object-contain p-2" })), React.createElement("div", null, React.createElement("h1", { className: "text-3xl font-bold text-gray-900" }, projectViewTitle), React.createElement("p", { className: "text-gray-500 mt-1 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-folder-open text-orange-500" }), " ", projectViewSubtitle),
     // BUSCADOR CORREGIDO (pl-12 y estructura correcta)
     React.createElement("div", { className: "mt-4 flex flex-col sm:flex-row sm:items-center gap-3" }, React.createElement("div", { className: "relative group" }, React.createElement("i", { className: "fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs group-focus-within:text-[color:var(--brand)] transition-colors" }), React.createElement("input", { type: "text", placeholder: "Buscar proyecto...", value: searchTerm, onChange: (e) => setSearchTerm(e.target.value), onKeyDown: (e) => { if (e.key === 'Escape')
             setSearchTerm(''); }, className: "apple-search-input pl-12" })), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: "text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2" }, "Cliente"), React.createElement("select", { className: "apple-select-filter", value: clientFilter, onChange: (e) => setClientFilter(e.target.value) }, React.createElement("option", { value: "Todos" }, "Todos"), clients.map(c => React.createElement("option", { key: c, value: c }, c))))))), React.createElement("div", { className: "flex items-center gap-2 no-print" }, React.createElement("button", { onClick: onCreate, className: "btn-apple-primary no-print", title: "Crear nuevo proyecto" }, React.createElement("i", { className: "fas fa-plus" }), "Nuevo"), React.createElement("button", {
         onClick: () => window.location.hash = '#/charts',
         className: "btn-apple no-print",
-        title: "Ver grÃ¡ficos"
-    }, React.createElement("i", { className: "fas fa-chart-bar" }), "GrÃ¡ficos"), React.createElement("div", { className: "actions-menu no-print", ref: actionsRef }, React.createElement("button", { type: "button", className: "btn-apple-icon", title: "Acciones", "aria-label": "Acciones", onClick: () => setActionsOpen(o => !o) }, React.createElement("i", { className: "fas fa-ellipsis" })), actionsOpen && (React.createElement("div", { className: "actions-popover", role: "menu", "aria-label": "Acciones" }, React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onBackup(); } }, React.createElement("i", { className: "fas fa-file-arrow-down" }), React.createElement("span", null, "Backup (JSON)")), React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onExportCSV && onExportCSV(); } }, React.createElement("i", { className: "fas fa-file-csv" }), React.createElement("span", null, "Exportar CSV (Excel)")), React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onImport(); } }, React.createElement("i", { className: "fas fa-file-arrow-up" }), React.createElement("span", null, "Importar\u2026")), typeof storagePercent === 'number' && (React.createElement("div", { className: "px-3 pt-3 pb-1 border-t border-gray-100 mt-1" }, React.createElement("div", { className: "flex justify-between text-[10px] text-gray-400 mb-1" }, React.createElement("span", null, "Almacenamiento local"), React.createElement("span", { className: storagePercent >= 80 ? "text-orange-500 font-bold" : "" }, storagePercent, "%")), React.createElement("div", { className: "w-full h-1.5 rounded-full bg-gray-100 overflow-hidden" }, React.createElement("div", { className: `h-full rounded-full transition-all ${storagePercent >= 80 ? 'bg-orange-400' : storagePercent >= 50 ? 'bg-amber-400' : 'bg-emerald-400'}`, style: { width: `${storagePercent}%` } }))))))))), filteredProjects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" }, React.createElement("div", { className: "text-gray-300 text-6xl mb-6" }, React.createElement("i", { className: "fas fa-folder-open" })), React.createElement("h3", { className: "text-xl font-semibold text-gray-700" }, "No hay proyectos para mostrar"), React.createElement("p", { className: "text-gray-400 mt-2 mb-6" }, statusFilter ? "Este estado todavÃ­a no tiene proyectos." : "Ajusta la bÃºsqueda o crea el primer proyecto."), React.createElement("button", { onClick: onCreate, className: "text-blue-600 font-medium hover:underline" }, "Crear proyecto"))) : (React.createElement("div", { className: "space-y-12" }, React.createElement("div", { className: "section-tapiz exec-summary p-6 rounded-2xl border" }, React.createElement("div", { className: "exec-header" }, React.createElement("div", { className: "exec-title" }, React.createElement("div", { className: "exec-title-icon", "aria-hidden": "true" }, React.createElement("i", { className: "fas fa-gauge-high" })), React.createElement("div", null, React.createElement("div", { className: "exec-title-text" }, "Resumen ejecutivo"), React.createElement("div", { className: "exec-subtitle" }, "Centro de control (seg\u00FAn el filtro de cliente)"))), React.createElement("div", { className: "exec-pill", title: "Se recalcula con los filtros activos" }, React.createElement("i", { className: "fas fa-sliders", "aria-hidden": "true" }), React.createElement("span", null, "Seg\u00FAn filtros"))), React.createElement("div", { className: "exec-grid" },
+        title: "Ver gráficos"
+    }, React.createElement("i", { className: "fas fa-chart-bar" }), "Gráficos"), React.createElement("div", { className: "actions-menu no-print", ref: actionsRef }, React.createElement("button", { type: "button", className: "btn-apple-icon", title: "Acciones", "aria-label": "Acciones", onClick: () => setActionsOpen(o => !o) }, React.createElement("i", { className: "fas fa-ellipsis" })), actionsOpen && (React.createElement("div", { className: "actions-popover", role: "menu", "aria-label": "Acciones" }, React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onBackup(); } }, React.createElement("i", { className: "fas fa-file-arrow-down" }), React.createElement("span", null, "Backup (JSON)")), React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onExportCSV && onExportCSV(); } }, React.createElement("i", { className: "fas fa-file-csv" }), React.createElement("span", null, "Exportar CSV (Excel)")), React.createElement("button", { type: "button", className: "actions-item", role: "menuitem", onClick: () => { setActionsOpen(false); onImport(); } }, React.createElement("i", { className: "fas fa-file-arrow-up" }), React.createElement("span", null, "Importar\u2026")), typeof storagePercent === 'number' && (React.createElement("div", { className: "px-3 pt-3 pb-1 border-t border-gray-100 mt-1" }, React.createElement("div", { className: "flex justify-between text-[10px] text-gray-400 mb-1" }, React.createElement("span", null, "Almacenamiento local"), React.createElement("span", { className: storagePercent >= 80 ? "text-orange-500 font-bold" : "" }, storagePercent, "%")), React.createElement("div", { className: "w-full h-1.5 rounded-full bg-gray-100 overflow-hidden" }, React.createElement("div", { className: `h-full rounded-full transition-all ${storagePercent >= 80 ? 'bg-orange-400' : storagePercent >= 50 ? 'bg-amber-400' : 'bg-emerald-400'}`, style: { width: `${storagePercent}%` } }))))))))), filteredProjects.length === 0 ? (React.createElement("div", { className: "text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200" }, React.createElement("div", { className: "text-gray-300 text-6xl mb-6" }, React.createElement("i", { className: "fas fa-folder-open" })), React.createElement("h3", { className: "text-xl font-semibold text-gray-700" }, "No hay proyectos para mostrar"), React.createElement("p", { className: "text-gray-400 mt-2 mb-6" }, statusFilter ? "Este estado todavía no tiene proyectos." : "Ajusta la búsqueda o crea el primer proyecto."), React.createElement("button", { onClick: onCreate, className: "text-blue-600 font-medium hover:underline" }, "Crear proyecto"))) : (React.createElement("div", { className: "space-y-12" }, React.createElement("div", { className: "section-tapiz exec-summary p-6 rounded-2xl border" }, React.createElement("div", { className: "exec-header" }, React.createElement("div", { className: "exec-title" }, React.createElement("div", { className: "exec-title-icon", "aria-hidden": "true" }, React.createElement("i", { className: "fas fa-gauge-high" })), React.createElement("div", null, React.createElement("div", { className: "exec-title-text" }, "Resumen ejecutivo"), React.createElement("div", { className: "exec-subtitle" }, "Centro de control (seg\u00FAn el filtro de cliente)"))), React.createElement("div", { className: "exec-pill", title: "Se recalcula con los filtros activos" }, React.createElement("i", { className: "fas fa-sliders", "aria-hidden": "true" }), React.createElement("span", null, "Seg\u00FAn filtros"))), React.createElement("div", { className: "exec-grid" },
     // 1. PROYECTOS
     React.createElement("div", { className: "exec-card", onClick: () => setClientFilter('Todos'), title: "Ver todos" }, React.createElement("div", { className: "exec-card-top" }, React.createElement("div", null, React.createElement("div", { className: "exec-label" }, "Proyectos activos"), React.createElement("div", { className: "exec-value" }, executiveSummary.projectsActive)), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-layer-group" }))), React.createElement("div", { className: "exec-chips" }, React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(59,130,246,0.3)] text-blue-700 bg-blue-50/50 text-[10px] font-bold" }, "Eje: ", activeProjects.length), React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(239,68,68,0.3)] text-red-700 bg-red-50/50 text-[10px] font-bold" }, "Pausa: ", pausedProjects.length), React.createElement("span", { className: "px-2 py-1 rounded-full border border-[color:rgba(139,92,246,0.3)] text-violet-700 bg-violet-50/50 text-[10px] font-bold" }, "Rev: ", reviewProjects.length))),
     // 2. AVANCE
@@ -739,22 +739,22 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
                 : "inherit"
         }
     }, (executiveSummary.blockedTasks + executiveSummary.redProjects + executiveSummary.urgentTasks)), React.createElement("div", { className: "exec-note" }, (executiveSummary.blockedTasks + executiveSummary.redProjects + executiveSummary.urgentTasks) > 0
-        ? "Requiere atenciÃ³n"
-        : "Sin incidencias")), React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" }, React.createElement("i", { className: "fas fa-shield-halved" }))), React.createElement("div", { className: "mt-4 flex flex-col gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-tight" }, React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-orange-400' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.blockedTasks, " Tareas Bloqueadas")), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.redProjects > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.redProjects, " Alertas CrÃ­ticas")), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.urgentTasks > 0 ? 'bg-amber-500 animate-pulse' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.urgentTasks, " Tareas Urgentes")))),
+        ? "Requiere atención"
+        : "Sin incidencias")), React.createElement("div", { className: "exec-card-icon exec-card-icon-warn" }, React.createElement("i", { className: "fas fa-shield-halved" }))), React.createElement("div", { className: "mt-4 flex flex-col gap-1 text-[10px] text-gray-500 font-bold uppercase tracking-tight" }, React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.blockedTasks > 0 ? 'bg-orange-400' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.blockedTasks, " Tareas Bloqueadas")), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.redProjects > 0 ? 'bg-red-500 animate-pulse' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.redProjects, " Alertas Críticas")), React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { className: `h-2 w-2 rounded-full ${executiveSummary.urgentTasks > 0 ? 'bg-amber-500 animate-pulse' : 'bg-gray-200'}` }), React.createElement("span", null, executiveSummary.urgentTasks, " Tareas Urgentes")))),
     // 5. CARGA POR RESPONSABLE (DOBLE)
     React.createElement("div", {
         className: "exec-card md:col-span-2 cursor-pointer hover:ring-2 hover:ring-indigo-100 transition-all",
         onClick: () => window.location.hash = '#/workload',
         title: "Ver detalle detallado por persona"
     }, React.createElement("div", { className: "exec-card-top mb-5" }, React.createElement("div", { className: "exec-label" }, "Carga por Persona"), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-users" }))), React.createElement("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5" }, executiveSummary.workloadData.map((item, i) => (React.createElement("div", { key: i }, React.createElement("div", { className: "flex justify-between text-sm mb-2" }, React.createElement("span", { className: "font-bold truncate" }, item.name), React.createElement("span", { className: "text-gray-500 font-medium" }, item.count)), React.createElement("div", { className: "w-full h-2 bg-gray-200 rounded-full overflow-hidden" }, React.createElement("div", { className: "h-full bg-indigo-500", style: { width: `${Math.min(100, (item.count / 10) * 100)}%` } }))))))),
-    // 6. PRÃ“XIMOS VENCIMIENTOS (INTERACTIVA)
+    // 6. PRÓXIMOS VENCIMIENTOS (INTERACTIVA)
     React.createElement("div", {
         className: "exec-card md:col-span-2 cursor-pointer hover:ring-2 hover:ring-cyan-100 transition-all",
-        onClick: () => window.location.hash = '#/alerts', // <-- Ahora te lleva al Centro de Control con la nueva secciÃ³n
+        onClick: () => window.location.hash = '#/alerts', // <-- Ahora te lleva al Centro de Control con la nueva sección
         title: "Ver detalles de vencimientos"
-    }, React.createElement("div", { className: "exec-card-top mb-5" }, React.createElement("div", { className: "exec-label" }, "PrÃ³ximos Vencimientos"), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))), React.createElement("div", { className: "space-y-3" }, executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (React.createElement("div", { key: i, className: "flex items-center justify-between p-3 rounded-xl bg-black/5" }, React.createElement("div", { className: "min-w-0 flex-1" }, React.createElement("div", { className: "text-sm font-bold truncate" }, item.tarea), React.createElement("div", { className: "text-[11px] text-gray-500 truncate mt-0.5" }, item.proyecto)), React.createElement("div", { className: "ml-4 text-[12px] font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-md" }, window.formatFechaES(item.fecha))))) : React.createElement("p", { className: "text-sm italic text-gray-400 p-2" }, "Sin vencimientos cercanos"))))),
+    }, React.createElement("div", { className: "exec-card-top mb-5" }, React.createElement("div", { className: "exec-label" }, "Próximos Vencimientos"), React.createElement("div", { className: "exec-card-icon" }, React.createElement("i", { className: "fas fa-calendar-day" }))), React.createElement("div", { className: "space-y-3" }, executiveSummary.sortedDeadlines.length > 0 ? executiveSummary.sortedDeadlines.map((item, i) => (React.createElement("div", { key: i, className: "flex items-center justify-between p-3 rounded-xl bg-black/5" }, React.createElement("div", { className: "min-w-0 flex-1" }, React.createElement("div", { className: "text-sm font-bold truncate" }, item.tarea), React.createElement("div", { className: "text-[11px] text-gray-500 truncate mt-0.5" }, item.proyecto)), React.createElement("div", { className: "ml-4 text-[12px] font-bold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-md" }, window.formatFechaES(item.fecha))))) : React.createElement("p", { className: "text-sm italic text-gray-400 p-2" }, "Sin vencimientos cercanos"))))),
     // SECCIONES DE PROYECTOS
-    showSectionActive && React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En EjecuciÃ³n') }, React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" }, React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }), " En Ejecuci\u00F3n", React.createElement("span", { className: "ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs" }, activeProjects.length)), activeProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, activeProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
+    showSectionActive && React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') }, React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" }, React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }), " En Ejecuci\u00F3n", React.createElement("span", { className: "ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs" }, activeProjects.length)), activeProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, activeProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
             onDragStart: handleProjectDragStart,
             onDragEnd: handleProjectDragEnd,
             onDragOver: handleProjectCardDragOver,
@@ -770,7 +770,7 @@ const ProjectList = ({ projects, onCreate, onSelect, onDelete, onMoveProject, on
             isDragging: draggingProjectId === p.id,
             isDragOver: dragOverProjectId === p.id,
             blockClickRef
-        } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en pausa.")), showSectionReview && React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En RevisiÃ³n') }, React.createElement("h2", { className: "text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" }, React.createElement("span", { className: "bg-violet-500 w-2 h-2 rounded-full" }), " En Revisi\u00F3n", React.createElement("span", { className: "ml-2 bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full text-xs" }, reviewProjects.length)), reviewProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, reviewProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
+        } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en pausa.")), showSectionReview && React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') }, React.createElement("h2", { className: "text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" }, React.createElement("span", { className: "bg-violet-500 w-2 h-2 rounded-full" }), " En Revisi\u00F3n", React.createElement("span", { className: "ml-2 bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full text-xs" }, reviewProjects.length)), reviewProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, reviewProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
             onDragStart: handleProjectDragStart,
             onDragEnd: handleProjectDragEnd,
             onDragOver: handleProjectCardDragOver,
@@ -830,10 +830,10 @@ const ProjectPreview = ({ data }) => {
             return 'Dependencia no encontrada';
         return `${dep.area} - ${dep.tarea}`;
     };
-    return (React.createElement("div", { className: "bg-gray-50 print-container" }, React.createElement("div", { className: "max-w-7xl mx-auto space-y-6" }, React.createElement("div", { id: "header-container", className: "print-header flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "header-left-part flex items-center w-full md:w-2/3 gap-4 md:gap-6" }, data.meta.clientLogoData && React.createElement("img", { src: normalizeDataImage(data.meta.clientLogoData), alt: "Logo Cliente", className: "h-14 w-auto object-contain shrink-0 logo-print" }), React.createElement("div", null, React.createElement("h1", { className: "text-3xl font-bold text-gray-900 leading-tight tracking-tight" }, data.meta.titulo), React.createElement("p", { className: "text-gray-500 mt-2 text-lg" }, data.meta.subtitulo), React.createElement("div", { className: "mt-3 text-xs text-gray-700 leading-snug" }, data.meta.responsableProyecto && React.createElement("div", null, React.createElement("span", { className: "font-semibold" }, "Responsable: "), data.meta.responsableProyecto), data.meta.ejecutorProyecto && React.createElement("div", null, React.createElement("span", { className: "font-semibold" }, "Ejecutor: "), data.meta.ejecutorProyecto), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, "Fecha de emisiÃ³n: ", new Date().toLocaleDateString("es-ES"))))), React.createElement("div", { className: "header-right-part mt-4 md:mt-0 flex items-center gap-6 self-start md:self-center" }, React.createElement("div", { className: "hidden md:block w-px h-12 bg-gray-200 no-print" }), React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "h-10 md:h-12 object-contain logo-print" }))), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-6" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between gap-4" }, React.createElement("div", { className: "min-w-0" }, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Estado Global"), React.createElement("p", { className: "text-3xl font-bold text-gray-900 mt-2 tabular-nums" }, progress, "%"), React.createElement("p", { className: "text-xs text-gray-400 mt-1" }, "Completado")), React.createElement("div", { className: "shrink-0" }, React.createElement("svg", { width: "64", height: "64", viewBox: "0 0 64 64", className: "block" }, React.createElement("circle", { cx: "32", cy: "32", r: "26", fill: "none", stroke: "var(--progress-track)", strokeWidth: "8" }), React.createElement("circle", { cx: "32", cy: "32", r: "26", fill: "none", stroke: "#2563EB", strokeWidth: "8", strokeLinecap: "round", transform: "rotate(-90 32 32)", strokeDasharray: 2 * Math.PI * 26, strokeDashoffset: (2 * Math.PI * 26) * (1 - (progress / 100)) }), React.createElement("text", { x: "32", y: "36", textAnchor: "middle", fontSize: "14", fontWeight: "700", fill: "var(--progress-text)", className: "tabular-nums" }, progress, "%"))))), React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between" }, React.createElement("div", null, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Tareas Resueltas"), React.createElement("p", { className: "text-3xl font-bold text-green-600 mt-2" }, completedTasks)), React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-green-50 rounded-full text-green-600" }, React.createElement("i", { className: "fas fa-check" })))), React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between" }, React.createElement("div", null, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Pendientes"), React.createElement("p", { className: "text-3xl font-bold text-orange-600 mt-2" }, totalTasks - completedTasks)), React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-orange-50 rounded-full text-orange-600" }, React.createElement("i", { className: "fas fa-clock" }))))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" }, React.createElement("h2", { className: "text-lg font-semibold text-gray-800" }, "Detalle de Trabajos")), React.createElement("div", { className: "w-full overflow-x-auto" }, React.createElement("table", { className: "w-full min-w-[1100px] table-fixed text-left border-collapse text-sm" }, React.createElement("thead", null, React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider" }, React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/5" }, "\u00C1rea"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Tarea"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6 internal-only" }, "Asignado"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Estado"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Prioridad"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Detalles"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Inicio"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "L\u00EDmite"))), React.createElement("tbody", { className: "divide-y divide-gray-200" }, data.tasks.map((row) => {
+    return (React.createElement("div", { className: "bg-gray-50 print-container" }, React.createElement("div", { className: "max-w-7xl mx-auto space-y-6" }, React.createElement("div", { id: "header-container", className: "print-header flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "header-left-part flex items-center w-full md:w-2/3 gap-4 md:gap-6" }, data.meta.clientLogoData && React.createElement("img", { src: normalizeDataImage(data.meta.clientLogoData), alt: "Logo Cliente", className: "h-14 w-auto object-contain shrink-0 logo-print" }), React.createElement("div", null, React.createElement("h1", { className: "text-3xl font-bold text-gray-900 leading-tight tracking-tight" }, data.meta.titulo), React.createElement("p", { className: "text-gray-500 mt-2 text-lg" }, data.meta.subtitulo), React.createElement("div", { className: "mt-3 text-xs text-gray-700 leading-snug" }, data.meta.responsableProyecto && React.createElement("div", null, React.createElement("span", { className: "font-semibold" }, "Responsable: "), data.meta.responsableProyecto), data.meta.ejecutorProyecto && React.createElement("div", null, React.createElement("span", { className: "font-semibold" }, "Ejecutor: "), data.meta.ejecutorProyecto), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, "Fecha de emisión: ", new Date().toLocaleDateString("es-ES"))))), React.createElement("div", { className: "header-right-part mt-4 md:mt-0 flex items-center gap-6 self-start md:self-center" }, React.createElement("div", { className: "hidden md:block w-px h-12 bg-gray-200 no-print" }), React.createElement("img", { src: UNITECNIC_LOGO_BASE64, alt: "Unitecnic", className: "h-10 md:h-12 object-contain logo-print" }))), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-3 gap-6" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between gap-4" }, React.createElement("div", { className: "min-w-0" }, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Estado Global"), React.createElement("p", { className: "text-3xl font-bold text-gray-900 mt-2 tabular-nums" }, progress, "%"), React.createElement("p", { className: "text-xs text-gray-400 mt-1" }, "Completado")), React.createElement("div", { className: "shrink-0" }, React.createElement("svg", { width: "64", height: "64", viewBox: "0 0 64 64", className: "block" }, React.createElement("circle", { cx: "32", cy: "32", r: "26", fill: "none", stroke: "var(--progress-track)", strokeWidth: "8" }), React.createElement("circle", { cx: "32", cy: "32", r: "26", fill: "none", stroke: "#2563EB", strokeWidth: "8", strokeLinecap: "round", transform: "rotate(-90 32 32)", strokeDasharray: 2 * Math.PI * 26, strokeDashoffset: (2 * Math.PI * 26) * (1 - (progress / 100)) }), React.createElement("text", { x: "32", y: "36", textAnchor: "middle", fontSize: "14", fontWeight: "700", fill: "var(--progress-text)", className: "tabular-nums" }, progress, "%"))))), React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between" }, React.createElement("div", null, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Tareas Resueltas"), React.createElement("p", { className: "text-3xl font-bold text-green-600 mt-2" }, completedTasks)), React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-green-50 rounded-full text-green-600" }, React.createElement("i", { className: "fas fa-check" })))), React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex items-center justify-between" }, React.createElement("div", null, React.createElement("p", { className: "text-sm font-medium text-gray-500" }, "Pendientes"), React.createElement("p", { className: "text-3xl font-bold text-orange-600 mt-2" }, totalTasks - completedTasks)), React.createElement("div", { className: "w-12 h-12 flex items-center justify-center bg-orange-50 rounded-full text-orange-600" }, React.createElement("i", { className: "fas fa-clock" }))))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" }, React.createElement("h2", { className: "text-lg font-semibold text-gray-800" }, "Detalle de Trabajos")), React.createElement("div", { className: "w-full overflow-x-auto" }, React.createElement("table", { className: "w-full min-w-[1100px] table-fixed text-left border-collapse text-sm" }, React.createElement("thead", null, React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider" }, React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/5" }, "\u00C1rea"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Tarea"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6 internal-only" }, "Asignado"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Estado"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Prioridad"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/4" }, "Detalles"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "Inicio"), React.createElement("th", { className: "px-4 py-3 font-medium whitespace-normal break-words w-1/6" }, "L\u00EDmite"))), React.createElement("tbody", { className: "divide-y divide-gray-200" }, data.tasks.map((row) => {
         var _a;
         return (React.createElement("tr", { key: row.id, className: "hover:bg-gray-50 transition-colors" },
-        // 1. Columna ÃREA
+        // 1. Columna ÁREA
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("div", { className: "flex items-center" }, React.createElement("div", {
             className: "p-1.5 rounded-lg mr-2 no-print flex items-center justify-center " + (row.iconType === 'wifi' ? 'bg-blue-100 text-blue-600' :
                 row.iconType === 'server' ? 'bg-orange-100 text-orange-600' :
@@ -846,8 +846,8 @@ const ProjectPreview = ({ data }) => {
                                             'bg-gray-100 text-gray-600'),
             style: { width: '32px', height: '32px' }
         }, Icons[row.iconType] || Icons.monitor), React.createElement("span", { className: "font-medium text-gray-900" }, row.area))),
-        // 2. Columna TAREA (Subtareas aquÃ­)
-        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("div", { className: "flex flex-col gap-1" }, React.createElement("span", { className: "text-gray-900 font-bold" }, row.tarea), (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 ml-1 border-l-2 border-gray-200 pl-2" }, row.subtasks.map(sub => React.createElement("div", { key: sub.id, className: "flex items-start gap-2 mt-1" }, React.createElement("span", { className: sub.done ? "text-emerald-600 font-bold text-xs" : "text-gray-300 text-xs" }, sub.done ? "â˜‘" : "â˜"), React.createElement("span", { className: `text-xs ${sub.done ? "line-through text-gray-400" : "text-gray-600"}` }, sub.text)))), isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill mt-1" }, React.createElement("i", { className: "fas fa-lock" }), "Bloqueada por: ", React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || 'â€”'))))),
+        // 2. Columna TAREA (Subtareas aquí)
+        React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("div", { className: "flex flex-col gap-1" }, React.createElement("span", { className: "text-gray-900 font-bold" }, row.tarea), (row.subtasks && row.subtasks.length > 0) && React.createElement("div", { className: "mt-2 ml-1 border-l-2 border-gray-200 pl-2" }, row.subtasks.map(sub => React.createElement("div", { key: sub.id, className: "flex items-start gap-2 mt-1" }, React.createElement("span", { className: sub.done ? "text-emerald-600 font-bold text-xs" : "text-gray-300 text-xs" }, sub.done ? "☑" : "☐"), React.createElement("span", { className: `text-xs ${sub.done ? "line-through text-gray-400" : "text-gray-600"}` }, sub.text)))), isTaskBlocked(row, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 w-fit dependency-pill mt-1" }, React.createElement("i", { className: "fas fa-lock" }), "Bloqueada por: ", React.createElement("span", { className: "font-medium" }, getDependencyLabel(row) || '—'))))),
         // 3. Columna ASIGNADO
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words internal-only" }, React.createElement("span", { className: "text-gray-700" }, row.asignadoA ? row.asignadoA : '-')),
         // 4. Columna ESTADO
@@ -864,7 +864,7 @@ const ProjectPreview = ({ data }) => {
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: "text-sm text-gray-600" }, (_a = row.detalles) !== null && _a !== void 0 ? _a : '')),
         // 7. Columna FECHA INICIO
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaInicio))),
-        // 8. Columna FECHA LÃMITE
+        // 8. Columna FECHA LÍMITE
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaLimite)))));
     }))))))));
 };
@@ -909,22 +909,22 @@ const buildProjectDetailModel = (project) => {
     ];
     const progress = stats.progress || 0;
     const status = getProjectStatus(project);
-    let health = { label: 'Correcto', tone: 'good', icon: 'fa-circle-check', text: 'El proyecto no presenta seÃ±ales relevantes de riesgo.' };
+    let health = { label: 'Correcto', tone: 'good', icon: 'fa-circle-check', text: 'El proyecto no presenta señales relevantes de riesgo.' };
     if (status === 'Completado')
-        health = { label: 'Completado', tone: 'done', icon: 'fa-circle-check', text: 'El proyecto estÃ¡ completado. MantÃ©n la documentaciÃ³n cerrada y accesible.' };
+        health = { label: 'Completado', tone: 'done', icon: 'fa-circle-check', text: 'El proyecto está completado. Mantén la documentación cerrada y accesible.' };
     else if (status === 'En Pausa')
-        health = { label: 'En pausa', tone: 'paused', icon: 'fa-circle-pause', text: 'El proyecto estÃ¡ pausado. Conviene revisar prÃ³ximos pasos antes de reactivarlo.' };
+        health = { label: 'En pausa', tone: 'paused', icon: 'fa-circle-pause', text: 'El proyecto está pausado. Conviene revisar próximos pasos antes de reactivarlo.' };
     else if (overdueTasks.length || blockedTasks.length > 1 || urgentTasks.some(t => t.prioridad === 'Urgente'))
-        health = { label: 'CrÃ­tico', tone: 'critical', icon: 'fa-triangle-exclamation', text: 'Hay tareas vencidas, bloqueos o prioridades urgentes que requieren intervenciÃ³n.' };
-    else if (upcomingTasks.length || blockedTasks.length || !wikiDocumented || (status === 'En EjecuciÃ³n' && rows.length === 0) || (tasks.length && progress < 35))
-        health = { label: 'AtenciÃ³n requerida', tone: 'warning', icon: 'fa-circle-exclamation', text: 'El proyecto avanza, pero hay elementos que conviene revisar para evitar desvÃ­os.' };
+        health = { label: 'Crítico', tone: 'critical', icon: 'fa-triangle-exclamation', text: 'Hay tareas vencidas, bloqueos o prioridades urgentes que requieren intervención.' };
+    else if (upcomingTasks.length || blockedTasks.length || !wikiDocumented || (status === 'En Ejecución' && rows.length === 0) || (tasks.length && progress < 35))
+        health = { label: 'Atención requerida', tone: 'warning', icon: 'fa-circle-exclamation', text: 'El proyecto avanza, pero hay elementos que conviene revisar para evitar desvíos.' };
     const nextDueTask = upcomingTasks[0] || openTasks
         .filter(t => parseDateOnly(t.fechaLimite))
         .sort((a, b) => String(a.fechaLimite || '').localeCompare(String(b.fechaLimite || '')))[0];
     const activity = [];
     const audit = (project && project.audit && Array.isArray(project.audit.activity)) ? project.audit.activity : [];
     audit.forEach(item => activity.push({ ts: item.ts, icon: 'fa-history', title: item.message || 'Actividad registrada', meta: item.user || 'Usuario' }));
-    rows.slice(0, 6).forEach(row => { var _g; return activity.push({ ts: ((_g = parseDateOnly(row.date)) === null || _g === void 0 ? void 0 : _g.getTime()) || 0, icon: 'fa-clock', title: `ImputaciÃ³n de ${toNumberOrZero(row.hours).toLocaleString('es-ES')} h`, meta: row.user || 'Sin persona' }); });
+    rows.slice(0, 6).forEach(row => { var _g; return activity.push({ ts: ((_g = parseDateOnly(row.date)) === null || _g === void 0 ? void 0 : _g.getTime()) || 0, icon: 'fa-clock', title: `Imputación de ${toNumberOrZero(row.hours).toLocaleString('es-ES')} h`, meta: row.user || 'Sin persona' }); });
     tasks.slice(-6).forEach(task => { var _g; return activity.push({ ts: ((_g = parseDateOnly(task.fechaLimite)) === null || _g === void 0 ? void 0 : _g.getTime()) || 0, icon: 'fa-list-check', title: task.tarea || 'Tarea del proyecto', meta: task.estado || 'Sin estado' }); });
     if (wiki.updatedAt)
         activity.push({ ts: new Date(wiki.updatedAt).getTime(), icon: 'fa-book', title: 'Wiki actualizada', meta: formatWikiDate(wiki.updatedAt) });
@@ -938,13 +938,13 @@ const buildProjectDetailModel = (project) => {
     if (blockedTasks.length)
         recommendations.push('Resolver tareas bloqueadas o completar sus dependencias.');
     if (upcomingTasks.length)
-        recommendations.push(`Revisar ${upcomingTasks.length} tarea${upcomingTasks.length === 1 ? '' : 's'} prÃ³xima${upcomingTasks.length === 1 ? '' : 's'} a vencer.`);
+        recommendations.push(`Revisar ${upcomingTasks.length} tarea${upcomingTasks.length === 1 ? '' : 's'} próxima${upcomingTasks.length === 1 ? '' : 's'} a vencer.`);
     if (!wikiDocumented)
-        recommendations.push('Completar documentaciÃ³n de la wiki.');
-    if (status === 'En EjecuciÃ³n' && rows.length === 0)
-        recommendations.push('AÃ±adir imputaciones si ya se ha trabajado en este proyecto.');
+        recommendations.push('Completar documentación de la wiki.');
+    if (status === 'En Ejecución' && rows.length === 0)
+        recommendations.push('Añadir imputaciones si ya se ha trabajado en este proyecto.');
     if (!recommendations.length)
-        recommendations.push('Mantener seguimiento periÃ³dico y actualizar la actividad relevante.');
+        recommendations.push('Mantener seguimiento periódico y actualizar la actividad relevante.');
     return { tasks, idx, stats, wiki, wikiDocumented, rows, totals, openTasks, completedTasks, overdueTasks, upcomingTasks, blockedTasks, urgentTasks, incidentItems, progress, status, health, nextDueTask, activityList, recommendations };
 };
 const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, onEditTimeEntry, onDeleteTimeEntry, onPrint }) => {
@@ -991,9 +991,9 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
         ['Tareas abiertas', model.openTasks.length, `${model.overdueTasks.length} vencidas`, 'fa-list-check'],
         ['Incidencias', model.incidentItems.length, `${model.blockedTasks.length} bloqueadas`, 'fa-shield-halved'],
         ['Horas imputadas', model.totals.hours.toLocaleString('es-ES'), `${model.rows.length} registros`, 'fa-clock'],
-        ['KilÃ³metros', model.totals.km.toLocaleString('es-ES'), 'Km registrados', 'fa-route'],
-        ['Dietas', model.totals.allowanceCount.toLocaleString('es-ES'), `${model.totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â‚¬`, 'fa-utensils'],
-        ['PrÃ³ximo vencimiento', model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos', model.nextDueTask ? (model.nextDueTask.tarea || 'Tarea') : 'No hay fechas prÃ³ximas', 'fa-calendar-day']
+        ['Kilómetros', model.totals.km.toLocaleString('es-ES'), 'Km registrados', 'fa-route'],
+        ['Dietas', model.totals.allowanceCount.toLocaleString('es-ES'), `${model.totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'fa-utensils'],
+        ['Próximo vencimiento', model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos', model.nextDueTask ? (model.nextDueTask.tarea || 'Tarea') : 'No hay fechas próximas', 'fa-calendar-day']
     ];
     const renderEmpty = (icon, titleText, text) => (React.createElement("div", { className: "project-empty-state" },
         React.createElement("i", { className: `fas ${icon}` }),
@@ -1013,7 +1013,7 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
         return React.createElement("article", { className: `project-task-card ${blocked ? 'blocked' : ''}`, key: task.id },
             React.createElement("div", { className: "project-task-card-main" },
                 React.createElement("span", { className: "project-task-area" }, task.area || 'General'),
-                React.createElement("strong", null, task.tarea || 'Tarea sin tÃ­tulo'),
+                React.createElement("strong", null, task.tarea || 'Tarea sin título'),
                 React.createElement("small", null, task.detalles || 'Sin detalles'),
                 blocked && React.createElement("div", { className: "project-task-blocked" },
                     React.createElement("i", { className: "fas fa-lock" }),
@@ -1048,34 +1048,34 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                     model.totals.hours.toLocaleString('es-ES'),
                     " h imputadas"),
                 React.createElement("span", null, model.wikiDocumented ? 'Wiki documentada' : 'Wiki pendiente'),
-                React.createElement("span", null, model.incidentItems.length ? `${model.incidentItems.length} incidencias` : 'Sin incidencias crÃ­ticas'))),
+                React.createElement("span", null, model.incidentItems.length ? `${model.incidentItems.length} incidencias` : 'Sin incidencias críticas'))),
         React.createElement("section", { className: "project-panel" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
-                    React.createElement("span", null, "Pr\u00C3\u00B3ximos vencimientos"),
+                    React.createElement("span", null, "Pr\u00F3ximos vencimientos"),
                     React.createElement("h2", null, "Agenda inmediata"))),
-            model.upcomingTasks.length ? renderTaskList(model.upcomingTasks.slice(0, 4)) : renderEmpty('fa-calendar-check', 'Sin vencimientos prÃ³ximos', 'No hay tareas con fecha lÃ­mite en los prÃ³ximos 14 dÃ­as.')),
+            model.upcomingTasks.length ? renderTaskList(model.upcomingTasks.slice(0, 4)) : renderEmpty('fa-calendar-check', 'Sin vencimientos próximos', 'No hay tareas con fecha límite en los próximos 14 días.')),
         React.createElement("section", { className: "project-panel" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
                     React.createElement("span", null, "Riesgos"),
-                    React.createElement("h2", null, "Tareas cr\u00C3\u00ADticas o bloqueadas"))),
+                    React.createElement("h2", null, "Tareas cr\u00EDticas o bloqueadas"))),
             (model.overdueTasks.length || model.blockedTasks.length || model.urgentTasks.length) ? renderTaskList([...model.overdueTasks, ...model.blockedTasks, ...model.urgentTasks].slice(0, 5)) : renderEmpty('fa-shield-heart', 'Sin riesgos destacados', 'No hay tareas vencidas, bloqueadas o urgentes.')),
         React.createElement("section", { className: "project-panel" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
-                    React.createElement("span", null, "\u00C3\u0161ltimas imputaciones"),
+                    React.createElement("span", null, "\u00DAltimas imputaciones"),
                     React.createElement("h2", null, "Trabajo registrado")),
-                React.createElement("button", { type: "button", onClick: () => onAddTimeEntry(project.id) }, "+ A\u00C3\u00B1adir")),
+                React.createElement("button", { type: "button", onClick: () => onAddTimeEntry(project.id) }, "+ A\u00F1adir")),
             React.createElement(AdvancedTimeEntriesTable, { rows: model.rows.slice(0, 4), compact: true, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry, emptyText: "No hay imputaciones registradas en este proyecto." })),
         React.createElement("section", { className: "project-panel" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
                     React.createElement("span", null, "Wiki"),
-                    React.createElement("h2", null, "Documentaci\u00C3\u00B3n")),
+                    React.createElement("h2", null, "Documentaci\u00F3n")),
                 React.createElement("button", { type: "button", onClick: () => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}` }, "Ver wiki")),
-            React.createElement("p", { className: "project-panel-text" }, model.wikiDocumented ? buildWikiExcerpt(project) : 'Este proyecto todavÃ­a no tiene documentaciÃ³n tÃ©cnica.'),
-            React.createElement("div", { className: "project-chip-row" }, (model.wiki.tags || []).length ? model.wiki.tags.map(tag => React.createElement("span", { key: tag }, tag)) : React.createElement("span", null, "Sin categor\u00C3\u00ADas"))),
+            React.createElement("p", { className: "project-panel-text" }, model.wikiDocumented ? buildWikiExcerpt(project) : 'Este proyecto todavía no tiene documentación técnica.'),
+            React.createElement("div", { className: "project-chip-row" }, (model.wiki.tags || []).length ? model.wiki.tags.map(tag => React.createElement("span", { key: tag }, tag)) : React.createElement("span", null, "Sin categor\u00EDas"))),
         React.createElement("section", { className: "project-panel" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
@@ -1091,7 +1091,7 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                 React.createElement("h1", null, title),
                 React.createElement("p", null,
                     client,
-                    " \u00C2\u00B7 Responsable: ",
+                    " \u00B7 Responsable: ",
                     meta.responsableProyecto || meta.ejecutorProyecto || 'Sin asignar')),
             React.createElement("div", { className: "project-detail-side" },
                 React.createElement("div", { className: "project-client-logo", title: client },
@@ -1114,10 +1114,10 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                     "Editar proyecto"),
                 React.createElement("button", { type: "button", onClick: () => { onAddTask(); setActiveTab('tasks'); } },
                     React.createElement("i", { className: "fas fa-plus" }),
-                    "A\u00C3\u00B1adir tarea"),
+                    "A\u00F1adir tarea"),
                 React.createElement("button", { type: "button", onClick: () => onAddTimeEntry(project.id) },
                     React.createElement("i", { className: "fas fa-business-time" }),
-                    "A\u00C3\u00B1adir imputaci\u00C3\u00B3n"),
+                    "A\u00F1adir imputaci\u00F3n"),
                 React.createElement("button", { type: "button", onClick: () => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}` },
                     React.createElement("i", { className: "fas fa-book" }),
                     "Ver wiki"),
@@ -1139,9 +1139,9 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                 React.createElement("div", null,
                     React.createElement("span", null, "Plan de trabajo"),
                     React.createElement("h2", null, "Tareas")),
-                React.createElement("button", { type: "button", onClick: onAddTask }, "A\u00C3\u00B1adir tarea")),
+                React.createElement("button", { type: "button", onClick: onAddTask }, "A\u00F1adir tarea")),
             React.createElement("div", { className: "project-task-filters no-print" },
-                React.createElement("input", { value: taskQuery, onChange: e => setTaskQuery(e.target.value), placeholder: "Buscar tarea, \u00C3\u00A1rea, asignado..." }),
+                React.createElement("input", { value: taskQuery, onChange: e => setTaskQuery(e.target.value), placeholder: "Buscar tarea, \u00E1rea, asignado..." }),
                 React.createElement("select", { value: taskStatus, onChange: e => setTaskStatus(e.target.value) },
                     React.createElement("option", null, "Todos"),
                     React.createElement("option", null, "Pendiente"),
@@ -1160,25 +1160,25 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
         activeTab === 'gantt' && React.createElement("section", { className: "project-panel project-panel-wide" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
-                    React.createElement("span", null, "Planificaci\u00C3\u00B3n"),
+                    React.createElement("span", null, "Planificaci\u00F3n"),
                     React.createElement("h2", null, "Gantt"))),
             React.createElement("div", { className: "project-gantt-list" }, model.tasks.filter(t => t.fechaInicio || t.fechaLimite).map(t => React.createElement("div", { key: t.id },
                 React.createElement("strong", null, t.tarea || 'Tarea'),
                 React.createElement("span", null,
                     window.formatFechaES ? window.formatFechaES(t.fechaInicio) : (t.fechaInicio || 'Sin inicio'),
-                    " \u00E2\u2020\u2019 ",
+                    " \u2192 ",
                     window.formatFechaES ? window.formatFechaES(t.fechaLimite) : (t.fechaLimite || 'Sin fin'))))),
-            !model.tasks.some(t => t.fechaInicio || t.fechaLimite) && renderEmpty('fa-timeline', 'Sin planificaciÃ³n', 'AÃ±ade fechas a las tareas para ver la planificaciÃ³n del proyecto.')),
+            !model.tasks.some(t => t.fechaInicio || t.fechaLimite) && renderEmpty('fa-timeline', 'Sin planificación', 'Añade fechas a las tareas para ver la planificación del proyecto.')),
         activeTab === 'imputations' && React.createElement(ProjectTimeEntriesPanelV2, { project: project, onAdd: onAddTimeEntry, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry }),
         activeTab === 'wiki' && React.createElement("section", { className: "project-panel project-panel-wide" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
-                    React.createElement("span", null, "Documentaci\u00C3\u00B3n t\u00C3\u00A9cnica y notas de campo."),
+                    React.createElement("span", null, "Documentaci\u00F3n t\u00E9cnica y notas de campo."),
                     React.createElement("h2", null, "Wiki del proyecto")),
                 React.createElement("button", { type: "button", onClick: () => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}` }, "Abrir editor")),
-            React.createElement("p", { className: "project-panel-text" }, model.wikiDocumented ? buildWikiExcerpt(project) : 'No hay documentaciÃ³n registrada todavÃ­a.'),
+            React.createElement("p", { className: "project-panel-text" }, model.wikiDocumented ? buildWikiExcerpt(project) : 'No hay documentación registrada todavía.'),
             React.createElement("div", { className: "project-chip-row" },
-                (model.wiki.tags || []).length ? model.wiki.tags.map(tag => React.createElement("span", { key: tag }, tag)) : React.createElement("span", null, "Sin categor\u00C3\u00ADas"),
+                (model.wiki.tags || []).length ? model.wiki.tags.map(tag => React.createElement("span", { key: tag }, tag)) : React.createElement("span", null, "Sin categor\u00EDas"),
                 React.createElement("span", null,
                     "Actualizada: ",
                     formatWikiDate(model.wiki.updatedAt)))),
@@ -1192,12 +1192,12 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                 React.createElement("span", null, item.task.tarea || 'Tarea'),
                 React.createElement("small", null,
                     item.task.asignadoA || 'Sin asignar',
-                    " \u00C2\u00B7 ",
+                    " \u00B7 ",
                     item.task.fechaLimite ? (window.formatFechaES ? window.formatFechaES(item.task.fechaLimite) : item.task.fechaLimite) : 'Sin fecha')))) : renderEmpty('fa-shield-heart', 'No hay incidencias registradas en este proyecto.', 'No se detectan tareas vencidas, bloqueadas ni urgentes.')),
         activeTab === 'activity' && React.createElement("section", { className: "project-panel project-panel-wide" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
-                    React.createElement("span", null, "\u00C3\u0161ltimos eventos"),
+                    React.createElement("span", null, "\u00DAltimos eventos"),
                     React.createElement("h2", null, "Actividad"))),
             model.activityList.length ? React.createElement("div", { className: "project-activity-list" }, model.activityList.map((item, idx) => React.createElement("div", { key: `${item.title}-${idx}` },
                 React.createElement("i", { className: `fas ${item.icon}` }),
@@ -1205,8 +1205,8 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                     React.createElement("strong", null, item.title),
                     React.createElement("span", null,
                         item.meta,
-                        " \u00C2\u00B7 ",
-                        item.ts ? new Date(item.ts).toLocaleString('es-ES') : 'Sin fecha'))))) : renderEmpty('fa-clock-rotate-left', 'Sin actividad todavÃ­a', 'La actividad aparecerÃ¡ cuando se edite el proyecto, tareas, wiki o imputaciones.')),
+                        " \u00B7 ",
+                        item.ts ? new Date(item.ts).toLocaleString('es-ES') : 'Sin fecha'))))) : renderEmpty('fa-clock-rotate-left', 'Sin actividad todavía', 'La actividad aparecerá cuando se edite el proyecto, tareas, wiki o imputaciones.')),
         activeTab === 'documents' && React.createElement("section", { className: "project-panel project-panel-wide" },
             React.createElement("div", { className: "project-panel-head" },
                 React.createElement("div", null,
@@ -1216,7 +1216,7 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                 React.createElement("i", { className: "fas fa-folder-open" }),
                 React.createElement("div", null,
                     React.createElement("strong", null, "Carpeta SharePoint"),
-                    React.createElement("span", null, meta.sharepointUrl))) : renderEmpty('fa-folder-open', 'No hay documentos vinculados a este proyecto.', 'AÃ±ade una carpeta SharePoint en la ediciÃ³n del proyecto para verla aquÃ­.')));
+                    React.createElement("span", null, meta.sharepointUrl))) : renderEmpty('fa-folder-open', 'No hay documentos vinculados a este proyecto.', 'Añade una carpeta SharePoint en la edición del proyecto para verla aquí.')));
 };
 // --- COMPONENTE: EDITOR DE PROYECTO ---
 const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme, onAddTimeEntry, onEditTimeEntry, onDeleteTimeEntry }) => {
@@ -1236,7 +1236,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     const [showExportMenu, setShowExportMenu] = useState(false);
     const [showToast, setShowToast] = useState(false);
     const [openIconPickerId, setOpenIconPickerId] = useState(null);
-    // --- DRAG & DROP de tareas (reordenaciÃ³n) ---
+    // --- DRAG & DROP de tareas (reordenación) ---
     const [draggingTaskId, setDraggingTaskId] = useState(null);
     const [dragOverTaskId, setDragOverTaskId] = useState(null);
     const readDraggedTaskId = (e) => {
@@ -1325,7 +1325,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     const isNewDraft = Boolean(project && project.__isDraft);
     const handleCancelNew = () => {
         var _a, _b, _c, _d, _e, _f;
-        // ConfirmaciÃ³n para evitar perder cambios
+        // Confirmación para evitar perder cambios
         if (isNewDraft) {
             const touched = hasChanges || (((_a = data === null || data === void 0 ? void 0 : data.tasks) === null || _a === void 0 ? void 0 : _a.length) || 0) > 0 ||
                 (((_b = data === null || data === void 0 ? void 0 : data.meta) === null || _b === void 0 ? void 0 : _b.titulo) && data.meta.titulo !== 'Nuevo Proyecto') ||
@@ -1334,7 +1334,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 ((_e = data === null || data === void 0 ? void 0 : data.meta) === null || _e === void 0 ? void 0 : _e.responsableProyecto) ||
                 ((_f = data === null || data === void 0 ? void 0 : data.meta) === null || _f === void 0 ? void 0 : _f.pep);
             if (touched) {
-                const ok = confirm('Se descartarÃ¡ el nuevo proyecto y se perderÃ¡n los cambios. Â¿Continuar?');
+                const ok = confirm('Se descartará el nuevo proyecto y se perderán los cambios. ¿Continuar?');
                 if (!ok)
                     return;
             }
@@ -1344,7 +1344,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         onBack && onBack();
     };
     const handleBack = () => {
-        // Para nuevos, tratamos "volver" como cancelar (con confirmaciÃ³n)
+        // Para nuevos, tratamos "volver" como cancelar (con confirmación)
         if (isNewDraft)
             return handleCancelNew();
         onBack && onBack();
@@ -1352,17 +1352,17 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     const handleSave = async () => {
         const res = await onSave(data);
         setHasChanges(false);
-        // Si era un nuevo proyecto, onSave ya nos ha llevado al dashboard y el componente se desmontarÃ¡
+        // Si era un nuevo proyecto, onSave ya nos ha llevado al dashboard y el componente se desmontará
         if (res && res.created)
             return;
         setViewMode('preview');
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
     };
-    // --- NUEVA FUNCIÃ“N: Cancelar ediciÃ³n ---
+    // --- NUEVA FUNCIÓN: Cancelar edición ---
     const handleCancelEdit = () => {
         if (hasChanges) {
-            const confirmDiscard = window.confirm("Â¿Descartar cambios no guardados y volver?");
+            const confirmDiscard = window.confirm("¿Descartar cambios no guardados y volver?");
             if (!confirmDiscard)
                 return;
         }
@@ -1373,8 +1373,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     };
     const updateMeta = (field, value) => {
         const META_LABELS = {
-            titulo: 'TÃ­tulo',
-            subtitulo: 'SubtÃ­tulo',
+            titulo: 'Título',
+            subtitulo: 'Subtítulo',
             cliente: 'Cliente',
             empresa: 'Empresa',
             estado: 'Estado',
@@ -1392,7 +1392,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 return prev;
             const nextProject = { ...prev, meta: { ...prevMeta, [field]: value } };
             const label = META_LABELS[field] || field;
-            return addActivityToProject(nextProject, `${label}: "${(fromVal !== null && fromVal !== void 0 ? fromVal : '')}" â†’ "${(value !== null && value !== void 0 ? value : '')}"`, 'meta');
+            return addActivityToProject(nextProject, `${label}: "${(fromVal !== null && fromVal !== void 0 ? fromVal : '')}" → "${(value !== null && value !== void 0 ? value : '')}"`, 'meta');
         });
         setHasChanges(true);
     };
@@ -1414,7 +1414,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     const handleClienteChange = (value) => {
         const v = (value || '').trim();
         updateMeta('cliente', value);
-        // Si el proyecto aÃºn no tiene logo, y existe uno guardado para ese cliente, lo aplica automÃ¡ticamente.
+        // Si el proyecto aún no tiene logo, y existe uno guardado para ese cliente, lo aplica automáticamente.
         const hasLogo = !!getClientLogoSrc(data);
         if (!hasLogo && v) {
             const map = getClientLogoMap();
@@ -1451,14 +1451,14 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
     };
     const updateTask = (id, field, value) => {
         const TASK_LABELS = {
-            area: 'Ãrea',
+            area: 'Área',
             tarea: 'Tarea',
             estado: 'Estado',
             prioridad: 'Prioridad',
             detalles: 'Detalles',
             fechaInicio: 'Fecha inicio',
             fechaFin: 'Fecha fin',
-            fechaLimite: 'Fecha lÃ­mite',
+            fechaLimite: 'Fecha límite',
             dependsOn: 'Dependencia',
             asignadoA: 'Asignado a'
         };
@@ -1482,7 +1482,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
             if (fromVal !== value) {
                 const label = TASK_LABELS[field] || field;
                 const taskName = (targetTask && (targetTask.tarea || targetTask.detalles || targetTask.id)) ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
-                nextProject = addActivityToProject(nextProject, `Tarea "${taskName}": ${label}: "${(fromVal !== null && fromVal !== void 0 ? fromVal : '')}" â†’ "${(value !== null && value !== void 0 ? value : '')}"`, 'task');
+                nextProject = addActivityToProject(nextProject, `Tarea "${taskName}": ${label}: "${(fromVal !== null && fromVal !== void 0 ? fromVal : '')}" → "${(value !== null && value !== void 0 ? value : '')}"`, 'task');
             }
             return nextProject;
         });
@@ -1497,7 +1497,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 tarea: 'Nueva tarea',
                 estado: 'Pendiente',
                 prioridad: 'Media',
-                detalles: 'DescripciÃ³n...',
+                detalles: 'Descripción...',
                 fechaInicio: '',
                 fechaFin: '',
                 fechaLimite: '',
@@ -1505,13 +1505,13 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                 dependsOn: null
             };
             let nextProject = { ...prev, tasks: [...prevTasks, newTask] };
-            nextProject = addActivityToProject(nextProject, `Nueva tarea aÃ±adida: "${newTask.tarea}"`, 'task');
+            nextProject = addActivityToProject(nextProject, `Nueva tarea añadida: "${newTask.tarea}"`, 'task');
             return nextProject;
         });
         setHasChanges(true);
     };
     const deleteTask = (id) => {
-        if (!confirm('Â¿Borrar tarea?'))
+        if (!confirm('¿Borrar tarea?'))
             return;
         setData(prev => {
             const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
@@ -1524,9 +1524,9 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         });
         setHasChanges(true);
     };
-    // --- FUNCIONES NUEVAS PARA SUBTAREAS (VERSIÃ“N 2: EdiciÃ³n directa) ---
+    // --- FUNCIONES NUEVAS PARA SUBTAREAS (VERSIÓN 2: Edición directa) ---
     const addSubtask = (taskId) => {
-        // AÃ±adimos directamente una subtarea vacÃ­a para editarla en pantalla
+        // Añadimos directamente una subtarea vacía para editarla en pantalla
         setData(prev => {
             const nextTasks = prev.tasks.map(t => {
                 if (t.id !== taskId)
@@ -1564,8 +1564,8 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setHasChanges(true);
     };
     const deleteSubtask = (taskId, subId) => {
-        // AquÃ­ sÃ­ mantenemos la confirmaciÃ³n para evitar borrar por error
-        if (!confirm("Â¿Borrar subtarea?"))
+        // Aquí sí mantenemos la confirmación para evitar borrar por error
+        if (!confirm("¿Borrar subtarea?"))
             return;
         setData(prev => {
             const nextTasks = prev.tasks.map(t => {
@@ -1612,7 +1612,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         setTimeout(() => window.print(), 500);
     };
     return (React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20 relative project-editor-screen" }, showAudit && (React.createElement("div", { className: "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9998] no-print", onClick: () => setShowAudit(false) }, React.createElement("div", { className: "bg-white w-[min(760px,calc(100vw-24px))] max-h-[80vh] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden", onClick: (e) => e.stopPropagation() }, React.createElement("div", { className: "px-5 py-4 border-b flex items-center justify-between" }, React.createElement("div", { className: "min-w-0" }, React.createElement("div", { className: "text-sm text-gray-500" }, "Historial de cambios"), React.createElement("div", { className: "text-lg font-semibold text-gray-900" }, "Actividad")), React.createElement("button", { type: "button", onClick: () => setShowAudit(false), className: "h-9 w-9 rounded-full hover:bg-gray-100 flex items-center justify-center", "aria-label": "Cerrar" }, React.createElement("i", { className: "fas fa-times" }))), React.createElement("div", { className: "p-5 overflow-auto max-h-[calc(80vh-72px)]" }, activityList.length === 0
-        ? React.createElement("div", { className: "text-sm text-gray-500" }, "Sin actividad todavÃ­a.")
+        ? React.createElement("div", { className: "text-sm text-gray-500" }, "Sin actividad todavía.")
         : React.createElement("ul", { className: "space-y-3" }, activityList.map((log) => React.createElement("li", { key: log.id || String(log.ts || Math.random()), className: "text-sm" }, React.createElement("div", { className: "flex items-start justify-between gap-3" }, React.createElement("div", { className: "min-w-0" }, React.createElement("div", { className: "text-gray-900 break-words" }, React.createElement("span", { className: "font-semibold" }, log.user || 'Usuario'), ": ", log.message || ''), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, new Date(log.ts || Date.now()).toLocaleString('es-ES'))))))))))), showToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-50 z-[9999] pointer-events-none" }, React.createElement("div", { className: "bg-green-500 rounded-full p-1" }, React.createElement("i", { className: "fas fa-check text-white text-xs" })), React.createElement("div", null, React.createElement("h4", { className: "font-bold text-sm" }, "Guardado"), React.createElement("p", { className: "text-xs text-gray-400" }, "Listo para exportar.")))), React.createElement("div", { className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-3 flex justify-between items-center shadow-sm no-print" }, React.createElement("div", { className: "flex items-center gap-4" }, React.createElement("button", { onClick: handleBack, className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium" }, React.createElement("i", { className: "fas fa-arrow-left" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Dashboard")), React.createElement("div", { className: "h-6 w-px bg-gray-200" }), React.createElement("button", { onClick: () => setViewMode(viewMode === 'edit' ? 'preview' : 'edit'), className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${viewMode === 'edit'
             ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             : 'bg-blue-600 text-white hover:bg-blue-700'}`, title: viewMode === 'edit' ? 'Ver vista previa' : 'Editar proyecto' }, React.createElement("i", { className: `fas ${viewMode === 'edit' ? 'fa-eye' : 'fa-pen'}` }), React.createElement("span", { className: "hidden sm:inline" }, viewMode === 'edit' ? 'Vista previa' : 'Editar proyecto')), viewMode === 'edit' && React.createElement("div", { className: "project-edit-toolbar-title" }, React.createElement("strong", null, "Editar proyecto"), React.createElement("span", null, data.meta.titulo || "Proyecto"))), React.createElement("div", { className: "flex gap-3 relative" }, isNewDraft && (React.createElement("button", { onClick: handleCancelNew, className: "px-4 py-2 rounded-lg text-sm font-medium bg-slate-800 hover:bg-slate-700 text-white/90 border border-white/10 transition", title: "Descartar el nuevo proyecto" }, "Cancelar")), (!isNewDraft && viewMode === 'edit') && (React.createElement("button", { onClick: handleCancelEdit, className: "px-4 py-2 rounded-lg text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 transition shadow-sm", title: "Descartar cambios y volver" }, "Cancelar")), React.createElement("button", { onClick: handleSave, disabled: isSaving, className: `px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${hasChanges ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}` }, isSaving ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" }) : React.createElement("i", { className: "fas fa-save" }), React.createElement("span", { className: "hidden sm:inline" }, isSaving ? 'Guardando...' : 'Guardar Progreso')), React.createElement("button", { onClick: () => setShowAudit(true), className: "px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" }, React.createElement("i", { className: "fas fa-history" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Historial")), React.createElement("button", {
@@ -1627,12 +1627,12 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         onEditTimeEntry: onEditTimeEntry,
         onDeleteTimeEntry: onDeleteTimeEntry,
         onPrint: printPDF
-    })) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex justify-between items-center mb-6 pb-2 border-b" }, React.createElement("h3", { className: "text-sm font-bold text-gray-500 uppercase tracking-wider" }, "Datos del Proyecto"), React.createElement("span", { className: "text-xs text-gray-400" }, "ID: ", data.id)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-8" }, React.createElement("div", { className: "space-y-4" }, React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "T\u00EDtulo"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.titulo, onChange: (e) => updateMeta('titulo', e.target.value), placeholder: "Ej: Renovaci\u00F3n Sede Central" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Subt\u00EDtulo / Fase"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.subtitulo, onChange: (e) => updateMeta('subtitulo', e.target.value), placeholder: "Ej: Fase 1 - Cableado Estructurado" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Cliente"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.cliente || '', onChange: (e) => handleClienteChange(e.target.value), placeholder: "Ej: RTVE / EITB / Mediaset..." })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Proyecto"), React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "" })), React.createElement("div", { className: "mt-4" }, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de EjecuciÃ³n / TÃ©cnico"), React.createElement("input", {
+    })) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex justify-between items-center mb-6 pb-2 border-b" }, React.createElement("h3", { className: "text-sm font-bold text-gray-500 uppercase tracking-wider" }, "Datos del Proyecto"), React.createElement("span", { className: "text-xs text-gray-400" }, "ID: ", data.id)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-8" }, React.createElement("div", { className: "space-y-4" }, React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "T\u00EDtulo"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.titulo, onChange: (e) => updateMeta('titulo', e.target.value), placeholder: "Ej: Renovaci\u00F3n Sede Central" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Subt\u00EDtulo / Fase"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.subtitulo, onChange: (e) => updateMeta('subtitulo', e.target.value), placeholder: "Ej: Fase 1 - Cableado Estructurado" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Cliente"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.cliente || '', onChange: (e) => handleClienteChange(e.target.value), placeholder: "Ej: RTVE / EITB / Mediaset..." })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Proyecto"), React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "" })), React.createElement("div", { className: "mt-4" }, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Ejecución / Técnico"), React.createElement("input", {
         type: "text",
         className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow",
         value: data.meta.ejecutorProyecto || '',
         onChange: (e) => updateMeta('ejecutorProyecto', e.target.value),
-        placeholder: "QuiÃ©n ejecuta la obra..."
+        placeholder: "Quién ejecuta la obra..."
     })), React.createElement("div", { className: "internal-only" }, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "PEP"), React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.pep || '', onChange: (e) => updateMeta('pep', e.target.value), placeholder: "Ej: PEP-2026-001" })), React.createElement("div", null, React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Carpeta SharePoint"), React.createElement("div", { className: "relative" }, React.createElement("i", { className: "fas fa-folder-open absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" }), React.createElement("input", {
         type: "url",
         className: "w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow",
@@ -1645,7 +1645,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         value: data.meta.clientLogoUrl || '',
         onChange: (e) => updateMeta('clientLogoUrl', e.target.value),
         placeholder: "URL del logo del cliente"
-    }), React.createElement("div", { className: "project-edit-logo-actions" }, React.createElement("label", { className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer text-sm font-semibold text-gray-700 transition" }, React.createElement("i", { className: "fas fa-upload" }), "Subir logo", React.createElement("input", { type: "file", accept: "image/*", className: "hidden", onChange: (e) => { var _a; return handleClientLogoUpload((_a = e.target.files) === null || _a === void 0 ? void 0 : _a[0]); } })), getClientLogoSrc(data) && (React.createElement("button", { type: "button", className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-700 transition", onClick: handleClientLogoRemove, title: "Quitar logo" }, React.createElement("i", { className: "fas fa-trash" }), "Quitar"))))), React.createElement("p", { className: "text-xs text-gray-500 mt-2" }, "Puedes pegar una URL o subir una imagen. Si no hay logo, se mostrarÃ¡n las iniciales del cliente.")), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Estado"), React.createElement("select", { className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white", value: normalizeProjectEstado(data.meta.estado), onChange: (e) => updateMeta('estado', e.target.value) }, React.createElement("option", { value: "En Ejecuci\u00F3n" }, "\u26A1 En Ejecuci\u00F3n (Activo)"), React.createElement("option", { value: "En Pausa" }, "\u23F8 En Pausa"), React.createElement("option", { value: "En Revisi\u00F3n" }, "\uD83D\uDD0E En Revisi\u00F3n"), React.createElement("option", { value: "Completado" }, "\u2705 Completado (Hist\u00F3rico)")))), React.createElement("div", { className: "space-y-4" }))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center" }, React.createElement("h2", { className: "font-semibold text-gray-800" }, "Plan de Trabajo"), React.createElement("button", { onClick: addTask, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm" }, React.createElement("i", { className: "fas fa-plus" }), " Nueva Tarea")), React.createElement("div", { className: "overflow-auto", style: { maxHeight: "calc(100vh - 320px)" } }, React.createElement("table", { className: "w-full min-w-[1200px] text-left border-collapse" }, React.createElement("thead", null, React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200" }, React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[320px]" }, "\u00C1REA / TIPO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "TAREA"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "ESTADO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "PRIORIDAD"), React.createElement("th", { className: "px-4 py-3 font-semibold whitespace-nowrap min-w-[200px] internal-only" }, "ASIGNADO A"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "DETALLES"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"), React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))), React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, data.tasks.map((task, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` }, React.createElement("td", { className: "px-6 py-4 min-w-[320px]" }, React.createElement("div", { className: "flex flex-col gap-2" }, React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { draggable: true, onDragStart: (e) => handleTaskDragStart(e, task.id), onDragEnd: handleTaskDragEnd, className: "task-drag-handle inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:border-gray-300 cursor-grab active:cursor-grabbing", title: "Arrastra para reordenar" }, React.createElement("i", { className: "fas fa-grip-vertical" })), React.createElement(IconPicker, { value: task.iconType, open: openIconPickerId === task.id, onToggle: () => setOpenIconPickerId(prev => prev === task.id ? null : task.id), onChange: (newId) => { updateTask(task.id, 'iconType', newId); setOpenIconPickerId(null); } }), React.createElement("input", { type: "text", className: "flex-1 border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none font-medium", value: task.area, onChange: (e) => updateTask(task.id, 'area', e.target.value) }), React.createElement("div", { className: "flex flex-wrap items-center gap-2 pl-12 min-w-0" }, React.createElement("div", { className: "text-[11px] text-gray-500 shrink-0" }, "Depende de"), React.createElement("select", { className: "flex-1 min-w-[240px] border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[color:var(--brand)]", value: task.dependsOn || '', onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value ? Number(e.target.value) : null) }, React.createElement("option", { value: "" }, "(ninguna)"), data.tasks
+    }), React.createElement("div", { className: "project-edit-logo-actions" }, React.createElement("label", { className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer text-sm font-semibold text-gray-700 transition" }, React.createElement("i", { className: "fas fa-upload" }), "Subir logo", React.createElement("input", { type: "file", accept: "image/*", className: "hidden", onChange: (e) => { var _a; return handleClientLogoUpload((_a = e.target.files) === null || _a === void 0 ? void 0 : _a[0]); } })), getClientLogoSrc(data) && (React.createElement("button", { type: "button", className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-700 transition", onClick: handleClientLogoRemove, title: "Quitar logo" }, React.createElement("i", { className: "fas fa-trash" }), "Quitar"))))), React.createElement("p", { className: "text-xs text-gray-500 mt-2" }, "Puedes pegar una URL o subir una imagen. Si no hay logo, se mostrarán las iniciales del cliente.")), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Estado"), React.createElement("select", { className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white", value: normalizeProjectEstado(data.meta.estado), onChange: (e) => updateMeta('estado', e.target.value) }, React.createElement("option", { value: "En Ejecuci\u00F3n" }, "\u26A1 En Ejecuci\u00F3n (Activo)"), React.createElement("option", { value: "En Pausa" }, "\u23F8 En Pausa"), React.createElement("option", { value: "En Revisi\u00F3n" }, "\uD83D\uDD0E En Revisi\u00F3n"), React.createElement("option", { value: "Completado" }, "\u2705 Completado (Hist\u00F3rico)")))), React.createElement("div", { className: "space-y-4" }))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center" }, React.createElement("h2", { className: "font-semibold text-gray-800" }, "Plan de Trabajo"), React.createElement("button", { onClick: addTask, className: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm" }, React.createElement("i", { className: "fas fa-plus" }), " Nueva Tarea")), React.createElement("div", { className: "overflow-auto", style: { maxHeight: "calc(100vh - 320px)" } }, React.createElement("table", { className: "w-full min-w-[1200px] text-left border-collapse" }, React.createElement("thead", null, React.createElement("tr", { className: "bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200" }, React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[320px]" }, "\u00C1REA / TIPO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "TAREA"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "ESTADO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[160px]" }, "PRIORIDAD"), React.createElement("th", { className: "px-4 py-3 font-semibold whitespace-nowrap min-w-[200px] internal-only" }, "ASIGNADO A"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[280px]" }, "DETALLES"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA INICIO"), React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowrap min-w-[180px]" }, "FECHA L\u00CDMITE"), React.createElement("th", { className: "px-4 py-3 font-semibold text-center w-10" }))), React.createElement("tbody", { className: "divide-y divide-gray-100 bg-white", onDragOver: handleTaskTableDragOver, onDrop: handleTaskTableDrop }, data.tasks.map((task, idx) => (React.createElement("tr", { key: task.id, onDragOver: (e) => handleTaskRowDragOver(e, task.id), onDrop: (e) => handleTaskRowDrop(e, task.id), className: `hover:bg-blue-50/30 transition-colors align-top group ${dragOverTaskId === task.id ? 'ring-2 ring-[color:rgba(8,136,200,0.25)]' : ''} ${draggingTaskId === task.id ? 'opacity-60' : ''}` }, React.createElement("td", { className: "px-6 py-4 min-w-[320px]" }, React.createElement("div", { className: "flex flex-col gap-2" }, React.createElement("div", { className: "flex items-center gap-2" }, React.createElement("span", { draggable: true, onDragStart: (e) => handleTaskDragStart(e, task.id), onDragEnd: handleTaskDragEnd, className: "task-drag-handle inline-flex items-center justify-center w-8 h-8 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:border-gray-300 cursor-grab active:cursor-grabbing", title: "Arrastra para reordenar" }, React.createElement("i", { className: "fas fa-grip-vertical" })), React.createElement(IconPicker, { value: task.iconType, open: openIconPickerId === task.id, onToggle: () => setOpenIconPickerId(prev => prev === task.id ? null : task.id), onChange: (newId) => { updateTask(task.id, 'iconType', newId); setOpenIconPickerId(null); } }), React.createElement("input", { type: "text", className: "flex-1 border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none font-medium", value: task.area, onChange: (e) => updateTask(task.id, 'area', e.target.value) }), React.createElement("div", { className: "flex flex-wrap items-center gap-2 pl-12 min-w-0" }, React.createElement("div", { className: "text-[11px] text-gray-500 shrink-0" }, "Depende de"), React.createElement("select", { className: "flex-1 min-w-[240px] border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[color:var(--brand)]", value: task.dependsOn || '', onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value ? Number(e.target.value) : null) }, React.createElement("option", { value: "" }, "(ninguna)"), data.tasks
         .filter(t => t.id !== task.id)
         .map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))), isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" }, React.createElement("i", { className: "fas fa-lock" }), " Bloqueada")))))), React.createElement("td", { className: "px-6 py-4 min-w-[280px]" },
     // Tarea principal
@@ -1662,14 +1662,14 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         placeholder: "Escribe la subtarea...",
         onChange: (e) => updateSubtask(task.id, sub.id, e.target.value)
     }),
-    // BotÃ³n borrar
+    // Botón borrar
     React.createElement("button", { onClick: () => deleteSubtask(task.id, sub.id), className: "btn-del-subtask", title: "Borrar subtarea" }, React.createElement("i", { className: "fas fa-trash" }))))), React.createElement("button", { onClick: () => addSubtask(task.id), className: "btn-add-subtask" }, React.createElement("i", { className: "fas fa-plus-circle" }), " Subtarea"))), React.createElement("td", { className: "px-6 py-4 min-w-[160px]" }, React.createElement("select", { className: `w-full border rounded text-sm p-1.5 outline-none font-medium ${task.estado === 'Completado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
             : task.estado === 'En Curso' ? 'bg-amber-50 text-amber-700 border-amber-200'
                 : 'bg-rose-50 text-rose-700 border-rose-200'}`, value: task.estado, onChange: (e) => {
             const newEstado = e.target.value;
             const blocked = isTaskBlocked(task, taskIndex);
             if (blocked && (newEstado === 'En Curso' || newEstado === 'Completado')) {
-                alert('Esta tarea depende de otra aÃºn no completada. Marca la tarea previa como Completado para poder iniciarla.');
+                alert('Esta tarea depende de otra aún no completada. Marca la tarea previa como Completado para poder iniciarla.');
                 updateTask(task.id, 'estado', 'Pendiente');
                 return;
             }
@@ -1685,7 +1685,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
 };
 // --- COMPONENTE: DETALLE DE CARGA DE TRABAJO (CORREGIDO: SEPARA NOMBRES MULTIPLES) ---
 const WorkloadView = ({ projects, onBack }) => {
-    // LÃ“GICA DE CÃLCULO
+    // LÓGICA DE CÁLCULO
     const workloadData = React.useMemo(() => {
         const map = {};
         projects.forEach(p => {
@@ -1714,7 +1714,7 @@ const WorkloadView = ({ projects, onBack }) => {
                     if (!map[key].projectsMap[p.id]) {
                         map[key].projectsMap[p.id] = {
                             id: p.id,
-                            title: p.meta.titulo || 'Sin tÃ­tulo',
+                            title: p.meta.titulo || 'Sin título',
                             client: p.meta.cliente || 'Varios',
                             tasks: []
                         };
@@ -1831,7 +1831,7 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
                     if (!person.projectsMap[p.id]) {
                         person.projectsMap[p.id] = {
                             id: p.id,
-                            title: ((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.titulo) || 'Sin tÃ­tulo',
+                            title: ((_g = p === null || p === void 0 ? void 0 : p.meta) === null || _g === void 0 ? void 0 : _g.titulo) || 'Sin título',
                             client: ((_h = p === null || p === void 0 ? void 0 : p.meta) === null || _h === void 0 ? void 0 : _h.cliente) || 'Sin cliente',
                             tasks: []
                         };
@@ -1839,7 +1839,7 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
                     const taskItem = {
                         ...t,
                         projectId: p.id,
-                        projectTitle: ((_j = p === null || p === void 0 ? void 0 : p.meta) === null || _j === void 0 ? void 0 : _j.titulo) || 'Sin tÃ­tulo',
+                        projectTitle: ((_j = p === null || p === void 0 ? void 0 : p.meta) === null || _j === void 0 ? void 0 : _j.titulo) || 'Sin título',
                         client: ((_k = p === null || p === void 0 ? void 0 : p.meta) === null || _k === void 0 ? void 0 : _k.cliente) || 'Sin cliente',
                         isCritical,
                         isOverdue: !!(due && due < today)
@@ -1876,7 +1876,7 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
         const leastBusy = [...people].reverse().find(p => p.tone === 'available') || people[people.length - 1] || null;
         const allPeopleNames = Array.from(new Set((projects || []).flatMap(p => (p.tasks || []).flatMap(t => splitAssignees(t.asignadoA))))).sort((a, b) => a.localeCompare(b, 'es'));
         const alerts = [];
-        overloaded.forEach(p => alerts.push(`${p.name} estÃ¡ al ${p.pct}% de carga.`));
+        overloaded.forEach(p => alerts.push(`${p.name} está al ${p.pct}% de carga.`));
         if (!overloaded.length && highLoad.length)
             alerts.push(`${highLoad[0].name} concentra una carga elevada.`);
         if (spread >= 55 && people.length > 1)
@@ -1885,28 +1885,28 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
             alerts.push(`${available.map(p => p.name).slice(0, 2).join(' y ')} ${available.length === 1 ? 'tiene' : 'tienen'} disponibilidad.`);
         const criticalHigh = highLoad.find(p => p.criticalTasks > 0);
         if (criticalHigh)
-            alerts.push(`Existen tareas crÃ­ticas asignadas a ${criticalHigh.name}, que ya tiene carga alta.`);
+            alerts.push(`Existen tareas críticas asignadas a ${criticalHigh.name}, que ya tiene carga alta.`);
         const recommendations = [];
         if (busiest && leastBusy && busiest.name !== leastBusy.name && busiest.totalTasks - leastBusy.totalTasks >= 2) {
             recommendations.push(`Redistribuir tareas desde ${busiest.name} hacia ${leastBusy.name}.`);
         }
         if (criticalHigh)
-            recommendations.push(`Revisar si las tareas crÃ­ticas de ${criticalHigh.name} pueden priorizarse o moverse.`);
+            recommendations.push(`Revisar si las tareas críticas de ${criticalHigh.name} pueden priorizarse o moverse.`);
         if (available.length)
             recommendations.push(`Asignar nuevas tareas a personas con disponibilidad: ${available.map(p => p.name).slice(0, 3).join(', ')}.`);
         if (highLoad.length)
-            recommendations.push(`Evitar asignar mÃ¡s tareas a ${highLoad.map(p => p.name).slice(0, 2).join(' y ')} hasta equilibrar la carga.`);
+            recommendations.push(`Evitar asignar más tareas a ${highLoad.map(p => p.name).slice(0, 2).join(' y ')} hasta equilibrar la carga.`);
         if (!recommendations.length)
-            recommendations.push('La carga del equipo estÃ¡ equilibrada. Mantener el reparto actual.');
+            recommendations.push('La carga del equipo está equilibrada. Mantener el reparto actual.');
         return { people, allPeopleNames, capacity, openTasks, criticalAssigned, avgLoad, overloaded, available, alerts, recommendations };
     }, [projects, projectStatusFilter, personFilter, priorityFilter]);
     const kpis = [
         { label: 'Personas activas', value: workloadModel.people.length, note: 'Con tareas abiertas', icon: 'fa-user-group', tone: 'blue' },
         { label: 'Tareas abiertas', value: workloadModel.openTasks, note: 'Pendientes o en curso', icon: 'fa-list-check', tone: 'cyan' },
         { label: 'Carga media', value: `${workloadModel.avgLoad}%`, note: 'Media del equipo', icon: 'fa-gauge-high', tone: 'green' },
-        { label: 'Sobrecargadas', value: workloadModel.overloaded.length, note: 'Personas al 100% o mÃ¡s', icon: 'fa-triangle-exclamation', tone: 'red' },
-        { label: 'Disponibles', value: workloadModel.available.length, note: 'Con margen de asignaciÃ³n', icon: 'fa-circle-check', tone: 'green' },
-        { label: 'CrÃ­ticas asignadas', value: workloadModel.criticalAssigned, note: 'Urgentes o altas', icon: 'fa-bolt', tone: 'amber' }
+        { label: 'Sobrecargadas', value: workloadModel.overloaded.length, note: 'Personas al 100% o más', icon: 'fa-triangle-exclamation', tone: 'red' },
+        { label: 'Disponibles', value: workloadModel.available.length, note: 'Con margen de asignación', icon: 'fa-circle-check', tone: 'green' },
+        { label: 'Críticas asignadas', value: workloadModel.criticalAssigned, note: 'Urgentes o altas', icon: 'fa-bolt', tone: 'amber' }
     ];
     return (React.createElement("div", { className: "workload-page" },
         React.createElement("section", { className: "workload-hero" },
@@ -1916,15 +1916,15 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
                     React.createElement("span", null, "Volver")),
                 React.createElement("div", null,
                     React.createElement("h1", null, "Carga de trabajo"),
-                    React.createElement("p", null, "Distribuci\u00C3\u00B3n de tareas, disponibilidad y equilibrio del equipo."))),
+                    React.createElement("p", null, "Distribuci\u00F3n de tareas, disponibilidad y equilibrio del equipo."))),
             React.createElement("div", { className: "workload-filters no-print" },
                 React.createElement("label", null,
                     React.createElement("span", null, "Estado"),
                     React.createElement("select", { value: projectStatusFilter, onChange: e => setProjectStatusFilter(e.target.value) },
                         React.createElement("option", { value: "Activos" }, "Activos"),
                         React.createElement("option", { value: "Todos" }, "Todos"),
-                        React.createElement("option", { value: "En Ejecuci\u00C3\u00B3n" }, "En ejecuci\u00C3\u00B3n"),
-                        React.createElement("option", { value: "En Revisi\u00C3\u00B3n" }, "En revisi\u00C3\u00B3n"),
+                        React.createElement("option", { value: "En Ejecuci\u00F3n" }, "En ejecuci\u00F3n"),
+                        React.createElement("option", { value: "En Revisi\u00F3n" }, "En revisi\u00F3n"),
                         React.createElement("option", { value: "En Pausa" }, "En pausa"),
                         React.createElement("option", { value: "Completado" }, "Completados"))),
                 React.createElement("label", null,
@@ -1943,7 +1943,7 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
         workloadModel.people.length === 0 ? (React.createElement("div", { className: "workload-empty" },
             React.createElement("i", { className: "fas fa-chart-simple" }),
             React.createElement("h2", null, "No hay datos suficientes para calcular la carga de trabajo."),
-            React.createElement("p", null, "A\u00C3\u00B1ade tareas asignadas a usuarios para visualizar la distribuci\u00C3\u00B3n del equipo."))) : (React.createElement("div", { className: "workload-shell" },
+            React.createElement("p", null, "A\u00F1ade tareas asignadas a usuarios para visualizar la distribuci\u00F3n del equipo."))) : (React.createElement("div", { className: "workload-shell" },
             React.createElement("section", { className: "workload-kpi-grid" }, kpis.map(kpi => React.createElement("article", { className: `workload-kpi workload-kpi--${kpi.tone}`, key: kpi.label },
                 React.createElement("i", { className: `fas ${kpi.icon}` }),
                 React.createElement("div", null,
@@ -1969,7 +1969,7 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
                                     person.totalTasks,
                                     " tarea",
                                     person.totalTasks === 1 ? '' : 's',
-                                    " abiertas \u00C2\u00B7 ",
+                                    " abiertas \u00B7 ",
                                     person.projects.length,
                                     " proyecto",
                                     person.projects.length === 1 ? '' : 's'))),
@@ -1991,11 +1991,11 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
                             React.createElement("i", { className: "fas fa-circle-exclamation" }),
                             React.createElement("span", null, alert))) : React.createElement("div", { className: "workload-positive" },
                             React.createElement("i", { className: "fas fa-circle-check" }),
-                            React.createElement("span", null, "La carga del equipo est\u00C3\u00A1 equilibrada.")))),
+                            React.createElement("span", null, "La carga del equipo est\u00E1 equilibrada.")))),
                     React.createElement("article", { className: "workload-panel" },
                         React.createElement("div", { className: "workload-panel-head" },
                             React.createElement("div", null,
-                                React.createElement("span", null, "Decisi\u00C3\u00B3n"),
+                                React.createElement("span", null, "Decisi\u00F3n"),
                                 React.createElement("h2", null, "Recomendaciones"))),
                         React.createElement("div", { className: "workload-rec-list" }, workloadModel.recommendations.map((rec, i) => React.createElement("div", { className: "workload-rec", key: i },
                             React.createElement("i", { className: "fas fa-arrow-right" }),
@@ -2003,7 +2003,7 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
             React.createElement("section", { className: "workload-panel" },
                 React.createElement("div", { className: "workload-panel-head" },
                     React.createElement("div", null,
-                        React.createElement("span", null, "Distribuci\u00C3\u00B3n"),
+                        React.createElement("span", null, "Distribuci\u00F3n"),
                         React.createElement("h2", null, "Ranking de carga"))),
                 React.createElement("div", { className: "workload-ranking" }, workloadModel.people.map(person => React.createElement("div", { className: `workload-rank-row workload-rank-row--${person.tone}`, key: person.name },
                     React.createElement("span", null, person.name),
@@ -2034,17 +2034,17 @@ const WorkloadDashboardView = ({ projects, onBack }) => {
                             " proyectos"),
                         React.createElement("span", null,
                             person.criticalTasks,
-                            " cr\u00C3\u00ADticas")),
+                            " cr\u00EDticas")),
                     React.createElement("div", { className: "workload-project-list" }, person.projects.slice(0, 4).map(project => React.createElement("button", { key: project.id, onClick: () => window.location.hash = `#/project/${project.id}` },
                         React.createElement("strong", null, project.title),
                         React.createElement("span", null,
                             project.client,
-                            " \u00C2\u00B7 ",
+                            " \u00B7 ",
                             project.tasks.length,
                             " tarea",
                             project.tasks.length === 1 ? '' : 's'))))))))))));
 };
-// --- COMPONENTE: VISTA DETALLADA DE ALERTAS (FINAL: Bloqueos + Rojas + PrÃ³ximos) ---
+// --- COMPONENTE: VISTA DETALLADA DE ALERTAS (FINAL: Bloqueos + Rojas + Próximos) ---
 const AlertsView = ({ projects, onBack }) => {
     const [searchTerm, setSearchTerm] = React.useState('');
     const [clientFilter, setClientFilter] = React.useState('Todos');
@@ -2080,7 +2080,7 @@ const AlertsView = ({ projects, onBack }) => {
             return new Date(y, (m || 1) - 1, d || 1);
         };
         filteredProjects.forEach(p => {
-            const pState = (p.meta && p.meta.estado) ? p.meta.estado : 'En EjecuciÃ³n';
+            const pState = (p.meta && p.meta.estado) ? p.meta.estado : 'En Ejecución';
             if (String(pState).toLowerCase() === 'completado')
                 return;
             const tasks = p.tasks || [];
@@ -2109,7 +2109,7 @@ const AlertsView = ({ projects, onBack }) => {
                     // B. Vencidas (Rojo)
                     if (lim && lim < today)
                         hasOverdue = true;
-                    // C. PrÃ³ximas (Cyan) - PrÃ³ximos 7 dÃ­as
+                    // C. Próximas (Cyan) - Próximos 7 días
                     if (lim && lim >= today && lim <= nextWeek) {
                         upcomingTasks.push(t);
                     }
@@ -2163,8 +2163,8 @@ const AlertsView = ({ projects, onBack }) => {
     // 1. BLOQUEOS
     alertsData.blockedProjects.length > 0 && React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-lock text-orange-500" }), " Bloqueos por Dependencias", React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.blockedProjects.length)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.blockedProjects.map(proj => (React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, proj.items.map(t => React.createElement("div", { key: t.id, className: "text-xs bg-orange-50 text-orange-800 p-1.5 rounded" }, React.createElement("i", { className: "fas fa-lock mr-1" }), t.tarea, " (Espera a: ", t.blockerName, ")")))))))),
     // 2. ALERTAS ROJAS
-    alertsData.redProjects.length > 0 && React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-bell text-red-500" }), " Alertas CrÃ­ticas", React.createElement("span", { className: "alert-count-badge" }, alertsData.redProjects.length)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.redProjects.map(proj => (React.createElement("div", { key: proj.id, className: "wl-person-card alert-critical-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, (proj.reasons || []).map((r, i) => React.createElement("div", { key: i, className: "alert-critical-item" }, React.createElement("i", { className: "fas fa-circle-exclamation" }), String(r || '').toUpperCase())))))))),
-    // 3. TAREAS URGENTES (NUEVA SECCIÃ“N)
+    alertsData.redProjects.length > 0 && React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-bell text-red-500" }), " Alertas Críticas", React.createElement("span", { className: "alert-count-badge" }, alertsData.redProjects.length)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.redProjects.map(proj => (React.createElement("div", { key: proj.id, className: "wl-person-card alert-critical-card", style: { padding: '16px' }, onClick: () => window.location.hash = `#/project/${proj.id}` }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, (proj.reasons || []).map((r, i) => React.createElement("div", { key: i, className: "alert-critical-item" }, React.createElement("i", { className: "fas fa-circle-exclamation" }), String(r || '').toUpperCase())))))))),
+    // 3. TAREAS URGENTES (NUEVA SECCIÓN)
     React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-triangle-exclamation text-amber-500" }), " Tareas Urgentes", React.createElement("span", { className: "alert-count-badge" }, alertsData.urgentProjects.length)), alertsData.urgentProjects.length === 0
         ? React.createElement("div", { className: "p-6 text-center text-gray-400 bg-white rounded-xl border border-dashed text-sm" }, "No hay tareas urgentes.")
         : React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.urgentProjects.map(proj => React.createElement("div", {
@@ -2173,12 +2173,12 @@ const AlertsView = ({ projects, onBack }) => {
             style: { padding: '16px' },
             onClick: () => window.location.hash = `#/project/${proj.id}`
         }, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client), React.createElement("div", { className: "space-y-1" }, (proj.items || []).map(t => React.createElement("div", { key: t.id, className: "alert-urgent-item" }, React.createElement("i", { className: "fas fa-bolt" }), t.tarea))))))),
-    // 4. PRÃ“XIMOS VENCIMIENTOS (NUEVA SECCIÃ“N)
-    React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-calendar-day text-cyan-600" }), " PrÃ³ximos Vencimientos (7 dÃ­as)", React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.upcomingProjects.length)), alertsData.upcomingProjects.length === 0
+    // 4. PRÓXIMOS VENCIMIENTOS (NUEVA SECCIÓN)
+    React.createElement("div", null, React.createElement("h3", { className: "text-lg font-bold text-gray-800 mb-4 flex items-center gap-2" }, React.createElement("i", { className: "fas fa-calendar-day text-cyan-600" }), " Próximos Vencimientos (7 días)", React.createElement("span", { className: "bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs" }, alertsData.upcomingProjects.length)), alertsData.upcomingProjects.length === 0
         ? React.createElement("div", { className: "p-6 text-center text-gray-400 bg-white rounded-xl border border-dashed text-sm" }, "No hay vencimientos esta semana.")
         : React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-4" }, alertsData.upcomingProjects.map(proj => (React.createElement("div", { key: proj.id, className: "wl-person-card", style: { padding: '16px', borderLeft: '4px solid #0891b2' }, onClick: () => window.location.hash = `#/project/${proj.id}` }, React.createElement("div", { className: "flex justify-between" }, React.createElement("div", null, React.createElement("div", { className: "font-bold text-gray-800" }, proj.title), React.createElement("div", { className: "text-xs text-gray-500 mb-2" }, proj.client)), React.createElement("div", { className: "text-xs font-bold text-cyan-700 bg-cyan-50 px-2 py-1 rounded h-fit" }, proj.items.length)), React.createElement("div", { className: "space-y-1" }, proj.items.map(t => React.createElement("div", { key: t.id, className: "flex justify-between text-xs bg-cyan-50/50 text-cyan-900 p-1.5 rounded" }, React.createElement("span", { className: "truncate mr-2 font-medium" }, t.tarea), React.createElement("span", { className: "whitespace-nowrap font-bold" }, window.formatFechaES(t.fechaLimite)))))))))))));
 };
-// --- VISTA: GRÃFICOS (Charts) ---
+// --- VISTA: GRÁFICOS (Charts) ---
 const ChartsView = ({ projects, onBack }) => {
     const didAnimateRef = React.useRef(false);
     const [themeTick, setThemeTick] = React.useState(0);
@@ -2209,7 +2209,7 @@ const ChartsView = ({ projects, onBack }) => {
         return Object.entries(map).sort((a, b) => b[1] - a[1]);
     };
     React.useEffect(() => {
-        // Esto detecta cuando el <html> cambia de clase (por ejemplo: se aÃ±ade o quita "theme-dark")
+        // Esto detecta cuando el <html> cambia de clase (por ejemplo: se añade o quita "theme-dark")
         const el = document.documentElement;
         const obs = new MutationObserver(() => {
             setThemeTick(t => t + 1);
@@ -2226,7 +2226,7 @@ const ChartsView = ({ projects, onBack }) => {
             catch (e) { }
         }
         chartsRef.current = [];
-        // Solo animar la primera vez que entras en GrÃ¡ficos
+        // Solo animar la primera vez que entras en Gráficos
         const anim = didAnimateRef.current ? false : { duration: 650 };
         const tasks = flattenTasks();
         // 1) Donut por Estado
@@ -2245,12 +2245,12 @@ const ChartsView = ({ projects, onBack }) => {
             return '#64748b'; // gris fallback
         };
         const donutColors = donutLabels.map(estadoColor);
-        // 2) Barras por Ãrea
-        const byArea = countBy(tasks, t => t.area, "Sin Ã¡rea");
+        // 2) Barras por Área
+        const byArea = countBy(tasks, t => t.area, "Sin área");
         const areaLabels = byArea.slice(0, 15).map(x => x[0]); // top 15 para que no se sature
         const areaData = byArea.slice(0, 15).map(x => x[1]);
         // 3) Barras por Prioridad
-        // Orden lÃ³gico: Urgente, Alta, Media, Baja
+        // Orden lógico: Urgente, Alta, Media, Baja
         const prioOrder = ["Urgente", "Alta", "Media", "Baja"];
         const prioMap = {};
         for (const t of tasks) {
@@ -2260,7 +2260,7 @@ const ChartsView = ({ projects, onBack }) => {
         const prioLabels = prioOrder.filter(p => prioMap[p] != null);
         const prioData = prioLabels.map(p => prioMap[p] || 0);
         // 4) Barras por Asignado
-        // 4) Barras por Asignado (CORREGIDO: separa mÃºltiples nombres)
+        // 4) Barras por Asignado (CORREGIDO: separa múltiples nombres)
         const byAssignee = (() => {
             const map = {};
             for (const t of tasks) {
@@ -2285,7 +2285,7 @@ const ChartsView = ({ projects, onBack }) => {
         // Chart.js (UMD) disponible como window.Chart
         const ChartJS = (window && window.Chart) ? window.Chart : null;
         if (!ChartJS) {
-            console.error("Chart.js no estÃ¡ cargado. Revisa el PASO 1 (index.html).");
+            console.error("Chart.js no está cargado. Revisa el PASO 1 (index.html).");
             return;
         }
         const isDark = document.documentElement.classList.contains('theme-dark');
@@ -2350,7 +2350,7 @@ const ChartsView = ({ projects, onBack }) => {
             });
             chartsRef.current.push(ch);
         }
-        // Ãrea
+        // Área
         if (byAreaRef.current) {
             const ch = new ChartJS(byAreaRef.current, {
                 type: 'bar',
@@ -2410,17 +2410,17 @@ const ChartsView = ({ projects, onBack }) => {
         };
     }, [projects, themeTick]);
     const total = flattenTasks().length;
-    return React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" }, React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } }, React.createElement("div", { className: "max-w-7xl mx-auto px-6 py-4 flex items-center justify-between" }, React.createElement("div", { className: "flex items-center gap-3" }, React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } }, React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"), React.createElement("div", null, React.createElement("div", { className: "text-xl font-extrabold" }, "GrÃ¡ficos"), React.createElement("div", { className: "text-xs opacity-70" }, `Resumen global Â· ${total} tareas`))))), React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-6" }, React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6" },
+    return React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" }, React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } }, React.createElement("div", { className: "max-w-7xl mx-auto px-6 py-4 flex items-center justify-between" }, React.createElement("div", { className: "flex items-center gap-3" }, React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } }, React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"), React.createElement("div", null, React.createElement("div", { className: "text-xl font-extrabold" }, "Gráficos"), React.createElement("div", { className: "text-xs opacity-70" }, `Resumen global · ${total} tareas`))))), React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-6" }, React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6" },
     // Donut
     React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Estado"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: donutRef }))),
-    // Ãrea
-    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border lg:col-span-2" }, React.createElement("div", { className: "font-bold mb-3" }, "Ãreas (Top 15)"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byAreaRef })))), React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
+    // Área
+    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border lg:col-span-2" }, React.createElement("div", { className: "font-bold mb-3" }, "Áreas (Top 15)"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byAreaRef })))), React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
     // Prioridad
     React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Prioridad"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byPriorityRef }))),
     // Asignado
     React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Tareas por Persona"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byAssigneeRef }))))));
 };
-// --- Seguridad: saneado bÃ¡sico de HTML antes de mostrar/guardar la Wiki ---
+// --- Seguridad: saneado básico de HTML antes de mostrar/guardar la Wiki ---
 // Evita que un backup manipulado o contenido pegado en Quill pueda ejecutar scripts.
 const sanitizeWikiHtml = (html) => {
     try {
@@ -2458,9 +2458,9 @@ const sanitizeWikiHtml = (html) => {
     }
 };
 const WIKI_TAG_OPTIONS = [
-    'Red/IP', 'ST 2110', 'Dante/AES67', 'NDI', 'Intercom', 'Audio', 'VÃ­deo',
+    'Red/IP', 'ST 2110', 'Dante/AES67', 'NDI', 'Intercom', 'Audio', 'Vídeo',
     'Servidores', 'Avid', 'Grafismo', 'Playout', 'Routing', 'Seguridad',
-    'Incidencia', 'ConfiguraciÃ³n', 'Material instalado', 'Pendiente de revisar',
+    'Incidencia', 'Configuración', 'Material instalado', 'Pendiente de revisar',
     'Cliente', 'Otro'
 ];
 const getProjectWikiData = (project) => {
@@ -2478,7 +2478,7 @@ const getProjectWikiData = (project) => {
     }
     return { content: '', tags: [], updatedAt: '' };
 };
-const getProjectTitle = (project) => ((project && project.meta && project.meta.titulo) || 'Proyecto sin tÃ­tulo');
+const getProjectTitle = (project) => ((project && project.meta && project.meta.titulo) || 'Proyecto sin título');
 const getProjectClient = (project) => ((project && project.meta && project.meta.cliente) || '');
 const getProjectStatus = (project) => normalizeProjectEstado(project && project.meta && project.meta.estado);
 const stripWikiHtml = (html) => {
@@ -2503,7 +2503,7 @@ const formatWikiDate = (value) => {
 const buildWikiExcerpt = (project) => {
     const text = stripWikiHtml(getProjectWikiData(project).content);
     if (!text)
-        return 'Este proyecto todavÃ­a no tiene wiki.';
+        return 'Este proyecto todavía no tiene wiki.';
     return text.length > 190 ? text.slice(0, 190).trim() + '...' : text;
 };
 // --- VISTA: WIKI DE PROYECTO (VER / EDITAR como ProjectEditor) ---
@@ -2529,7 +2529,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         if (quillRef.current)
             return;
         if (!window.Quill) {
-            console.error("Quill no estÃ¡ cargado. Revisa index.html (las lÃ­neas de Quill).");
+            console.error("Quill no está cargado. Revisa index.html (las líneas de Quill).");
             return;
         }
         quillRef.current = new window.Quill(editorHostRef.current, {
@@ -2543,24 +2543,24 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
                 ]
             }
         });
-        // 1) Recordar la Ãºltima selecciÃ³n vÃ¡lida
+        // 1) Recordar la última selección válida
         quillRef.current.on("selection-change", (range) => {
             if (range)
                 lastRangeRef.current = range;
         });
-        // 2) Evitar que la barra de herramientas robe el foco (y se pierda la selecciÃ³n)
+        // 2) Evitar que la barra de herramientas robe el foco (y se pierda la selección)
         const toolbar = (_g = quillRef.current.getModule("toolbar")) === null || _g === void 0 ? void 0 : _g.container;
         if (toolbar) {
             toolbar.addEventListener("mousedown", (e) => {
                 // Evita que el click quite el foco al editor
                 e.preventDefault();
-                // Y restaura la selecciÃ³n si existe
+                // Y restaura la selección si existe
                 if (lastRangeRef.current) {
                     quillRef.current.setSelection(lastRangeRef.current);
                 }
             });
         }
-        // Si el editor pierde foco, guardamos el Ãºltimo rango igualmente
+        // Si el editor pierde foco, guardamos el último rango igualmente
         quillRef.current.root.addEventListener("keyup", () => {
             const r = quillRef.current.getSelection();
             if (r)
@@ -2634,15 +2634,15 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
     const documented = hasWikiDocumentation(project);
     // Render principal
     return (React.createElement("div", null,
-    // Barra superior (misma filosofÃ­a que ProjectEditor)
+    // Barra superior (misma filosofía que ProjectEditor)
     React.createElement("div", {
         className: "bg-white border-b border-gray-200 sticky top-0 z-20 px-6 py-3 flex justify-between items-center shadow-sm no-print"
     }, React.createElement("div", { className: "flex items-center gap-4" }, React.createElement("button", {
         type: "button",
         onClick: onBack,
         className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium"
-    }, React.createElement("i", { className: "fas fa-arrow-left" }), React.createElement("span", { className: "hidden sm:inline" }, "Volver al proyecto")), React.createElement("div", { className: "h-6 w-px bg-gray-200" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold text-gray-800" }, "Wiki del proyecto"), React.createElement("div", { className: "text-xs text-gray-500" }, "DocumentaciÃ³n tÃ©cnica y notas de campo."))), React.createElement("div", { className: "flex items-center gap-2" },
-    // BotÃ³n Editar / Ver (como el de ProjectEditor)
+    }, React.createElement("i", { className: "fas fa-arrow-left" }), React.createElement("span", { className: "hidden sm:inline" }, "Volver al proyecto")), React.createElement("div", { className: "h-6 w-px bg-gray-200" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold text-gray-800" }, "Wiki del proyecto"), React.createElement("div", { className: "text-xs text-gray-500" }, "Documentación técnica y notas de campo."))), React.createElement("div", { className: "flex items-center gap-2" },
+    // Botón Editar / Ver (como el de ProjectEditor)
     (mode === 'view')
         ? React.createElement("button", {
             type: "button",
@@ -2664,9 +2664,9 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" })
         : React.createElement("i", { className: "fas fa-save" }), React.createElement("span", { className: "hidden sm:inline" }, isSaving ? "Guardando..." : "Guardar")))),
     // Contenido
-    React.createElement("div", { className: "max-w-5xl mx-auto p-6" }, React.createElement("div", { className: "wiki-project-summary" }, React.createElement("div", { className: "wiki-project-summary-main" }, React.createElement("span", { className: "wiki-card-status" }, getProjectStatus(project)), React.createElement("h1", null, getProjectTitle(project)), React.createElement("p", null, documented ? "Wiki documentada y disponible en la base global de conocimiento." : "Este proyecto todavÃ­a no tiene wiki.")), React.createElement("div", { className: "wiki-project-summary-meta" }, React.createElement("span", null, "Ãšltima actualizaciÃ³n"), React.createElement("strong", null, formatWikiDate(wikiData.updatedAt)))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" }, React.createElement("div", { className: "font-semibold text-gray-800" }, mode === 'view' ? "Vista" : "EdiciÃ³n"), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, mode === 'view'
-        ? "Pulsa â€œEditarâ€ para modificar."
-        : "Usa la barra para negrita, listas y tÃ­tulos.")), React.createElement("div", { className: "wiki-tag-panel" }, React.createElement("div", { className: "wiki-tag-panel-head" }, React.createElement("div", null, React.createElement("div", { className: "wiki-tag-title" }, "CategorÃ­as tÃ©cnicas"), React.createElement("div", { className: "wiki-tag-subtitle" }, mode === 'edit' ? "Selecciona una o varias categorÃ­as para clasificar esta wiki." : "Pulsa Editar para modificar las categorÃ­as."))), React.createElement("div", { className: "wiki-tag-cloud" }, WIKI_TAG_OPTIONS.map(tag => React.createElement("button", {
+    React.createElement("div", { className: "max-w-5xl mx-auto p-6" }, React.createElement("div", { className: "wiki-project-summary" }, React.createElement("div", { className: "wiki-project-summary-main" }, React.createElement("span", { className: "wiki-card-status" }, getProjectStatus(project)), React.createElement("h1", null, getProjectTitle(project)), React.createElement("p", null, documented ? "Wiki documentada y disponible en la base global de conocimiento." : "Este proyecto todavía no tiene wiki.")), React.createElement("div", { className: "wiki-project-summary-meta" }, React.createElement("span", null, "Última actualización"), React.createElement("strong", null, formatWikiDate(wikiData.updatedAt)))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" }, React.createElement("div", { className: "font-semibold text-gray-800" }, mode === 'view' ? "Vista" : "Edición"), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, mode === 'view'
+        ? "Pulsa “Editar” para modificar."
+        : "Usa la barra para negrita, listas y títulos.")), React.createElement("div", { className: "wiki-tag-panel" }, React.createElement("div", { className: "wiki-tag-panel-head" }, React.createElement("div", null, React.createElement("div", { className: "wiki-tag-title" }, "Categorías técnicas"), React.createElement("div", { className: "wiki-tag-subtitle" }, mode === 'edit' ? "Selecciona una o varias categorías para clasificar esta wiki." : "Pulsa Editar para modificar las categorías."))), React.createElement("div", { className: "wiki-tag-cloud" }, WIKI_TAG_OPTIONS.map(tag => React.createElement("button", {
         key: tag,
         type: "button",
         disabled: mode !== 'edit',
@@ -2675,7 +2675,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
     }, tag)))),
     // Zona Quill
     React.createElement("div", { className: "p-4" },
-    // Truco: cuando estÃ¡ en view, escondemos la toolbar que Quill crea (ql-toolbar)
+    // Truco: cuando está en view, escondemos la toolbar que Quill crea (ql-toolbar)
     React.createElement("div", {
         style: {},
         ref: (el) => {
@@ -2699,7 +2699,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         style: { minHeight: "420px" }
     }))))));
 };
-// â”€â”€â”€ VISTA: USUARIOS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── VISTA: USUARIOS ─────────────────────────────────────────────────────────
 const ProjectWikiGlobalView = ({ projects, onOpenWiki, onOpenProjects }) => {
     const [query, setQuery] = React.useState('');
     const [projectId, setProjectId] = React.useState('');
@@ -2765,16 +2765,16 @@ const ProjectWikiGlobalView = ({ projects, onOpenWiki, onOpenProjects }) => {
         setTag('');
         setDateFilter('');
     };
-    const statuses = ['En EjecuciÃ³n', 'En RevisiÃ³n', 'Completado', 'En Pausa'];
-    return React.createElement('div', { className: 'wiki-global-page' }, React.createElement('div', { className: 'wiki-global-header' }, React.createElement('div', null, React.createElement('h1', null, 'Wiki de proyectos'), React.createElement('p', null, 'DocumentaciÃ³n tÃ©cnica, notas de campo y aprendizajes por proyecto.')), React.createElement('div', { className: 'wiki-global-actions' }, React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: onOpenProjects }, React.createElement('i', { className: 'fas fa-folder-open' }), 'Ver proyectos'))), React.createElement('div', { className: 'wiki-kpi-grid' }, React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Proyectos documentados'), React.createElement('strong', null, documentedCount)), React.createElement('div', { className: 'wiki-kpi-card warn' }, React.createElement('span', null, 'Proyectos sin documentaciÃ³n'), React.createElement('strong', null, emptyCount)), React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Total de notas/wiki'), React.createElement('strong', null, documentedCount)), React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Ãšltima actualizaciÃ³n'), React.createElement('strong', null, formatWikiDate(latestUpdate)))), React.createElement('div', { className: 'wiki-search-panel' }, React.createElement('div', { className: 'wiki-search-box' }, React.createElement('i', { className: 'fas fa-magnifying-glass' }), React.createElement('input', { value: query, onChange: e => setQuery(e.target.value), placeholder: 'Buscar en documentaciÃ³n, incidencias, configuraciones...' })), React.createElement('div', { className: 'wiki-filter-grid' }, React.createElement('select', { value: projectId, onChange: e => setProjectId(e.target.value) }, React.createElement('option', { value: '' }, 'Todos los proyectos'), wikiRows.map(row => React.createElement('option', { key: row.project.id, value: row.project.id }, getProjectTitle(row.project)))), React.createElement('select', { value: status, onChange: e => setStatus(e.target.value) }, React.createElement('option', { value: '' }, 'Todos los estados'), statuses.map(item => React.createElement('option', { key: item, value: item }, item))), React.createElement('select', { value: tag, onChange: e => setTag(e.target.value) }, React.createElement('option', { value: '' }, 'Todas las categorÃ­as'), WIKI_TAG_OPTIONS.map(item => React.createElement('option', { key: item, value: item }, item))), React.createElement('select', { value: dateFilter, onChange: e => setDateFilter(e.target.value) }, React.createElement('option', { value: '' }, 'Cualquier fecha'), React.createElement('option', { value: '7' }, 'Actualizado Ãºltimos 7 dÃ­as'), React.createElement('option', { value: '30' }, 'Actualizado Ãºltimos 30 dÃ­as'), React.createElement('option', { value: 'none' }, 'Sin fecha')), React.createElement('button', { type: 'button', className: 'wiki-clear-btn', onClick: clearFilters }, React.createElement('i', { className: 'fas fa-filter-circle-xmark' }), 'Limpiar filtros'))), React.createElement('div', { className: 'wiki-results-head' }, React.createElement('span', null, `${filteredRows.length} resultado${filteredRows.length === 1 ? '' : 's'}`), emptyCount > 0 ? React.createElement('span', { className: 'wiki-empty-hint' }, `${emptyCount} proyecto${emptyCount === 1 ? '' : 's'} sin documentaciÃ³n`) : null), filteredRows.length > 0
+    const statuses = ['En Ejecución', 'En Revisión', 'Completado', 'En Pausa'];
+    return React.createElement('div', { className: 'wiki-global-page' }, React.createElement('div', { className: 'wiki-global-header' }, React.createElement('div', null, React.createElement('h1', null, 'Wiki de proyectos'), React.createElement('p', null, 'Documentación técnica, notas de campo y aprendizajes por proyecto.')), React.createElement('div', { className: 'wiki-global-actions' }, React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: onOpenProjects }, React.createElement('i', { className: 'fas fa-folder-open' }), 'Ver proyectos'))), React.createElement('div', { className: 'wiki-kpi-grid' }, React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Proyectos documentados'), React.createElement('strong', null, documentedCount)), React.createElement('div', { className: 'wiki-kpi-card warn' }, React.createElement('span', null, 'Proyectos sin documentación'), React.createElement('strong', null, emptyCount)), React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Total de notas/wiki'), React.createElement('strong', null, documentedCount)), React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Última actualización'), React.createElement('strong', null, formatWikiDate(latestUpdate)))), React.createElement('div', { className: 'wiki-search-panel' }, React.createElement('div', { className: 'wiki-search-box' }, React.createElement('i', { className: 'fas fa-magnifying-glass' }), React.createElement('input', { value: query, onChange: e => setQuery(e.target.value), placeholder: 'Buscar en documentación, incidencias, configuraciones...' })), React.createElement('div', { className: 'wiki-filter-grid' }, React.createElement('select', { value: projectId, onChange: e => setProjectId(e.target.value) }, React.createElement('option', { value: '' }, 'Todos los proyectos'), wikiRows.map(row => React.createElement('option', { key: row.project.id, value: row.project.id }, getProjectTitle(row.project)))), React.createElement('select', { value: status, onChange: e => setStatus(e.target.value) }, React.createElement('option', { value: '' }, 'Todos los estados'), statuses.map(item => React.createElement('option', { key: item, value: item }, item))), React.createElement('select', { value: tag, onChange: e => setTag(e.target.value) }, React.createElement('option', { value: '' }, 'Todas las categorías'), WIKI_TAG_OPTIONS.map(item => React.createElement('option', { key: item, value: item }, item))), React.createElement('select', { value: dateFilter, onChange: e => setDateFilter(e.target.value) }, React.createElement('option', { value: '' }, 'Cualquier fecha'), React.createElement('option', { value: '7' }, 'Actualizado últimos 7 días'), React.createElement('option', { value: '30' }, 'Actualizado últimos 30 días'), React.createElement('option', { value: 'none' }, 'Sin fecha')), React.createElement('button', { type: 'button', className: 'wiki-clear-btn', onClick: clearFilters }, React.createElement('i', { className: 'fas fa-filter-circle-xmark' }), 'Limpiar filtros'))), React.createElement('div', { className: 'wiki-results-head' }, React.createElement('span', null, `${filteredRows.length} resultado${filteredRows.length === 1 ? '' : 's'}`), emptyCount > 0 ? React.createElement('span', { className: 'wiki-empty-hint' }, `${emptyCount} proyecto${emptyCount === 1 ? '' : 's'} sin documentación`) : null), filteredRows.length > 0
         ? React.createElement('div', { className: 'wiki-card-grid' }, filteredRows.map(row => React.createElement('article', { key: row.project.id, className: 'wiki-card' + (row.documented ? '' : ' empty') }, React.createElement('div', { className: 'wiki-card-top' }, React.createElement('div', { className: 'wiki-card-title-wrap' }, React.createElement('span', { className: 'wiki-card-eyebrow' }, getProjectClient(row.project) || 'Sin cliente'), React.createElement('h2', { title: getProjectTitle(row.project) }, getProjectTitle(row.project))), React.createElement('span', { className: 'wiki-card-status' }, getProjectStatus(row.project))), React.createElement('p', { className: 'wiki-card-excerpt' }, buildWikiExcerpt(row.project)), React.createElement('div', { className: 'wiki-card-tags' }, (row.wiki.tags && row.wiki.tags.length)
             ? row.wiki.tags.slice(0, 5).map(item => React.createElement('span', { key: item }, item))
-            : React.createElement('span', { className: 'muted' }, 'Sin categorÃ­as')), React.createElement('div', { className: 'wiki-card-footer' }, React.createElement('div', { className: 'wiki-card-meta' }, React.createElement('i', { className: row.documented ? 'fas fa-circle-check' : 'fas fa-circle-info' }), React.createElement('span', null, row.documented ? 'Documentada' : 'Sin documentaciÃ³n'), React.createElement('span', null, formatWikiDate(row.wiki.updatedAt))), React.createElement('button', { type: 'button', onClick: () => onOpenWiki(row.project), className: 'wiki-open-btn' }, React.createElement('i', { className: 'fas fa-arrow-up-right-from-square' }), 'Ver wiki')))))
-        : React.createElement('div', { className: 'wiki-no-results' }, React.createElement('i', { className: 'fas fa-book-open' }), React.createElement('h2', null, 'Sin resultados'), React.createElement('p', null, 'Prueba a limpiar filtros o buscar por otro tÃ©rmino tÃ©cnico.')));
+            : React.createElement('span', { className: 'muted' }, 'Sin categorías')), React.createElement('div', { className: 'wiki-card-footer' }, React.createElement('div', { className: 'wiki-card-meta' }, React.createElement('i', { className: row.documented ? 'fas fa-circle-check' : 'fas fa-circle-info' }), React.createElement('span', null, row.documented ? 'Documentada' : 'Sin documentación'), React.createElement('span', null, formatWikiDate(row.wiki.updatedAt))), React.createElement('button', { type: 'button', onClick: () => onOpenWiki(row.project), className: 'wiki-open-btn' }, React.createElement('i', { className: 'fas fa-arrow-up-right-from-square' }), 'Ver wiki')))))
+        : React.createElement('div', { className: 'wiki-no-results' }, React.createElement('i', { className: 'fas fa-book-open' }), React.createElement('h2', null, 'Sin resultados'), React.createElement('p', null, 'Prueba a limpiar filtros o buscar por otro término técnico.')));
 };
-const UsersView = () => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Usuarios'), React.createElement('p', { className: 'sb-page-sub' }, 'GestiÃ³n de accesos y roles del equipo')), React.createElement('div', { className: 'sb-placeholder' }, React.createElement('div', { className: 'sb-placeholder-icon' }, React.createElement('i', { className: 'fas fa-user-group' })), React.createElement('h2', { className: 'sb-placeholder-title' }, 'GestiÃ³n de usuarios'), React.createElement('p', { className: 'sb-placeholder-text' }, 'La administraciÃ³n de usuarios y roles estarÃ¡ disponible prÃ³ximamente. AquÃ­ podrÃ¡s gestionar el acceso al panel, asignar permisos y ver la actividad por persona.'), React.createElement('span', { className: 'sb-placeholder-badge' }, 'PrÃ³ximamente')));
-const ImportView = ({ onImport }) => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Importar'), React.createElement('p', { className: 'sb-page-sub' }, 'RestauraciÃ³n de backups de proyectos Unitecnic')), React.createElement('div', { className: 'sb-placeholder' }, React.createElement('div', { className: 'sb-placeholder-icon' }, React.createElement('i', { className: 'fas fa-file-arrow-up' })), React.createElement('h2', { className: 'sb-placeholder-title' }, 'Importar backup JSON'), React.createElement('p', { className: 'sb-placeholder-text' }, 'Selecciona un backup exportado desde esta aplicaciÃ³n. Antes de sobrescribir los datos actuales se mostrarÃ¡ una confirmaciÃ³n.'), React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: onImport }, React.createElement('i', { className: 'fas fa-file-arrow-up' }), 'Seleccionar archivo')));
-// â”€â”€â”€ VISTA: PERFIL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const UsersView = () => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Usuarios'), React.createElement('p', { className: 'sb-page-sub' }, 'Gestión de accesos y roles del equipo')), React.createElement('div', { className: 'sb-placeholder' }, React.createElement('div', { className: 'sb-placeholder-icon' }, React.createElement('i', { className: 'fas fa-user-group' })), React.createElement('h2', { className: 'sb-placeholder-title' }, 'Gestión de usuarios'), React.createElement('p', { className: 'sb-placeholder-text' }, 'La administración de usuarios y roles estará disponible próximamente. Aquí podrás gestionar el acceso al panel, asignar permisos y ver la actividad por persona.'), React.createElement('span', { className: 'sb-placeholder-badge' }, 'Próximamente')));
+const ImportView = ({ onImport }) => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Importar'), React.createElement('p', { className: 'sb-page-sub' }, 'Restauración de backups de proyectos Unitecnic')), React.createElement('div', { className: 'sb-placeholder' }, React.createElement('div', { className: 'sb-placeholder-icon' }, React.createElement('i', { className: 'fas fa-file-arrow-up' })), React.createElement('h2', { className: 'sb-placeholder-title' }, 'Importar backup JSON'), React.createElement('p', { className: 'sb-placeholder-text' }, 'Selecciona un backup exportado desde esta aplicación. Antes de sobrescribir los datos actuales se mostrará una confirmación.'), React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: onImport }, React.createElement('i', { className: 'fas fa-file-arrow-up' }), 'Seleccionar archivo')));
+// ─── VISTA: PERFIL ────────────────────────────────────────────────────────────
 const TIME_ALLOWANCE_TYPES = ['Ninguna', 'Desayuno', 'Comida', 'Cena', 'Media dieta', 'Dieta completa', 'Alojamiento', 'Otro'];
 const getProjectTimeEntries = (project) => Array.isArray(project && project.timeEntries) ? project.timeEntries : [];
 const toNumberOrZero = (value) => {
@@ -2857,7 +2857,7 @@ const TimeEntryModal = ({ projects, entry, lockedProjectId, onClose, onSave }) =
 };
 const TimeEntriesTable = ({ rows, onEdit, onDelete, compact }) => rows.length === 0
     ? React.createElement('div', { className: 'imput-empty' }, React.createElement('i', { className: 'fas fa-clock' }), React.createElement('strong', null, 'Sin imputaciones'), React.createElement('span', null, 'Aun no hay horas, dietas o kilometros registrados.'))
-    : React.createElement('div', { className: 'imput-table-wrap' }, React.createElement('table', { className: 'imput-table' }, React.createElement('thead', null, React.createElement('tr', null, React.createElement('th', null, 'Fecha'), !compact && React.createElement('th', null, 'Proyecto'), React.createElement('th', null, 'Persona'), React.createElement('th', null, 'Horas'), React.createElement('th', null, 'Dieta'), React.createElement('th', null, 'Importe'), React.createElement('th', null, 'Km'), React.createElement('th', null, 'Observaciones'), React.createElement('th', null, 'Acciones'))), React.createElement('tbody', null, rows.map(row => React.createElement('tr', { key: row.id }, React.createElement('td', null, window.formatFechaES ? window.formatFechaES(row.date) : row.date), !compact && React.createElement('td', null, row.projectTitle), React.createElement('td', null, row.user || '-'), React.createElement('td', null, toNumberOrZero(row.hours).toLocaleString('es-ES')), React.createElement('td', null, row.allowanceType || 'Ninguna'), React.createElement('td', null, `${toNumberOrZero(row.allowanceAmount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â‚¬`), React.createElement('td', null, toNumberOrZero(row.mileageKm).toLocaleString('es-ES')), React.createElement('td', null, row.notes || '-'), React.createElement('td', { className: 'imput-actions' }, React.createElement('button', { type: 'button', onClick: () => onEdit(row), title: 'Editar' }, React.createElement('i', { className: 'fas fa-pen' })), React.createElement('button', { type: 'button', onClick: () => onDelete(row.projectId, row.id), title: 'Eliminar' }, React.createElement('i', { className: 'fas fa-trash' }))))))));
+    : React.createElement('div', { className: 'imput-table-wrap' }, React.createElement('table', { className: 'imput-table' }, React.createElement('thead', null, React.createElement('tr', null, React.createElement('th', null, 'Fecha'), !compact && React.createElement('th', null, 'Proyecto'), React.createElement('th', null, 'Persona'), React.createElement('th', null, 'Horas'), React.createElement('th', null, 'Dieta'), React.createElement('th', null, 'Importe'), React.createElement('th', null, 'Km'), React.createElement('th', null, 'Observaciones'), React.createElement('th', null, 'Acciones'))), React.createElement('tbody', null, rows.map(row => React.createElement('tr', { key: row.id }, React.createElement('td', null, window.formatFechaES ? window.formatFechaES(row.date) : row.date), !compact && React.createElement('td', null, row.projectTitle), React.createElement('td', null, row.user || '-'), React.createElement('td', null, toNumberOrZero(row.hours).toLocaleString('es-ES')), React.createElement('td', null, row.allowanceType || 'Ninguna'), React.createElement('td', null, `${toNumberOrZero(row.allowanceAmount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), React.createElement('td', null, toNumberOrZero(row.mileageKm).toLocaleString('es-ES')), React.createElement('td', null, row.notes || '-'), React.createElement('td', { className: 'imput-actions' }, React.createElement('button', { type: 'button', onClick: () => onEdit(row), title: 'Editar' }, React.createElement('i', { className: 'fas fa-pen' })), React.createElement('button', { type: 'button', onClick: () => onDelete(row.projectId, row.id), title: 'Eliminar' }, React.createElement('i', { className: 'fas fa-trash' }))))))));
 const ImputationsView = ({ projects, onBack, onCreate, onEdit, onDelete }) => {
     const rows = React.useMemo(() => flattenTimeEntries(projects), [projects]);
     const now = new Date();
@@ -2869,7 +2869,7 @@ const ImputationsView = ({ projects, onBack, onCreate, onEdit, onDelete }) => {
         ['Horas este mes', hoursMonth.toLocaleString('es-ES'), 'fa-clock'],
         ['Horas esta semana', hoursWeek.toLocaleString('es-ES'), 'fa-calendar-week'],
         ['Kilometros este mes', kmMonth.toLocaleString('es-ES'), 'fa-route'],
-        ['Dietas este mes', `${allowanceMonth.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â‚¬`, 'fa-utensils']
+        ['Dietas este mes', `${allowanceMonth.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'fa-utensils']
     ];
     return React.createElement('div', { className: 'sb-page imput-page' }, React.createElement('div', { className: 'sb-page-header imput-header' }, React.createElement('div', null, React.createElement('button', { type: 'button', className: 'btn-apple no-print', onClick: onBack }, React.createElement('i', { className: 'fas fa-arrow-left' }), ' Volver'), React.createElement('h1', { className: 'sb-page-title' }, 'Imputaciones'), React.createElement('p', { className: 'sb-page-sub' }, 'Registro de horas, dietas y kilometraje por proyecto.')), React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: () => onCreate(null) }, React.createElement('i', { className: 'fas fa-plus' }), ' Nueva imputacion')), React.createElement('div', { className: 'imput-kpis' }, kpis.map(k => React.createElement('article', { className: 'imput-kpi', key: k[0] }, React.createElement('i', { className: 'fas ' + k[2] }), React.createElement('span', null, k[0]), React.createElement('strong', null, k[1])))), React.createElement('section', { className: 'imput-card' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Listado de imputaciones'), React.createElement('p', null, `${rows.length} registro${rows.length === 1 ? '' : 's'}`))), React.createElement(TimeEntriesTable, { rows: rows, onEdit: onEdit, onDelete: onDelete })));
 };
@@ -2881,7 +2881,7 @@ const ProjectTimeEntriesPanel = ({ project, onAdd, onEdit, onDelete }) => {
         acc.allowance += toNumberOrZero(row.allowanceAmount);
         return acc;
     }, { hours: 0, km: 0, allowance: 0 });
-    return React.createElement('section', { className: 'imput-card project-imput-card no-print' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones'), React.createElement('p', null, 'Horas, dietas y kilometraje registrados en este proyecto.')), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onAdd(project.id) }, React.createElement('i', { className: 'fas fa-plus' }), ' AÃ±adir imputacion')), React.createElement('div', { className: 'imput-project-totals' }, React.createElement('span', null, React.createElement('strong', null, totals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, totals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, `${totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â‚¬`), ' dietas')), React.createElement(TimeEntriesTable, { rows: rows, compact: true, onEdit: onEdit, onDelete: onDelete }));
+    return React.createElement('section', { className: 'imput-card project-imput-card no-print' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones'), React.createElement('p', null, 'Horas, dietas y kilometraje registrados en este proyecto.')), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onAdd(project.id) }, React.createElement('i', { className: 'fas fa-plus' }), ' Añadir imputacion')), React.createElement('div', { className: 'imput-project-totals' }, React.createElement('span', null, React.createElement('strong', null, totals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, totals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, `${totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), ' dietas')), React.createElement(TimeEntriesTable, { rows: rows, compact: true, onEdit: onEdit, onDelete: onDelete }));
 };
 const getImputMonthKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 const getImputMonthLabel = (monthKey) => {
@@ -2946,7 +2946,7 @@ const AdvancedTimeEntryModal = ({ projects, entry, lockedProjectId, initialDate,
             return;
         }
         if (mileageKm < 0) {
-            alert('Los kilÃ³metros no pueden ser negativos.');
+            alert('Los kilómetros no pueden ser negativos.');
             return;
         }
         onSave({
@@ -2964,11 +2964,11 @@ const AdvancedTimeEntryModal = ({ projects, entry, lockedProjectId, initialDate,
             }
         });
     };
-    return React.createElement('div', { className: 'modal-overlay no-print', role: 'dialog', 'aria-modal': 'true' }, React.createElement('form', { className: 'modal-card imput-modal', onSubmit: submit }, React.createElement('div', { className: 'modal-title' }, entry ? 'Editar imputaciÃ³n' : 'Nueva imputaciÃ³n'), React.createElement('div', { className: 'modal-subtitle' }, 'Registra horas, dietas y kilometraje asociados a un proyecto.'), React.createElement('div', { className: 'imput-form-grid' }, React.createElement('label', null, 'Fecha', React.createElement('input', { type: 'date', value: form.date, onChange: e => setField('date', e.target.value), required: true })), React.createElement('label', null, 'Proyecto', React.createElement('select', { value: lockedProjectId || form.projectId, onChange: e => setField('projectId', e.target.value), disabled: !!lockedProjectId, required: true }, React.createElement('option', { value: '' }, 'Selecciona proyecto'), projects.map(p => React.createElement('option', { key: p.id, value: p.id }, (p.meta && p.meta.titulo) || 'Proyecto sin titulo')))), React.createElement('label', null, 'Persona', React.createElement('input', { type: 'text', value: form.user, onChange: e => setField('user', e.target.value), placeholder: 'Nombre', required: true })), React.createElement('label', null, 'Horas', React.createElement('input', { type: 'number', min: '0.25', step: '0.25', value: form.hours, onChange: e => setField('hours', e.target.value), required: true })), React.createElement('label', null, 'Tipo de dieta', React.createElement('select', { value: form.allowanceType, onChange: e => setField('allowanceType', e.target.value) }, TIME_ALLOWANCE_TYPES.map(t => React.createElement('option', { key: t, value: t }, t)))), React.createElement('label', null, 'Importe dieta', React.createElement('input', { type: 'number', min: '0', step: '0.01', value: form.allowanceAmount, onChange: e => setField('allowanceAmount', e.target.value) })), React.createElement('label', null, 'Kilometros', React.createElement('input', { type: 'number', min: '0', step: '0.1', value: form.mileageKm, onChange: e => setField('mileageKm', e.target.value) })), React.createElement('label', { className: 'imput-form-wide' }, 'Observaciones', React.createElement('textarea', { rows: 3, value: form.notes, onChange: e => setField('notes', e.target.value), placeholder: 'Comentario opcional' }))), React.createElement('div', { className: 'modal-actions' }, React.createElement('button', { type: 'button', className: 'btn-apple', onClick: onClose }, 'Cancelar'), React.createElement('button', { type: 'submit', className: 'btn-apple-primary' }, entry ? 'Guardar cambios' : 'Crear imputaciÃ³n'))));
+    return React.createElement('div', { className: 'modal-overlay no-print', role: 'dialog', 'aria-modal': 'true' }, React.createElement('form', { className: 'modal-card imput-modal', onSubmit: submit }, React.createElement('div', { className: 'modal-title' }, entry ? 'Editar imputación' : 'Nueva imputación'), React.createElement('div', { className: 'modal-subtitle' }, 'Registra horas, dietas y kilometraje asociados a un proyecto.'), React.createElement('div', { className: 'imput-form-grid' }, React.createElement('label', null, 'Fecha', React.createElement('input', { type: 'date', value: form.date, onChange: e => setField('date', e.target.value), required: true })), React.createElement('label', null, 'Proyecto', React.createElement('select', { value: lockedProjectId || form.projectId, onChange: e => setField('projectId', e.target.value), disabled: !!lockedProjectId, required: true }, React.createElement('option', { value: '' }, 'Selecciona proyecto'), projects.map(p => React.createElement('option', { key: p.id, value: p.id }, (p.meta && p.meta.titulo) || 'Proyecto sin titulo')))), React.createElement('label', null, 'Persona', React.createElement('input', { type: 'text', value: form.user, onChange: e => setField('user', e.target.value), placeholder: 'Nombre', required: true })), React.createElement('label', null, 'Horas', React.createElement('input', { type: 'number', min: '0.25', step: '0.25', value: form.hours, onChange: e => setField('hours', e.target.value), required: true })), React.createElement('label', null, 'Tipo de dieta', React.createElement('select', { value: form.allowanceType, onChange: e => setField('allowanceType', e.target.value) }, TIME_ALLOWANCE_TYPES.map(t => React.createElement('option', { key: t, value: t }, t)))), React.createElement('label', null, 'Importe dieta', React.createElement('input', { type: 'number', min: '0', step: '0.01', value: form.allowanceAmount, onChange: e => setField('allowanceAmount', e.target.value) })), React.createElement('label', null, 'Kilometros', React.createElement('input', { type: 'number', min: '0', step: '0.1', value: form.mileageKm, onChange: e => setField('mileageKm', e.target.value) })), React.createElement('label', { className: 'imput-form-wide' }, 'Observaciones', React.createElement('textarea', { rows: 3, value: form.notes, onChange: e => setField('notes', e.target.value), placeholder: 'Comentario opcional' }))), React.createElement('div', { className: 'modal-actions' }, React.createElement('button', { type: 'button', className: 'btn-apple', onClick: onClose }, 'Cancelar'), React.createElement('button', { type: 'submit', className: 'btn-apple-primary' }, entry ? 'Guardar cambios' : 'Crear imputación'))));
 };
 const AdvancedTimeEntriesTable = ({ rows, onEdit, onDelete, compact, emptyText }) => rows.length === 0
-    ? React.createElement('div', { className: 'imput-empty' }, React.createElement('i', { className: 'fas fa-clock' }), React.createElement('strong', null, 'Sin imputaciones'), React.createElement('span', null, emptyText || 'AÃºn no hay horas, dietas o kilÃ³metros registrados.'))
-    : React.createElement('div', { className: 'imput-table-wrap' }, React.createElement('table', { className: 'imput-table' }, React.createElement('thead', null, React.createElement('tr', null, React.createElement('th', null, 'Fecha'), !compact && React.createElement('th', null, 'Proyecto'), React.createElement('th', null, 'Persona'), React.createElement('th', null, 'Horas'), React.createElement('th', null, 'Dieta'), React.createElement('th', null, 'Importe'), React.createElement('th', null, 'Km'), React.createElement('th', null, 'Observaciones'), React.createElement('th', null, 'Acciones'))), React.createElement('tbody', null, rows.map(row => React.createElement('tr', { key: row.id }, React.createElement('td', { 'data-label': 'Fecha' }, window.formatFechaES ? window.formatFechaES(row.date) : row.date), !compact && React.createElement('td', { 'data-label': 'Proyecto' }, row.projectTitle), React.createElement('td', { 'data-label': 'Persona' }, row.user || '-'), React.createElement('td', { 'data-label': 'Horas' }, toNumberOrZero(row.hours).toLocaleString('es-ES')), React.createElement('td', { 'data-label': 'Dieta' }, row.allowanceType || 'Ninguna'), React.createElement('td', { 'data-label': 'Importe' }, `${toNumberOrZero(row.allowanceAmount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â‚¬`), React.createElement('td', { 'data-label': 'Km' }, toNumberOrZero(row.mileageKm).toLocaleString('es-ES')), React.createElement('td', { 'data-label': 'Observaciones' }, row.notes || '-'), React.createElement('td', { className: 'imput-actions', 'data-label': 'Acciones' }, React.createElement('button', { type: 'button', onClick: () => onEdit(row), title: 'Editar' }, React.createElement('i', { className: 'fas fa-pen' })), React.createElement('button', { type: 'button', onClick: () => onDelete(row.projectId, row.id), title: 'Eliminar' }, React.createElement('i', { className: 'fas fa-trash' }))))))));
+    ? React.createElement('div', { className: 'imput-empty' }, React.createElement('i', { className: 'fas fa-clock' }), React.createElement('strong', null, 'Sin imputaciones'), React.createElement('span', null, emptyText || 'Aún no hay horas, dietas o kilómetros registrados.'))
+    : React.createElement('div', { className: 'imput-table-wrap' }, React.createElement('table', { className: 'imput-table' }, React.createElement('thead', null, React.createElement('tr', null, React.createElement('th', null, 'Fecha'), !compact && React.createElement('th', null, 'Proyecto'), React.createElement('th', null, 'Persona'), React.createElement('th', null, 'Horas'), React.createElement('th', null, 'Dieta'), React.createElement('th', null, 'Importe'), React.createElement('th', null, 'Km'), React.createElement('th', null, 'Observaciones'), React.createElement('th', null, 'Acciones'))), React.createElement('tbody', null, rows.map(row => React.createElement('tr', { key: row.id }, React.createElement('td', { 'data-label': 'Fecha' }, window.formatFechaES ? window.formatFechaES(row.date) : row.date), !compact && React.createElement('td', { 'data-label': 'Proyecto' }, row.projectTitle), React.createElement('td', { 'data-label': 'Persona' }, row.user || '-'), React.createElement('td', { 'data-label': 'Horas' }, toNumberOrZero(row.hours).toLocaleString('es-ES')), React.createElement('td', { 'data-label': 'Dieta' }, row.allowanceType || 'Ninguna'), React.createElement('td', { 'data-label': 'Importe' }, `${toNumberOrZero(row.allowanceAmount).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), React.createElement('td', { 'data-label': 'Km' }, toNumberOrZero(row.mileageKm).toLocaleString('es-ES')), React.createElement('td', { 'data-label': 'Observaciones' }, row.notes || '-'), React.createElement('td', { className: 'imput-actions', 'data-label': 'Acciones' }, React.createElement('button', { type: 'button', onClick: () => onEdit(row), title: 'Editar' }, React.createElement('i', { className: 'fas fa-pen' })), React.createElement('button', { type: 'button', onClick: () => onDelete(row.projectId, row.id), title: 'Eliminar' }, React.createElement('i', { className: 'fas fa-trash' }))))))));
 const AdvancedImputationsView = ({ projects, onBack, onCreate, onEdit, onDelete }) => {
     const [monthFilter, setMonthFilter] = React.useState(getImputMonthKey());
     const [projectFilter, setProjectFilter] = React.useState('Todos');
@@ -3024,25 +3024,25 @@ const AdvancedImputationsView = ({ projects, onBack, onCreate, onEdit, onDelete 
             return ['No hay imputaciones registradas en el periodo seleccionado.'];
         const list = [];
         if (topPerson[1] > hoursPeriod * 0.5 && filteredRows.length > 1)
-            list.push(`${topPerson[0]} concentra la mayorÃ­a de horas imputadas este mes.`);
+            list.push(`${topPerson[0]} concentra la mayoría de horas imputadas este mes.`);
         const highDays = Object.values(dayMap).filter(v => v.hours > 8).length;
         if (highDays)
-            list.push(`Hay ${highDays} dÃ­a${highDays === 1 ? '' : 's'} con mÃ¡s de 8 horas imputadas.`);
+            list.push(`Hay ${highDays} día${highDays === 1 ? '' : 's'} con más de 8 horas imputadas.`);
         if (topProject[1] > 0)
-            list.push(`El proyecto con mÃ¡s horas es ${topProject[0]}.`);
+            list.push(`El proyecto con más horas es ${topProject[0]}.`);
         if (filteredRows.some(r => toNumberOrZero(r.mileageKm) > 0 && !String(r.notes || '').trim()))
-            list.push('Hay kilÃ³metros registrados sin observaciones.');
+            list.push('Hay kilómetros registrados sin observaciones.');
         if (!list.length)
-            list.push('La carga imputada estÃ¡ repartida de forma equilibrada.');
+            list.push('La carga imputada está repartida de forma equilibrada.');
         return list.slice(0, 4);
     }, [filteredRows, dayMap, topPerson[0], topPerson[1], topProject[0], topProject[1], hoursPeriod]);
     const kpis = [
         ['Horas del periodo', hoursPeriod.toLocaleString('es-ES'), filteredRows.length ? `${filteredRows.length} registros` : 'Sin datos en el periodo', 'fa-clock'],
-        ['Horas esta semana', hoursWeek.toLocaleString('es-ES'), 'SegÃºn filtros activos', 'fa-calendar-week'],
+        ['Horas esta semana', hoursWeek.toLocaleString('es-ES'), 'Según filtros activos', 'fa-calendar-week'],
         ['Km del periodo', kmPeriod.toLocaleString('es-ES'), filteredRows.length ? 'Kilometraje filtrado' : 'Sin datos en el periodo', 'fa-route'],
-        ['Dietas del periodo', `${allowancePeriod.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â‚¬`, 'Importe total', 'fa-utensils'],
-        ['Proyecto con mÃ¡s horas', topProject[0], `${toNumberOrZero(topProject[1]).toLocaleString('es-ES')} h`, 'fa-folder-open'],
-        ['Persona con mÃ¡s horas', topPerson[0], `${toNumberOrZero(topPerson[1]).toLocaleString('es-ES')} h`, 'fa-user']
+        ['Dietas del periodo', `${allowancePeriod.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'Importe total', 'fa-utensils'],
+        ['Proyecto con más horas', topProject[0], `${toNumberOrZero(topProject[1]).toLocaleString('es-ES')} h`, 'fa-folder-open'],
+        ['Persona con más horas', topPerson[0], `${toNumberOrZero(topPerson[1]).toLocaleString('es-ES')} h`, 'fa-user']
     ];
     const clearFilters = () => {
         setMonthFilter(getImputMonthKey());
@@ -3057,7 +3057,7 @@ const AdvancedImputationsView = ({ projects, onBack, onCreate, onEdit, onDelete 
             alert('No hay imputaciones que coincidan con los filtros seleccionados.');
             return;
         }
-        const headers = ['Fecha', 'Proyecto', 'Persona', 'Horas', 'Tipo de dieta', 'Importe dieta', 'KilÃ³metros', 'Observaciones'];
+        const headers = ['Fecha', 'Proyecto', 'Persona', 'Horas', 'Tipo de dieta', 'Importe dieta', 'Kilómetros', 'Observaciones'];
         const rows = filteredRows.map(r => [r.date, r.projectTitle, r.user, r.hours, r.allowanceType || 'Ninguna', r.allowanceAmount, r.mileageKm, r.notes].map(imputCsvEscape).join(';'));
         const blob = new Blob(['\uFEFF' + [headers.map(imputCsvEscape).join(';'), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -3070,12 +3070,12 @@ const AdvancedImputationsView = ({ projects, onBack, onCreate, onEdit, onDelete 
         URL.revokeObjectURL(url);
     };
     const setMonth = (next) => { const safe = next || getImputMonthKey(); setMonthFilter(safe); setSelectedDate(`${safe}-01`); };
-    return React.createElement('div', { className: 'sb-page imput-page' }, React.createElement('div', { className: 'sb-page-header imput-header' }, React.createElement('div', null, React.createElement('button', { type: 'button', className: 'btn-apple no-print', onClick: onBack }, React.createElement('i', { className: 'fas fa-arrow-left' }), ' Volver'), React.createElement('h1', { className: 'sb-page-title' }, 'Imputaciones'), React.createElement('p', { className: 'sb-page-sub' }, 'Registro de horas, dietas y kilometraje por proyecto.')), React.createElement('div', { className: 'imput-header-actions no-print' }, React.createElement('button', { type: 'button', className: 'btn-apple', onClick: exportCSV }, React.createElement('i', { className: 'fas fa-file-csv' }), ' Exportar CSV'), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onCreate(null, null, selectedDate) }, React.createElement('i', { className: 'fas fa-plus' }), ' Nueva imputaciÃ³n'))), projects.length === 0 && React.createElement('div', { className: 'imput-empty imput-empty--top' }, 'No hay proyectos disponibles para imputar horas.'), React.createElement('section', { className: 'imput-card imput-filters no-print' }, React.createElement('label', null, 'Mes', React.createElement('input', { type: 'month', value: monthFilter, onChange: e => setMonth(e.target.value) })), React.createElement('label', null, 'Proyecto', React.createElement('select', { value: projectFilter, onChange: e => setProjectFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todos'), projects.map(p => React.createElement('option', { key: p.id, value: p.id }, (p.meta && p.meta.titulo) || 'Proyecto sin titulo')))), React.createElement('label', null, 'Persona', React.createElement('select', { value: personFilter, onChange: e => setPersonFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todas'), people.map(p => React.createElement('option', { key: p, value: p }, p)))), React.createElement('label', null, 'Tipo de dieta', React.createElement('select', { value: allowanceFilter, onChange: e => setAllowanceFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todos'), TIME_ALLOWANCE_TYPES.map(t => React.createElement('option', { key: t, value: t }, t)))), React.createElement('label', null, 'Observaciones', React.createElement('input', { type: 'text', value: textFilter, onChange: e => setTextFilter(e.target.value), placeholder: 'Buscar texto...' })), React.createElement('button', { type: 'button', className: 'btn-apple', onClick: clearFilters }, 'Limpiar filtros')), React.createElement('div', { className: 'imput-kpis imput-kpis--six' }, kpis.map(k => React.createElement('article', { className: 'imput-kpi', key: k[0] }, React.createElement('i', { className: 'fas ' + k[3] }), React.createElement('span', null, k[0]), React.createElement('strong', null, k[1]), React.createElement('small', null, k[2])))), React.createElement('section', { className: 'imput-card imput-analysis' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'AnÃ¡lisis de imputaciones'), React.createElement('p', null, 'Lectura rÃ¡pida segÃºn los filtros activos.'))), React.createElement('div', { className: 'imput-recs' }, recs.map((r, i) => React.createElement('div', { className: 'imput-rec', key: i }, React.createElement('i', { className: 'fas fa-lightbulb' }), r)))), React.createElement('section', { className: 'imput-card imput-calendar-card' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Calendario mensual'), React.createElement('p', null, getImputMonthLabel(monthFilter))), React.createElement('div', { className: 'imput-calendar-actions no-print' }, React.createElement('button', { type: 'button', onClick: () => setMonth(addImputMonths(monthFilter, -1)) }, React.createElement('i', { className: 'fas fa-chevron-left' })), React.createElement('button', { type: 'button', onClick: () => { setMonthFilter(getImputMonthKey()); setSelectedDate(getCurrentDateInput()); } }, 'Mes actual'), React.createElement('button', { type: 'button', onClick: () => setMonth(addImputMonths(monthFilter, 1)) }, React.createElement('i', { className: 'fas fa-chevron-right' })))), React.createElement('div', { className: 'imput-calendar-weekdays' }, ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => React.createElement('span', { key: d }, d))), React.createElement('div', { className: 'imput-calendar-grid' }, getImputMonthDays(monthFilter).map((date, idx) => {
+    return React.createElement('div', { className: 'sb-page imput-page' }, React.createElement('div', { className: 'sb-page-header imput-header' }, React.createElement('div', null, React.createElement('button', { type: 'button', className: 'btn-apple no-print', onClick: onBack }, React.createElement('i', { className: 'fas fa-arrow-left' }), ' Volver'), React.createElement('h1', { className: 'sb-page-title' }, 'Imputaciones'), React.createElement('p', { className: 'sb-page-sub' }, 'Registro de horas, dietas y kilometraje por proyecto.')), React.createElement('div', { className: 'imput-header-actions no-print' }, React.createElement('button', { type: 'button', className: 'btn-apple', onClick: exportCSV }, React.createElement('i', { className: 'fas fa-file-csv' }), ' Exportar CSV'), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onCreate(null, null, selectedDate) }, React.createElement('i', { className: 'fas fa-plus' }), ' Nueva imputación'))), projects.length === 0 && React.createElement('div', { className: 'imput-empty imput-empty--top' }, 'No hay proyectos disponibles para imputar horas.'), React.createElement('section', { className: 'imput-card imput-filters no-print' }, React.createElement('label', null, 'Mes', React.createElement('input', { type: 'month', value: monthFilter, onChange: e => setMonth(e.target.value) })), React.createElement('label', null, 'Proyecto', React.createElement('select', { value: projectFilter, onChange: e => setProjectFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todos'), projects.map(p => React.createElement('option', { key: p.id, value: p.id }, (p.meta && p.meta.titulo) || 'Proyecto sin titulo')))), React.createElement('label', null, 'Persona', React.createElement('select', { value: personFilter, onChange: e => setPersonFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todas'), people.map(p => React.createElement('option', { key: p, value: p }, p)))), React.createElement('label', null, 'Tipo de dieta', React.createElement('select', { value: allowanceFilter, onChange: e => setAllowanceFilter(e.target.value) }, React.createElement('option', { value: 'Todos' }, 'Todos'), TIME_ALLOWANCE_TYPES.map(t => React.createElement('option', { key: t, value: t }, t)))), React.createElement('label', null, 'Observaciones', React.createElement('input', { type: 'text', value: textFilter, onChange: e => setTextFilter(e.target.value), placeholder: 'Buscar texto...' })), React.createElement('button', { type: 'button', className: 'btn-apple', onClick: clearFilters }, 'Limpiar filtros')), React.createElement('div', { className: 'imput-kpis imput-kpis--six' }, kpis.map(k => React.createElement('article', { className: 'imput-kpi', key: k[0] }, React.createElement('i', { className: 'fas ' + k[3] }), React.createElement('span', null, k[0]), React.createElement('strong', null, k[1]), React.createElement('small', null, k[2])))), React.createElement('section', { className: 'imput-card imput-analysis' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Análisis de imputaciones'), React.createElement('p', null, 'Lectura rápida según los filtros activos.'))), React.createElement('div', { className: 'imput-recs' }, recs.map((r, i) => React.createElement('div', { className: 'imput-rec', key: i }, React.createElement('i', { className: 'fas fa-lightbulb' }), r)))), React.createElement('section', { className: 'imput-card imput-calendar-card' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Calendario mensual'), React.createElement('p', null, getImputMonthLabel(monthFilter))), React.createElement('div', { className: 'imput-calendar-actions no-print' }, React.createElement('button', { type: 'button', onClick: () => setMonth(addImputMonths(monthFilter, -1)) }, React.createElement('i', { className: 'fas fa-chevron-left' })), React.createElement('button', { type: 'button', onClick: () => { setMonthFilter(getImputMonthKey()); setSelectedDate(getCurrentDateInput()); } }, 'Mes actual'), React.createElement('button', { type: 'button', onClick: () => setMonth(addImputMonths(monthFilter, 1)) }, React.createElement('i', { className: 'fas fa-chevron-right' })))), React.createElement('div', { className: 'imput-calendar-weekdays' }, ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => React.createElement('span', { key: d }, d))), React.createElement('div', { className: 'imput-calendar-grid' }, getImputMonthDays(monthFilter).map((date, idx) => {
         const day = date ? dayMap[date] : null;
         const hours = day ? day.hours : 0;
         const tone = !date ? 'empty' : hours > 10 ? 'red' : hours > 8 ? 'amber' : hours >= 6 ? 'green' : hours > 0 ? 'blue' : 'neutral';
         return React.createElement('button', { type: 'button', key: date || `empty-${idx}`, disabled: !date, onClick: () => setSelectedDate(date), className: `imput-day imput-day--${tone} ${selectedDate === date ? 'active' : ''}` }, date && React.createElement('strong', null, Number(date.slice(-2))), date && day && React.createElement(React.Fragment, null, React.createElement('span', null, `${hours.toLocaleString('es-ES')} h`), React.createElement('small', null, `${day.rows.length} registro${day.rows.length === 1 ? '' : 's'}`), React.createElement('em', null, day.km > 0 && React.createElement('i', { className: 'fas fa-car', title: 'Con kilometraje' }), day.allowance > 0 && React.createElement('i', { className: 'fas fa-utensils', title: 'Con dietas' }))));
-    }))), React.createElement('section', { className: 'imput-card imput-day-panel' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones del dÃ­a'), React.createElement('p', null, selectedDate ? (window.formatFechaES ? window.formatFechaES(selectedDate) : selectedDate) : 'Selecciona un dÃ­a')), React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: () => onCreate(null, null, selectedDate) }, React.createElement('i', { className: 'fas fa-plus' }), ' AÃ±adir imputaciÃ³n en este dÃ­a')), React.createElement('div', { className: 'imput-project-totals' }, React.createElement('span', null, React.createElement('strong', null, selectedTotals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, selectedTotals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, `${selectedTotals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â‚¬`), ' dietas')), React.createElement(AdvancedTimeEntriesTable, { rows: selectedRows, onEdit: onEdit, onDelete: onDelete, emptyText: 'No hay imputaciones registradas para este dÃ­a.' })), React.createElement('section', { className: 'imput-card' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Listado de imputaciones'), React.createElement('p', null, `${filteredRows.length} registro${filteredRows.length === 1 ? '' : 's'} filtrado${filteredRows.length === 1 ? '' : 's'}`))), React.createElement(AdvancedTimeEntriesTable, { rows: filteredRows, onEdit: onEdit, onDelete: onDelete, emptyText: rowsAll.length ? 'No hay imputaciones que coincidan con los filtros seleccionados.' : 'No hay imputaciones registradas todavÃ­a.' })));
+    }))), React.createElement('section', { className: 'imput-card imput-day-panel' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones del día'), React.createElement('p', null, selectedDate ? (window.formatFechaES ? window.formatFechaES(selectedDate) : selectedDate) : 'Selecciona un día')), React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: () => onCreate(null, null, selectedDate) }, React.createElement('i', { className: 'fas fa-plus' }), ' Añadir imputación en este día')), React.createElement('div', { className: 'imput-project-totals' }, React.createElement('span', null, React.createElement('strong', null, selectedTotals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, selectedTotals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, `${selectedTotals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), ' dietas')), React.createElement(AdvancedTimeEntriesTable, { rows: selectedRows, onEdit: onEdit, onDelete: onDelete, emptyText: 'No hay imputaciones registradas para este día.' })), React.createElement('section', { className: 'imput-card' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Listado de imputaciones'), React.createElement('p', null, `${filteredRows.length} registro${filteredRows.length === 1 ? '' : 's'} filtrado${filteredRows.length === 1 ? '' : 's'}`))), React.createElement(AdvancedTimeEntriesTable, { rows: filteredRows, onEdit: onEdit, onDelete: onDelete, emptyText: rowsAll.length ? 'No hay imputaciones que coincidan con los filtros seleccionados.' : 'No hay imputaciones registradas todavía.' })));
 };
 const ProjectTimeEntriesPanelV2 = ({ project, onAdd, onEdit, onDelete }) => {
     const rows = flattenTimeEntries([project]).slice(0, 8);
@@ -3088,7 +3088,7 @@ const ProjectTimeEntriesPanelV2 = ({ project, onAdd, onEdit, onDelete }) => {
         acc.allowance += toNumberOrZero(row.allowanceAmount);
         return acc;
     }, { hours: 0, km: 0, allowance: 0, allowanceCount: 0 });
-    return React.createElement('section', { className: 'imput-card project-imput-card no-print' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones'), React.createElement('p', null, 'Ãšltimas horas, dietas y kilometraje del proyecto.')), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onAdd(project.id) }, React.createElement('i', { className: 'fas fa-plus' }), ' AÃ±adir imputaciÃ³n')), React.createElement('div', { className: 'imput-project-totals imput-project-totals--cards' }, React.createElement('span', null, React.createElement('strong', null, totals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, totals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, totals.allowanceCount.toLocaleString('es-ES')), ' dietas'), React.createElement('span', null, React.createElement('strong', null, `${totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} â‚¬`), ' importe dietas')), React.createElement(AdvancedTimeEntriesTable, { rows: rows, compact: true, onEdit: onEdit, onDelete: onDelete, emptyText: 'No hay imputaciones registradas todavÃ­a en este proyecto.' }));
+    return React.createElement('section', { className: 'imput-card project-imput-card no-print' }, React.createElement('div', { className: 'imput-card-head' }, React.createElement('div', null, React.createElement('h2', null, 'Imputaciones'), React.createElement('p', null, 'Últimas horas, dietas y kilometraje del proyecto.')), React.createElement('button', { type: 'button', className: 'btn-apple-primary', onClick: () => onAdd(project.id) }, React.createElement('i', { className: 'fas fa-plus' }), ' Añadir imputación')), React.createElement('div', { className: 'imput-project-totals imput-project-totals--cards' }, React.createElement('span', null, React.createElement('strong', null, totals.hours.toLocaleString('es-ES')), ' horas'), React.createElement('span', null, React.createElement('strong', null, totals.km.toLocaleString('es-ES')), ' km'), React.createElement('span', null, React.createElement('strong', null, totals.allowanceCount.toLocaleString('es-ES')), ' dietas'), React.createElement('span', null, React.createElement('strong', null, `${totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`), ' importe dietas')), React.createElement(AdvancedTimeEntriesTable, { rows: rows, compact: true, onEdit: onEdit, onDelete: onDelete, emptyText: 'No hay imputaciones registradas todavía en este proyecto.' }));
 };
 const ProfileView = () => {
     const userLabel = getUserLabel();
@@ -3103,22 +3103,22 @@ const ProfileView = () => {
     })();
     const email = claims.email || '';
     const username = claims['cognito:username'] || claims.preferred_username || claims.username || claims.sub || '';
-    return React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Perfil'), React.createElement('p', { className: 'sb-page-sub' }, 'InformaciÃ³n de tu cuenta')), React.createElement('div', { className: 'profile-card' }, React.createElement('div', { className: 'profile-avatar-xl' }, (userLabel || 'U').charAt(0).toUpperCase()), React.createElement('div', { className: 'profile-details' }, React.createElement('div', { className: 'profile-name' }, userLabel), email && React.createElement('div', { className: 'profile-email' }, React.createElement('i', { className: 'fas fa-envelope' }), 'Â ', email), username && username !== email && React.createElement('div', { className: 'profile-username' }, React.createElement('i', { className: 'fas fa-at' }), 'Â ', username)), React.createElement('div', { className: 'profile-meta' }, React.createElement('div', { className: 'profile-meta-row' }, React.createElement('span', { className: 'profile-meta-label' }, 'Rol'), React.createElement('span', { className: 'profile-meta-value' }, 'Administrador')), React.createElement('div', { className: 'profile-meta-row' }, React.createElement('span', { className: 'profile-meta-label' }, 'Empresa'), React.createElement('span', { className: 'profile-meta-value' }, 'Unitecnic')))));
+    return React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Perfil'), React.createElement('p', { className: 'sb-page-sub' }, 'Información de tu cuenta')), React.createElement('div', { className: 'profile-card' }, React.createElement('div', { className: 'profile-avatar-xl' }, (userLabel || 'U').charAt(0).toUpperCase()), React.createElement('div', { className: 'profile-details' }, React.createElement('div', { className: 'profile-name' }, userLabel), email && React.createElement('div', { className: 'profile-email' }, React.createElement('i', { className: 'fas fa-envelope' }), ' ', email), username && username !== email && React.createElement('div', { className: 'profile-username' }, React.createElement('i', { className: 'fas fa-at' }), ' ', username)), React.createElement('div', { className: 'profile-meta' }, React.createElement('div', { className: 'profile-meta-row' }, React.createElement('span', { className: 'profile-meta-label' }, 'Rol'), React.createElement('span', { className: 'profile-meta-value' }, 'Administrador')), React.createElement('div', { className: 'profile-meta-row' }, React.createElement('span', { className: 'profile-meta-label' }, 'Empresa'), React.createElement('span', { className: 'profile-meta-value' }, 'Unitecnic')))));
 };
-// â”€â”€â”€ VISTA: AJUSTES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const SettingsView = ({ theme, onToggleTheme }) => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Ajustes'), React.createElement('p', { className: 'sb-page-sub' }, 'Preferencias de la aplicaciÃ³n')), React.createElement('div', { className: 'settings-group' }, React.createElement('h2', { className: 'settings-group-title' }, 'Apariencia'), React.createElement('div', { className: 'settings-row' }, React.createElement('div', { className: 'settings-row-info' }, React.createElement('div', { className: 'settings-row-label' }, 'Tema de la interfaz'), React.createElement('div', { className: 'settings-row-sub' }, theme === 'dark' ? 'Modo oscuro activo' : 'Modo claro activo')), React.createElement('button', {
+// ─── VISTA: AJUSTES ───────────────────────────────────────────────────────────
+const SettingsView = ({ theme, onToggleTheme }) => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Ajustes'), React.createElement('p', { className: 'sb-page-sub' }, 'Preferencias de la aplicación')), React.createElement('div', { className: 'settings-group' }, React.createElement('h2', { className: 'settings-group-title' }, 'Apariencia'), React.createElement('div', { className: 'settings-row' }, React.createElement('div', { className: 'settings-row-info' }, React.createElement('div', { className: 'settings-row-label' }, 'Tema de la interfaz'), React.createElement('div', { className: 'settings-row-sub' }, theme === 'dark' ? 'Modo oscuro activo' : 'Modo claro activo')), React.createElement('button', {
     className: `theme-fab ${theme === 'dark' ? 'night' : 'day'} settings-theme-inline`,
     onClick: onToggleTheme,
-    title: theme === 'dark' ? 'Cambiar a modo dÃ­a' : 'Cambiar a modo noche',
-    'aria-label': theme === 'dark' ? 'Cambiar a modo dÃ­a' : 'Cambiar a modo noche'
-}, React.createElement('i', { className: `fas ${theme === 'dark' ? 'fa-moon' : 'fa-sun'}` })))), React.createElement('div', { className: 'settings-group' }, React.createElement('h2', { className: 'settings-group-title' }, 'PrÃ³ximas funcionalidades'), React.createElement('div', { className: 'sb-placeholder sb-placeholder--compact' }, React.createElement('p', { className: 'sb-placeholder-text' }, 'Notificaciones, idioma, formato de fechas e integraciÃ³n con calendario estarÃ¡n disponibles prÃ³ximamente.'), React.createElement('span', { className: 'sb-placeholder-badge' }, 'En desarrollo'))));
-// â”€â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    title: theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche',
+    'aria-label': theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche'
+}, React.createElement('i', { className: `fas ${theme === 'dark' ? 'fa-moon' : 'fa-sun'}` })))), React.createElement('div', { className: 'settings-group' }, React.createElement('h2', { className: 'settings-group-title' }, 'Próximas funcionalidades'), React.createElement('div', { className: 'sb-placeholder sb-placeholder--compact' }, React.createElement('p', { className: 'sb-placeholder-text' }, 'Notificaciones, idioma, formato de fechas e integración con calendario estarán disponibles próximamente.'), React.createElement('span', { className: 'sb-placeholder-badge' }, 'En desarrollo'))));
+// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClose, theme, onToggleTheme, onImport }) => {
     const [proyectosOpen, setProyectosOpen] = useState(true);
     const counts = React.useMemo(() => ({
         total: projects.length,
-        active: projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'En EjecuciÃ³n').length,
-        review: projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'En RevisiÃ³n').length,
+        active: projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'En Ejecución').length,
+        review: projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'En Revisión').length,
         completed: projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'Completado').length,
         paused: projects.filter(p => normalizeProjectEstado(p && p.meta && p.meta.estado) === 'En Pausa').length,
     }), [projects]);
@@ -3137,7 +3137,7 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
     }, React.createElement('i', { className: 'fas ' + icon + ' snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, label), (badge != null && badge > 0) ? React.createElement('span', { className: 'snav-badge' }, badge) : null);
     return React.createElement('aside', {
         className: 'sidebar' + (sidebarOpen ? ' sidebar--open' : ''),
-        'aria-label': 'NavegaciÃ³n principal'
+        'aria-label': 'Navegación principal'
     },
     // CABECERA
     React.createElement('div', { className: 'sidebar-head' }, React.createElement('button', {
@@ -3147,16 +3147,16 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
     }, React.createElement('img', { src: UNITECNIC_LOGO_BASE64, alt: 'Unitecnic', className: 'sidebar-brand-img' }), React.createElement('div', { className: 'sidebar-brand-text' }, React.createElement('span', { className: 'sidebar-brand-name' }, 'Unitecnic'), React.createElement('span', { className: 'sidebar-brand-sub' }, 'Project Manager'))), React.createElement('button', {
         className: 'sidebar-close-btn',
         onClick: onClose,
-        'aria-label': 'Cerrar menÃº'
+        'aria-label': 'Cerrar menú'
     }, React.createElement('i', { className: 'fas fa-xmark' }))),
-    // NAVEGACIÃ“N
-    React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'MenÃº' }, React.createElement('div', { className: 'sidebar-section-label' }, 'Principal'), ni('fa-house', 'Home', () => { onNavigate('home', null); onClose(); }, null, isActive('home'), false),
+    // NAVEGACIÓN
+    React.createElement('nav', { className: 'sidebar-nav', 'aria-label': 'Menú' }, React.createElement('div', { className: 'sidebar-section-label' }, 'Principal'), ni('fa-house', 'Home', () => { onNavigate('home', null); onClose(); }, null, isActive('home'), false),
     // Grupo Proyectos
     React.createElement('div', { className: 'sidebar-section-label' }, 'Proyectos'), React.createElement('div', { className: 'sidebar-group' }, React.createElement('button', {
         className: 'sidebar-group-btn' + (isActive(['list', 'editor', 'wiki']) ? ' active' : ''),
         onClick: () => setProyectosOpen(function (o) { return !o; }),
         'aria-expanded': proyectosOpen
-    }, React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Proyectos'), React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })), proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' }, ni('fa-layer-group', 'Todos', () => { onNavigate('list', null); onClose(); }, counts.total, isActive('list', null), true), ni('fa-circle-play', 'En EjecuciÃ³n', () => { onNavigate('list', 'En EjecuciÃ³n'); onClose(); }, counts.active, isActive('list', 'En EjecuciÃ³n'), true), ni('fa-magnifying-glass', 'En RevisiÃ³n', () => { onNavigate('list', 'En RevisiÃ³n'); onClose(); }, counts.review, isActive('list', 'En RevisiÃ³n'), true), ni('fa-circle-check', 'Completados', () => { onNavigate('list', 'Completado'); onClose(); }, counts.completed, isActive('list', 'Completado'), true), ni('fa-circle-pause', 'En Pausa', () => { onNavigate('list', 'En Pausa'); onClose(); }, counts.paused, isActive('list', 'En Pausa'), true))), React.createElement('div', { className: 'sidebar-section-label' }, 'Operativa'), ni('fa-chart-bar', 'GrÃ¡ficos', () => { onNavigate('charts', null); onClose(); }, null, isActive('charts'), false), ni('fa-shield-halved', 'Incidencias', () => { onNavigate('alerts', null); onClose(); }, null, isActive('alerts'), false), ni('fa-users', 'Carga de trabajo', () => { onNavigate('workload', null); onClose(); }, null, isActive('workload'), false), ni('fa-business-time', 'Imputaciones', () => { onNavigate('imputations', null); onClose(); }, null, isActive('imputations'), false), React.createElement('div', { className: 'sidebar-section-label' }, 'Conocimiento'), ni('fa-book-open', 'Wiki de proyectos', () => { onNavigate('wikiProjects', null); onClose(); }, null, isActive('wikiProjects'), false), React.createElement('div', { className: 'sidebar-divider' }), React.createElement('div', { className: 'sidebar-section-label' }, 'AdministraciÃ³n'), ni('fa-user-group', 'Usuarios', () => { onNavigate('users', null); onClose(); }, null, isActive('users'), false), ni('fa-file-arrow-up', 'Importar', () => { onNavigate('import', null); onClose(); }, null, isActive('import'), false), ni('fa-gear', 'Ajustes', () => { onNavigate('settings', null); onClose(); }, null, isActive('settings'), false)),
+    }, React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Proyectos'), React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })), proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' }, ni('fa-layer-group', 'Todos', () => { onNavigate('list', null); onClose(); }, counts.total, isActive('list', null), true), ni('fa-circle-play', 'En Ejecución', () => { onNavigate('list', 'En Ejecución'); onClose(); }, counts.active, isActive('list', 'En Ejecución'), true), ni('fa-magnifying-glass', 'En Revisión', () => { onNavigate('list', 'En Revisión'); onClose(); }, counts.review, isActive('list', 'En Revisión'), true), ni('fa-circle-check', 'Completados', () => { onNavigate('list', 'Completado'); onClose(); }, counts.completed, isActive('list', 'Completado'), true), ni('fa-circle-pause', 'En Pausa', () => { onNavigate('list', 'En Pausa'); onClose(); }, counts.paused, isActive('list', 'En Pausa'), true))), React.createElement('div', { className: 'sidebar-section-label' }, 'Análisis'), ni('fa-chart-bar', 'Gráficos', () => { onNavigate('charts', null); onClose(); }, null, isActive('charts'), false), ni('fa-shield-halved', 'Incidencias', () => { onNavigate('alerts', null); onClose(); }, null, isActive('alerts'), false), ni('fa-users', 'Carga de trabajo', () => { onNavigate('workload', null); onClose(); }, null, isActive('workload'), false), ni('fa-business-time', 'Imputaciones', () => { onNavigate('imputations', null); onClose(); }, null, isActive('imputations'), false), React.createElement('div', { className: 'sidebar-section-label' }, 'Conocimiento'), ni('fa-book-open', 'Wiki de proyectos', () => { onNavigate('wikiProjects', null); onClose(); }, null, isActive('wikiProjects'), false), React.createElement('div', { className: 'sidebar-divider' }), React.createElement('div', { className: 'sidebar-section-label' }, 'Administración'), ni('fa-user-group', 'Usuarios', () => { onNavigate('users', null); onClose(); }, null, isActive('users'), false), ni('fa-file-arrow-up', 'Importar', () => { onNavigate('import', null); onClose(); }, null, isActive('import'), false), ni('fa-gear', 'Ajustes', () => { onNavigate('settings', null); onClose(); }, null, isActive('settings'), false)),
     // PIE
     React.createElement('div', { className: 'sidebar-foot' }, React.createElement('div', { className: 'sidebar-user-row' }, React.createElement('div', { className: 'sidebar-avatar' }, (userLabel || 'U').charAt(0).toUpperCase()), React.createElement('div', { className: 'sidebar-user-info' }, React.createElement('div', { className: 'sidebar-user-name', title: userLabel }, userLabel), React.createElement('div', { className: 'sidebar-user-role' }, 'Administrador'))), React.createElement('div', { className: 'sidebar-foot-actions' }, React.createElement('button', {
         className: 'sfab' + (isActive('profile') ? ' active' : ''),
@@ -3165,7 +3165,7 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
     }, React.createElement('i', { className: 'fas fa-circle-user' })), React.createElement('button', {
         className: 'sfab',
         onClick: onToggleTheme,
-        title: theme === 'dark' ? 'Modo dÃ­a' : 'Modo noche'
+        title: theme === 'dark' ? 'Modo día' : 'Modo noche'
     }, React.createElement('i', { className: 'fas ' + (theme === 'dark' ? 'fa-sun' : 'fa-moon') })), React.createElement('button', {
         className: 'sfab sfab--danger',
         onClick: function () {
@@ -3189,7 +3189,7 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
             }
             catch (e) { }
         },
-        title: 'Cerrar sesiÃ³n'
+        title: 'Cerrar sesión'
     }, React.createElement('i', { className: 'fas fa-right-from-bracket' })))));
 };
 const MainApp = () => {
@@ -3223,10 +3223,10 @@ const MainApp = () => {
     const [storageWarning, setStorageWarning] = React.useState(false);
     const [storagePercent, setStoragePercent] = React.useState(0);
     const [timeEntryModal, setTimeEntryModal] = React.useState(null);
-    // --- LOGICA DE SINCRONIZACIÃ“N Y AUTH ---
+    // --- LOGICA DE SINCRONIZACIÓN Y AUTH ---
     const PENDING_KEY = 'unitecnic_projects_pending';
     const PENDING_TS_KEY = 'unitecnic_projects_pending_ts';
-    // FunciÃ³n para obtener el token de seguridad de auth.js
+    // Función para obtener el token de seguridad de auth.js
     const getAuthHeader = () => {
         try {
             const s = JSON.parse(localStorage.getItem('unitecnic_auth_session'));
@@ -3267,7 +3267,7 @@ const MainApp = () => {
     };
     const loadProjectsLocal = async () => {
         try {
-            // AÃ±adimos ?t= para evitar datos viejos de cachÃ©
+            // Añadimos ?t= para evitar datos viejos de caché
             const res = await fetch(AWS_API_URL + '?t=' + Date.now(), {
                 method: 'GET',
                 headers: getAuthHeader()
@@ -3303,7 +3303,7 @@ const MainApp = () => {
                     window.gpSetSyncStatus('ok');
             }
             else {
-                throw new Error("Error en envÃ­o");
+                throw new Error("Error en envío");
             }
         }
         catch (err) {
@@ -3312,7 +3312,7 @@ const MainApp = () => {
                 window.gpSetSyncStatus('pending');
         }
     };
-    // --- RUTAS Y NAVEGACIÃ“N ---
+    // --- RUTAS Y NAVEGACIÓN ---
     const setRoute = (hash) => { try {
         if (window.location.hash !== hash)
             window.location.hash = hash;
@@ -3328,7 +3328,7 @@ const MainApp = () => {
             clientLogoData: "",
             clientLogoUrl: "",
             empresa: "UNITECNIC",
-            estado: "En EjecuciÃ³n",
+            estado: "En Ejecución",
             responsableProyecto: "",
             pep: "",
             sharepointUrl: "" // <--- Nuevo campo
@@ -3490,7 +3490,7 @@ const MainApp = () => {
         window.addEventListener('online', onOnline);
         return () => window.removeEventListener('online', onOnline);
     }, []);
-    // --- LÃ“GICA DE BACKUP ---
+    // --- LÓGICA DE BACKUP ---
     const exportBackupJSON = () => {
         try {
             const projectsToExport = projectsRef.current || [];
@@ -3521,7 +3521,7 @@ const MainApp = () => {
             alert("No se pudo generar el archivo de copia de seguridad.");
         }
     };
-    // --- LÃ“GICA DE EXPORTACIÃ“N CSV ---
+    // --- LÓGICA DE EXPORTACIÓN CSV ---
     const exportCSV = () => {
         try {
             const projectsToExport = projectsRef.current || [];
@@ -3532,7 +3532,7 @@ const MainApp = () => {
                 const stats = computeProjectStats(p.tasks || []);
                 return [m.titulo, m.cliente, normalizeProjectEstado(m.estado), m.responsableProyecto, m.ejecutorProyecto, m.pep, stats.total, stats.completed, stats.inProgress, stats.pending, stats.progress].map(escape).join(',');
             });
-            const bom = 'ï»¿';
+            const bom = '﻿';
             const csv = bom + [headers.map(escape).join(','), ...rows].join('\r\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -3551,7 +3551,7 @@ const MainApp = () => {
             alert("No se pudo generar el archivo CSV.");
         }
     };
-    // --- LÃ“GICA DE IMPORTACIÃ“N ---
+    // --- LÓGICA DE IMPORTACIÓN ---
     const openImportPicker = () => { if (importFileInputRef.current)
         importFileInputRef.current.click(); };
     const normalizeImportPayload = (data) => {
@@ -3579,7 +3579,7 @@ const MainApp = () => {
                     setImportConfirmOpen(true);
                 }
                 else {
-                    alert("El archivo no parece ser un backup vÃ¡lido.");
+                    alert("El archivo no parece ser un backup válido.");
                 }
             }
             catch (err) {
@@ -3606,7 +3606,7 @@ const MainApp = () => {
             alert("Error al importar los datos.");
         }
     };
-    // --- NAVEGACIÃ“N DESDE SIDEBAR ---
+    // --- NAVEGACIÓN DESDE SIDEBAR ---
     const handleSidebarNavigate = (targetView, targetFilter) => {
         setStatusFilter(targetFilter || null);
         if (targetView === 'home') {
@@ -3653,7 +3653,7 @@ const MainApp = () => {
                 const created = { ...clean, id: 'local_' + Date.now() };
                 const updatedList = [...projects, created];
                 await saveProjectsLocal(updatedList);
-                // Volvemos al dashboard al crear (flujo "Nuevo â†’ Editar â†’ Guardar â†’ Dashboard")
+                // Volvemos al dashboard al crear (flujo "Nuevo → Editar → Guardar → Dashboard")
                 setCurrentProject(null);
                 setView('list');
                 setRoute('#/list');
@@ -3700,7 +3700,7 @@ const MainApp = () => {
         }
     };
     const deleteProject = async (id) => {
-        if (!confirm("Â¿Eliminar proyecto permanentemente?"))
+        if (!confirm("¿Eliminar proyecto permanentemente?"))
             return;
         const updatedList = projects.filter(p => p.id !== id);
         await saveProjectsLocal(updatedList);
@@ -3719,7 +3719,7 @@ const MainApp = () => {
             meta: { ...(currentList[fromIdx].meta || {}), estado: target }
         };
         if (prevEstado !== target) {
-            moving = addActivityToProject(moving, `Estado del proyecto: ${prevEstado || '-'} â†’ ${target || '-'}`, 'project');
+            moving = addActivityToProject(moving, `Estado del proyecto: ${prevEstado || '-'} → ${target || '-'}`, 'project');
         }
         currentList.splice(fromIdx, 1);
         let insertIdx = currentList.length;
@@ -3772,7 +3772,7 @@ const MainApp = () => {
             if (String(p.id) !== targetId)
                 return { ...p, timeEntries: currentEntries };
             const nextProject = { ...p, timeEntries: [...currentEntries, entry] };
-            return addActivityToProject(nextProject, `${entryId ? 'ImputaciÃ³n actualizada' : 'ImputaciÃ³n aÃ±adida'}: ${entry.hours.toLocaleString('es-ES')} h${entry.mileageKm ? ` Â· ${entry.mileageKm.toLocaleString('es-ES')} km` : ''}`, 'time');
+            return addActivityToProject(nextProject, `${entryId ? 'Imputación actualizada' : 'Imputación añadida'}: ${entry.hours.toLocaleString('es-ES')} h${entry.mileageKm ? ` · ${entry.mileageKm.toLocaleString('es-ES')} km` : ''}`, 'time');
         });
         await saveProjectsLocal(updatedList);
         const updatedCurrent = updatedList.find(p => currentProject && String(p.id) === String(currentProject.id));
@@ -3781,7 +3781,7 @@ const MainApp = () => {
         setTimeEntryModal(null);
     };
     const deleteTimeEntry = async (projectId, entryId) => {
-        if (!confirm('Â¿Eliminar esta imputaciÃ³n?'))
+        if (!confirm('¿Eliminar esta imputación?'))
             return;
         const updatedList = projects.map(p => {
             if (String(p.id) !== String(projectId))
@@ -3816,11 +3816,11 @@ const MainApp = () => {
     }),
     // Contenido principal
     React.createElement("main", { className: "sidebar-main" },
-    // BotÃ³n hamburguesa (solo mobile)
+    // Botón hamburguesa (solo mobile)
     React.createElement("button", {
         className: "sidebar-hamburger no-print",
         onClick: function () { setSidebarOpen(true); },
-        "aria-label": "Abrir menÃº",
+        "aria-label": "Abrir menú",
         "aria-expanded": sidebarOpen
     }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })), view === 'workload' && (React.createElement(WorkloadDashboardView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'imputations' && (React.createElement(AdvancedImputationsView, { projects: projects, onBack: () => { setView('home'); setRoute('#/home'); }, onCreate: openTimeEntryModal, onEdit: (entry) => openTimeEntryModal(entry.projectId, entry), onDelete: deleteTimeEntry })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'wikiProjects' && (React.createElement(ProjectWikiGlobalView, {
         projects: projects,
@@ -3838,7 +3838,7 @@ const MainApp = () => {
         initialDate: timeEntryModal.initialDate,
         onClose: () => setTimeEntryModal(null),
         onSave: saveTimeEntry
-    }), importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" }, React.createElement("div", { className: "modal-card" }, React.createElement("div", { className: "modal-title" }, "Importar backup"), React.createElement("div", { className: "modal-subtitle" }, "Esta acci\u00F3n sobrescribe los datos actuales para evitar duplicados."), React.createElement("div", { className: "modal-meta" }, React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Proyectos:"), " ", Array.isArray(importCandidate.projects) ? importCandidate.projects.length : 0), React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Logos:"), " ", importCandidate.clientLogoMap ? Object.keys(importCandidate.clientLogoMap).length : 0), importCandidate.meta && importCandidate.meta.exportedAt && (React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Backup:"), " ", new Date(importCandidate.meta.exportedAt).toLocaleString('es-ES')))), React.createElement("div", { className: "modal-actions" }, React.createElement("button", { type: "button", className: "btn-apple", onClick: () => { setImportConfirmOpen(false); setImportCandidate(null); } }, "Cancelar"), React.createElement("button", { type: "button", className: "btn-apple-danger", onClick: confirmImport }, "Importar y sobrescribir"))))), importToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-arrow-up" })), React.createElement("div", { className: "min-w-[220px]" }, React.createElement("div", { className: "font-semibold leading-tight" }, "Importaci\u00F3n completada"), React.createElement("div", { className: "text-xs text-white/70" }, "Datos restaurados (proyectos y logos).")))), projectToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+18px)] left-1/2 -translate-x-1/2 bg-black/60 text-white px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none" }, React.createElement("div", { className: "bg-green-500 rounded-full p-1" }, React.createElement("i", { className: "fas fa-check text-white" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Proyecto creado"), React.createElement("div", { className: "text-sm text-white/75 leading-tight" }, "Guardado y a\u00F1adido al Dashboard.")))), csvToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+80px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-csv" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "CSV generado"), React.createElement("div", { className: "text-xs text-white/70" }, "Archivo descargado. Ãbrelo con Excel.")))), storageWarning && (React.createElement("div", { className: "fixed bottom-16 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[9998] no-print cursor-pointer", onClick: () => setStorageWarning(false) }, React.createElement("i", { className: "fas fa-triangle-exclamation text-lg" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Almacenamiento casi lleno (", storagePercent, "%)"), React.createElement("div", { className: "text-xs text-white/90" }, "Haz un backup y borra proyectos completados. Pulsa para cerrar.")), React.createElement("i", { className: "fas fa-xmark ml-2 text-white/60" }))), backupToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-arrow-down" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Backup generado"), React.createElement("div", { className: "text-xs text-white/70" }, "Archivo .json descargado con proyectos y logos.")))), React.createElement("button", { type: "button", onClick: toggleTheme, className: `theme-fab no-print sidebar-hide-fab ${theme === 'dark' ? 'night' : 'day'}`, title: theme === 'dark' ? 'Cambiar a modo dÃ­a' : 'Cambiar a modo noche', "aria-label": theme === 'dark' ? 'Cambiar a modo dÃ­a' : 'Cambiar a modo noche' }, theme === 'dark' ? (React.createElement("i", { className: "fas fa-moon" })) : (React.createElement("i", { className: "fas fa-sun" })))) /* cierre main */)); /* cierre app-layout + return */
+    }), importConfirmOpen && importCandidate && (React.createElement("div", { className: "modal-overlay no-print", role: "dialog", "aria-modal": "true", "aria-label": "Confirmar importaci\u00F3n" }, React.createElement("div", { className: "modal-card" }, React.createElement("div", { className: "modal-title" }, "Importar backup"), React.createElement("div", { className: "modal-subtitle" }, "Esta acci\u00F3n sobrescribe los datos actuales para evitar duplicados."), React.createElement("div", { className: "modal-meta" }, React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Proyectos:"), " ", Array.isArray(importCandidate.projects) ? importCandidate.projects.length : 0), React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Logos:"), " ", importCandidate.clientLogoMap ? Object.keys(importCandidate.clientLogoMap).length : 0), importCandidate.meta && importCandidate.meta.exportedAt && (React.createElement("div", null, React.createElement("span", { className: "modal-meta-label" }, "Backup:"), " ", new Date(importCandidate.meta.exportedAt).toLocaleString('es-ES')))), React.createElement("div", { className: "modal-actions" }, React.createElement("button", { type: "button", className: "btn-apple", onClick: () => { setImportConfirmOpen(false); setImportCandidate(null); } }, "Cancelar"), React.createElement("button", { type: "button", className: "btn-apple-danger", onClick: confirmImport }, "Importar y sobrescribir"))))), importToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-arrow-up" })), React.createElement("div", { className: "min-w-[220px]" }, React.createElement("div", { className: "font-semibold leading-tight" }, "Importaci\u00F3n completada"), React.createElement("div", { className: "text-xs text-white/70" }, "Datos restaurados (proyectos y logos).")))), projectToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+18px)] left-1/2 -translate-x-1/2 bg-black/60 text-white px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none" }, React.createElement("div", { className: "bg-green-500 rounded-full p-1" }, React.createElement("i", { className: "fas fa-check text-white" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Proyecto creado"), React.createElement("div", { className: "text-sm text-white/75 leading-tight" }, "Guardado y a\u00F1adido al Dashboard.")))), csvToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+80px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-csv" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "CSV generado"), React.createElement("div", { className: "text-xs text-white/70" }, "Archivo descargado. Ábrelo con Excel.")))), storageWarning && (React.createElement("div", { className: "fixed bottom-16 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-[9998] no-print cursor-pointer", onClick: () => setStorageWarning(false) }, React.createElement("i", { className: "fas fa-triangle-exclamation text-lg" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Almacenamiento casi lleno (", storagePercent, "%)"), React.createElement("div", { className: "text-xs text-white/90" }, "Haz un backup y borra proyectos completados. Pulsa para cerrar.")), React.createElement("i", { className: "fas fa-xmark ml-2 text-white/60" }))), backupToast && (React.createElement("div", { className: "fixed top-[calc(env(safe-area-inset-top)+16px)] left-1/2 -translate-x-1/2 bg-gray-900/80 text-white px-5 py-3 rounded-2xl shadow-xl backdrop-blur-md border border-white/10 flex items-center gap-3 z-[9999] pointer-events-none no-print" }, React.createElement("div", { className: "h-10 w-10 rounded-full bg-white/10 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-arrow-down" })), React.createElement("div", null, React.createElement("div", { className: "font-semibold leading-tight" }, "Backup generado"), React.createElement("div", { className: "text-xs text-white/70" }, "Archivo .json descargado con proyectos y logos.")))), React.createElement("button", { type: "button", onClick: toggleTheme, className: `theme-fab no-print sidebar-hide-fab ${theme === 'dark' ? 'night' : 'day'}`, title: theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche', "aria-label": theme === 'dark' ? 'Cambiar a modo día' : 'Cambiar a modo noche' }, theme === 'dark' ? (React.createElement("i", { className: "fas fa-moon" })) : (React.createElement("i", { className: "fas fa-sun" })))) /* cierre main */)); /* cierre app-layout + return */
 };
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -3849,17 +3849,17 @@ class ErrorBoundary extends React.Component {
         return { hasError: true };
     }
     componentDidCatch(error, info) {
-        console.error('Error crÃ­tico en la aplicaciÃ³n:', error, info);
+        console.error('Error crítico en la aplicación:', error, info);
     }
     render() {
         if (this.state.hasError) {
-            return React.createElement('div', { className: 'h-screen flex items-center justify-center bg-gray-50' }, React.createElement('div', { style: { background: 'white', borderRadius: '1.25rem', padding: '2.5rem', maxWidth: '28rem', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.1)', border: '1px solid #fecaca' } }, React.createElement('div', { style: { fontSize: '3rem', marginBottom: '1rem' } }, 'âš ï¸'), React.createElement('h2', { style: { fontWeight: 700, fontSize: '1.25rem', color: '#1f2937', marginBottom: '0.5rem' } }, 'Algo ha fallado'), React.createElement('p', { style: { color: '#6b7280', marginBottom: '1.5rem', lineHeight: 1.5 } }, 'Ha ocurrido un error inesperado. Tus datos estÃ¡n seguros en el servidor.'), React.createElement('button', {
+            return React.createElement('div', { className: 'h-screen flex items-center justify-center bg-gray-50' }, React.createElement('div', { style: { background: 'white', borderRadius: '1.25rem', padding: '2.5rem', maxWidth: '28rem', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.1)', border: '1px solid #fecaca' } }, React.createElement('div', { style: { fontSize: '3rem', marginBottom: '1rem' } }, '⚠️'), React.createElement('h2', { style: { fontWeight: 700, fontSize: '1.25rem', color: '#1f2937', marginBottom: '0.5rem' } }, 'Algo ha fallado'), React.createElement('p', { style: { color: '#6b7280', marginBottom: '1.5rem', lineHeight: 1.5 } }, 'Ha ocurrido un error inesperado. Tus datos están seguros en el servidor.'), React.createElement('button', {
                 onClick: () => this.setState({ hasError: false }),
                 style: { background: '#0888c8', color: 'white', border: 'none', borderRadius: '0.75rem', padding: '0.6rem 1.5rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.95rem' }
             }, 'Intentar de nuevo'), React.createElement('br', null), React.createElement('button', {
                 onClick: () => window.location.reload(),
                 style: { marginTop: '0.75rem', background: 'transparent', color: '#6b7280', border: 'none', cursor: 'pointer', fontSize: '0.85rem' }
-            }, 'Recargar pÃ¡gina')));
+            }, 'Recargar página')));
         }
         return this.props.children;
     }
