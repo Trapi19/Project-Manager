@@ -1282,6 +1282,224 @@ React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal br
         ));
     }))))))));
 };
+
+const buildProjectDetailModel = (project) => {
+    const tasks = Array.isArray(project && project.tasks) ? project.tasks : [];
+    const idx = buildTaskIndex(tasks);
+    const stats = computeProjectStats(tasks);
+    const wiki = getProjectWikiData(project);
+    const wikiDocumented = hasWikiDocumentation(project);
+    const rows = flattenTimeEntries([project]);
+    const totals = rows.reduce((acc, row) => {
+        acc.hours += toNumberOrZero(row.hours);
+        acc.km += toNumberOrZero(row.mileageKm);
+        if ((row.allowanceType && row.allowanceType !== 'Ninguna') || toNumberOrZero(row.allowanceAmount) > 0) acc.allowanceCount += 1;
+        acc.allowance += toNumberOrZero(row.allowanceAmount);
+        return acc;
+    }, { hours: 0, km: 0, allowance: 0, allowanceCount: 0 });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueSoonLimit = new Date(today);
+    dueSoonLimit.setDate(today.getDate() + 14);
+    const openTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
+    const completedTasks = tasks.filter(t => effectiveEstado(t, idx) === 'Completado');
+    const overdueTasks = openTasks.filter(t => {
+        const d = parseDateOnly(t.fechaLimite);
+        return d && d < today;
+    });
+    const upcomingTasks = openTasks
+        .filter(t => {
+            const d = parseDateOnly(t.fechaLimite);
+            return d && d >= today && d <= dueSoonLimit;
+        })
+        .sort((a, b) => String(a.fechaLimite || '').localeCompare(String(b.fechaLimite || '')))
+        .slice(0, 6);
+    const blockedTasks = openTasks.filter(t => isTaskBlocked(t, idx));
+    const urgentTasks = openTasks.filter(t => ['Urgente', 'Alta'].includes(t.prioridad || ''));
+    const incidentItems = [
+        ...overdueTasks.map(t => ({ type: 'Vencida', tone: 'critical', task: t })),
+        ...blockedTasks.map(t => ({ type: 'Bloqueada', tone: 'warning', task: t })),
+        ...urgentTasks.map(t => ({ type: t.prioridad || 'Alta', tone: (t.prioridad === 'Urgente' ? 'critical' : 'warning'), task: t }))
+    ];
+    const progress = stats.progress || 0;
+    const status = getProjectStatus(project);
+    let health = { label: 'Correcto', tone: 'good', icon: 'fa-circle-check', text: 'El proyecto no presenta señales relevantes de riesgo.' };
+    if (status === 'Completado') health = { label: 'Completado', tone: 'done', icon: 'fa-circle-check', text: 'El proyecto está completado. Mantén la documentación cerrada y accesible.' };
+    else if (status === 'En Pausa') health = { label: 'En pausa', tone: 'paused', icon: 'fa-circle-pause', text: 'El proyecto está pausado. Conviene revisar próximos pasos antes de reactivarlo.' };
+    else if (overdueTasks.length || blockedTasks.length > 1 || urgentTasks.some(t => t.prioridad === 'Urgente')) health = { label: 'Crítico', tone: 'critical', icon: 'fa-triangle-exclamation', text: 'Hay tareas vencidas, bloqueos o prioridades urgentes que requieren intervención.' };
+    else if (upcomingTasks.length || blockedTasks.length || !wikiDocumented || (status === 'En Ejecución' && rows.length === 0) || (tasks.length && progress < 35)) health = { label: 'Atención requerida', tone: 'warning', icon: 'fa-circle-exclamation', text: 'El proyecto avanza, pero hay elementos que conviene revisar para evitar desvíos.' };
+    const nextDueTask = upcomingTasks[0] || openTasks
+        .filter(t => parseDateOnly(t.fechaLimite))
+        .sort((a, b) => String(a.fechaLimite || '').localeCompare(String(b.fechaLimite || '')))[0];
+    const activity = [];
+    const audit = (project && project.audit && Array.isArray(project.audit.activity)) ? project.audit.activity : [];
+    audit.forEach(item => activity.push({ ts: item.ts, icon: 'fa-history', title: item.message || 'Actividad registrada', meta: item.user || 'Usuario' }));
+    rows.slice(0, 6).forEach(row => activity.push({ ts: parseDateOnly(row.date)?.getTime() || 0, icon: 'fa-clock', title: `Imputación de ${toNumberOrZero(row.hours).toLocaleString('es-ES')} h`, meta: row.user || 'Sin persona' }));
+    tasks.slice(-6).forEach(task => activity.push({ ts: parseDateOnly(task.fechaLimite)?.getTime() || 0, icon: 'fa-list-check', title: task.tarea || 'Tarea del proyecto', meta: task.estado || 'Sin estado' }));
+    if (wiki.updatedAt) activity.push({ ts: new Date(wiki.updatedAt).getTime(), icon: 'fa-book', title: 'Wiki actualizada', meta: formatWikiDate(wiki.updatedAt) });
+    const activityList = activity
+        .filter(item => item.title)
+        .sort((a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0))
+        .slice(0, 8);
+    const recommendations = [];
+    if (overdueTasks.length) recommendations.push(`Revisar ${overdueTasks.length} tarea${overdueTasks.length === 1 ? '' : 's'} vencida${overdueTasks.length === 1 ? '' : 's'}.`);
+    if (blockedTasks.length) recommendations.push('Resolver tareas bloqueadas o completar sus dependencias.');
+    if (upcomingTasks.length) recommendations.push(`Revisar ${upcomingTasks.length} tarea${upcomingTasks.length === 1 ? '' : 's'} próxima${upcomingTasks.length === 1 ? '' : 's'} a vencer.`);
+    if (!wikiDocumented) recommendations.push('Completar documentación de la wiki.');
+    if (status === 'En Ejecución' && rows.length === 0) recommendations.push('Añadir imputaciones si ya se ha trabajado en este proyecto.');
+    if (!recommendations.length) recommendations.push('Mantener seguimiento periódico y actualizar la actividad relevante.');
+    return { tasks, idx, stats, wiki, wikiDocumented, rows, totals, openTasks, completedTasks, overdueTasks, upcomingTasks, blockedTasks, urgentTasks, incidentItems, progress, status, health, nextDueTask, activityList, recommendations };
+};
+
+const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, onEditTimeEntry, onDeleteTimeEntry, onPrint }) => {
+    const [activeTab, setActiveTab] = React.useState('summary');
+    const [taskQuery, setTaskQuery] = React.useState('');
+    const [taskStatus, setTaskStatus] = React.useState('Todos');
+    const [taskAssignee, setTaskAssignee] = React.useState('Todos');
+    const [taskPriority, setTaskPriority] = React.useState('Todos');
+    const model = React.useMemo(() => buildProjectDetailModel(project), [project]);
+    const title = getProjectTitle(project);
+    const client = getProjectClient(project) || 'Sin cliente';
+    const meta = (project && project.meta) || {};
+    const assignees = React.useMemo(() => Array.from(new Set(model.tasks.map(t => t.asignadoA || '').filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es')), [model.tasks]);
+    const filteredTasks = React.useMemo(() => {
+        const q = taskQuery.trim().toLowerCase();
+        return model.tasks.filter(task => {
+            const effective = effectiveEstado(task, model.idx);
+            if (q && ![task.area, task.tarea, task.detalles, task.asignadoA].join(' ').toLowerCase().includes(q)) return false;
+            if (taskStatus !== 'Todos' && effective !== taskStatus) return false;
+            if (taskAssignee !== 'Todos' && (task.asignadoA || '') !== taskAssignee) return false;
+            if (taskPriority !== 'Todos' && (task.prioridad || 'Media') !== taskPriority) return false;
+            return true;
+        });
+    }, [model, taskQuery, taskStatus, taskAssignee, taskPriority]);
+    const tabs = [
+        ['summary', 'Resumen', 'fa-chart-pie'],
+        ['tasks', 'Tareas', 'fa-list-check'],
+        ['gantt', 'Gantt', 'fa-timeline'],
+        ['imputations', 'Imputaciones', 'fa-business-time'],
+        ['wiki', 'Wiki', 'fa-book'],
+        ['incidents', 'Incidencias', 'fa-shield-halved'],
+        ['activity', 'Actividad', 'fa-clock-rotate-left'],
+        ['documents', 'Documentos', 'fa-folder-open']
+    ];
+    const kpis = [
+        ['Progreso', `${model.progress}%`, `${model.completedTasks.length} de ${model.tasks.length} tareas`, 'fa-gauge-high'],
+        ['Tareas abiertas', model.openTasks.length, `${model.overdueTasks.length} vencidas`, 'fa-list-check'],
+        ['Incidencias', model.incidentItems.length, `${model.blockedTasks.length} bloqueadas`, 'fa-shield-halved'],
+        ['Horas imputadas', model.totals.hours.toLocaleString('es-ES'), `${model.rows.length} registros`, 'fa-clock'],
+        ['Kilómetros', model.totals.km.toLocaleString('es-ES'), 'Km registrados', 'fa-route'],
+        ['Dietas', model.totals.allowanceCount.toLocaleString('es-ES'), `${model.totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'fa-utensils'],
+        ['Próximo vencimiento', model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos', model.nextDueTask ? (model.nextDueTask.tarea || 'Tarea') : 'No hay fechas próximas', 'fa-calendar-day']
+    ];
+    const renderEmpty = (icon, titleText, text) => (
+        <div className="project-empty-state">
+            <i className={`fas ${icon}`}></i>
+            <strong>{titleText}</strong>
+            <span>{text}</span>
+        </div>
+    );
+    const renderTaskList = (items) => (
+        items.length ? <div className="project-task-list">
+            {items.map(task => {
+                const blocked = isTaskBlocked(task, model.idx);
+                const due = task.fechaLimite ? (window.formatFechaES ? window.formatFechaES(task.fechaLimite) : task.fechaLimite) : 'Sin fecha';
+                return <article className={`project-task-card ${blocked ? 'blocked' : ''}`} key={task.id}>
+                    <div className="project-task-card-main">
+                        <span>{task.area || 'General'}</span>
+                        <strong>{task.tarea || 'Tarea sin título'}</strong>
+                        <small>{task.detalles || 'Sin detalles'}</small>
+                    </div>
+                    <div className="project-task-card-meta">
+                        <em>{effectiveEstado(task, model.idx)}</em>
+                        <em>{task.prioridad || 'Media'}</em>
+                        <em>{task.asignadoA || 'Sin asignar'}</em>
+                        <em>{due}</em>
+                    </div>
+                </article>;
+            })}
+        </div> : renderEmpty('fa-list-check', 'Sin tareas', 'No hay tareas que coincidan con los filtros seleccionados.')
+    );
+    const renderSummary = () => (
+        <div className="project-summary-grid">
+            <section className={`project-health-card project-health-card--${model.health.tone}`}>
+                <div className="project-panel-head">
+                    <div><span>Salud del proyecto</span><h2>{model.health.label}</h2></div>
+                    <i className={`fas ${model.health.icon}`}></i>
+                </div>
+                <p>{model.health.text}</p>
+                <div className="project-health-chips">
+                    <span>{model.openTasks.length} tareas abiertas</span>
+                    <span>{model.overdueTasks.length} vencida{model.overdueTasks.length === 1 ? '' : 's'}</span>
+                    <span>{model.totals.hours.toLocaleString('es-ES')} h imputadas</span>
+                    <span>{model.wikiDocumented ? 'Wiki documentada' : 'Wiki pendiente'}</span>
+                    <span>{model.incidentItems.length ? `${model.incidentItems.length} incidencias` : 'Sin incidencias críticas'}</span>
+                </div>
+            </section>
+            <section className="project-panel">
+                <div className="project-panel-head"><div><span>Próximos vencimientos</span><h2>Agenda inmediata</h2></div></div>
+                {model.upcomingTasks.length ? renderTaskList(model.upcomingTasks.slice(0, 4)) : renderEmpty('fa-calendar-check', 'Sin vencimientos próximos', 'No hay tareas con fecha límite en los próximos 14 días.')}
+            </section>
+            <section className="project-panel">
+                <div className="project-panel-head"><div><span>Riesgos</span><h2>Tareas críticas o bloqueadas</h2></div></div>
+                {(model.overdueTasks.length || model.blockedTasks.length || model.urgentTasks.length) ? renderTaskList([...model.overdueTasks, ...model.blockedTasks, ...model.urgentTasks].slice(0, 5)) : renderEmpty('fa-shield-heart', 'Sin riesgos destacados', 'No hay tareas vencidas, bloqueadas o urgentes.')}
+            </section>
+            <section className="project-panel">
+                <div className="project-panel-head"><div><span>Últimas imputaciones</span><h2>Trabajo registrado</h2></div><button type="button" onClick={() => onAddTimeEntry(project.id)}>+ Añadir</button></div>
+                <AdvancedTimeEntriesTable rows={model.rows.slice(0, 4)} compact onEdit={onEditTimeEntry} onDelete={onDeleteTimeEntry} emptyText="No hay imputaciones registradas en este proyecto." />
+            </section>
+            <section className="project-panel">
+                <div className="project-panel-head"><div><span>Wiki</span><h2>Documentación</h2></div><button type="button" onClick={() => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}`}>Ver wiki</button></div>
+                <p className="project-panel-text">{model.wikiDocumented ? buildWikiExcerpt(project) : 'Este proyecto todavía no tiene documentación técnica.'}</p>
+                <div className="project-chip-row">{(model.wiki.tags || []).length ? model.wiki.tags.map(tag => <span key={tag}>{tag}</span>) : <span>Sin categorías</span>}</div>
+            </section>
+            <section className="project-panel">
+                <div className="project-panel-head"><div><span>Acciones recomendadas</span><h2>Siguientes pasos</h2></div></div>
+                <div className="project-recommendations">{model.recommendations.map((item, idx) => <div key={idx}><i className="fas fa-lightbulb"></i><span>{item}</span></div>)}</div>
+            </section>
+        </div>
+    );
+    return <div className="project-detail-page">
+        <header className="project-detail-hero">
+            <div className="project-detail-title">
+                <span className="project-status-pill">{model.status}</span>
+                <h1>{title}</h1>
+                <p>{client} · Responsable: {meta.responsableProyecto || meta.ejecutorProyecto || 'Sin asignar'}</p>
+            </div>
+            <div className="project-detail-meta">
+                <span><strong>Inicio</strong>{model.tasks.find(t => t.fechaInicio)?.fechaInicio ? (window.formatFechaES ? window.formatFechaES(model.tasks.find(t => t.fechaInicio).fechaInicio) : model.tasks.find(t => t.fechaInicio).fechaInicio) : 'Sin datos'}</span>
+                <span><strong>Fin / vencimiento</strong>{model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos'}</span>
+                <span><strong>Progreso</strong>{model.progress}%</span>
+            </div>
+            <div className="project-detail-actions no-print">
+                <button type="button" onClick={onEdit}><i className="fas fa-pen"></i>Editar proyecto</button>
+                <button type="button" onClick={() => { onAddTask(); setActiveTab('tasks'); }}><i className="fas fa-plus"></i>Añadir tarea</button>
+                <button type="button" onClick={() => onAddTimeEntry(project.id)}><i className="fas fa-business-time"></i>Añadir imputación</button>
+                <button type="button" onClick={() => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}`}><i className="fas fa-book"></i>Ver wiki</button>
+                <button type="button" onClick={onPrint}><i className="fas fa-print"></i>Imprimir</button>
+            </div>
+        </header>
+        <div className="project-detail-kpis">{kpis.map(k => <article key={k[0]}><i className={`fas ${k[3]}`}></i><div><strong>{k[1]}</strong><span>{k[0]}</span><small>{k[2]}</small></div></article>)}</div>
+        <nav className="project-detail-tabs no-print">{tabs.map(tab => <button key={tab[0]} className={activeTab === tab[0] ? 'active' : ''} onClick={() => setActiveTab(tab[0])}><i className={`fas ${tab[2]}`}></i>{tab[1]}</button>)}</nav>
+        {activeTab === 'summary' && renderSummary()}
+        {activeTab === 'tasks' && <section className="project-panel project-panel-wide">
+            <div className="project-panel-head"><div><span>Plan de trabajo</span><h2>Tareas</h2></div><button type="button" onClick={onAddTask}>Añadir tarea</button></div>
+            <div className="project-task-filters no-print">
+                <input value={taskQuery} onChange={e => setTaskQuery(e.target.value)} placeholder="Buscar tarea, área, asignado..." />
+                <select value={taskStatus} onChange={e => setTaskStatus(e.target.value)}><option>Todos</option><option>Pendiente</option><option>En Curso</option><option>Completado</option></select>
+                <select value={taskAssignee} onChange={e => setTaskAssignee(e.target.value)}><option>Todos</option>{assignees.map(a => <option key={a}>{a}</option>)}</select>
+                <select value={taskPriority} onChange={e => setTaskPriority(e.target.value)}><option>Todos</option><option>Urgente</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+            </div>
+            {renderTaskList(filteredTasks)}
+        </section>}
+        {activeTab === 'gantt' && <section className="project-panel project-panel-wide"><div className="project-panel-head"><div><span>Planificación</span><h2>Gantt</h2></div></div><div className="project-gantt-list">{model.tasks.filter(t => t.fechaInicio || t.fechaLimite).map(t => <div key={t.id}><strong>{t.tarea || 'Tarea'}</strong><span>{window.formatFechaES ? window.formatFechaES(t.fechaInicio) : (t.fechaInicio || 'Sin inicio')} → {window.formatFechaES ? window.formatFechaES(t.fechaLimite) : (t.fechaLimite || 'Sin fin')}</span></div>)}</div>{!model.tasks.some(t => t.fechaInicio || t.fechaLimite) && renderEmpty('fa-timeline', 'Sin planificación', 'Añade fechas a las tareas para ver la planificación del proyecto.')}</section>}
+        {activeTab === 'imputations' && <ProjectTimeEntriesPanelV2 project={project} onAdd={onAddTimeEntry} onEdit={onEditTimeEntry} onDelete={onDeleteTimeEntry} />}
+        {activeTab === 'wiki' && <section className="project-panel project-panel-wide"><div className="project-panel-head"><div><span>Documentación técnica y notas de campo.</span><h2>Wiki del proyecto</h2></div><button type="button" onClick={() => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}`}>Abrir editor</button></div><p className="project-panel-text">{model.wikiDocumented ? buildWikiExcerpt(project) : 'No hay documentación registrada todavía.'}</p><div className="project-chip-row">{(model.wiki.tags || []).length ? model.wiki.tags.map(tag => <span key={tag}>{tag}</span>) : <span>Sin categorías</span>}<span>Actualizada: {formatWikiDate(model.wiki.updatedAt)}</span></div></section>}
+        {activeTab === 'incidents' && <section className="project-panel project-panel-wide"><div className="project-panel-head"><div><span>Alertas del proyecto</span><h2>Incidencias</h2></div></div>{model.incidentItems.length ? <div className="project-incident-list">{model.incidentItems.map((item, idx) => <article className={`project-incident project-incident--${item.tone}`} key={`${item.type}-${item.task.id}-${idx}`}><strong>{item.type}</strong><span>{item.task.tarea || 'Tarea'}</span><small>{item.task.asignadoA || 'Sin asignar'} · {item.task.fechaLimite ? (window.formatFechaES ? window.formatFechaES(item.task.fechaLimite) : item.task.fechaLimite) : 'Sin fecha'}</small></article>)}</div> : renderEmpty('fa-shield-heart', 'No hay incidencias registradas en este proyecto.', 'No se detectan tareas vencidas, bloqueadas ni urgentes.')}</section>}
+        {activeTab === 'activity' && <section className="project-panel project-panel-wide"><div className="project-panel-head"><div><span>Últimos eventos</span><h2>Actividad</h2></div></div>{model.activityList.length ? <div className="project-activity-list">{model.activityList.map((item, idx) => <div key={`${item.title}-${idx}`}><i className={`fas ${item.icon}`}></i><div><strong>{item.title}</strong><span>{item.meta} · {item.ts ? new Date(item.ts).toLocaleString('es-ES') : 'Sin fecha'}</span></div></div>)}</div> : renderEmpty('fa-clock-rotate-left', 'Sin actividad todavía', 'La actividad aparecerá cuando se edite el proyecto, tareas, wiki o imputaciones.')}</section>}
+        {activeTab === 'documents' && <section className="project-panel project-panel-wide"><div className="project-panel-head"><div><span>Enlaces vinculados</span><h2>Documentos</h2></div></div>{meta.sharepointUrl ? <a className="project-doc-link" href={meta.sharepointUrl} target="_blank" rel="noopener noreferrer"><i className="fas fa-folder-open"></i><div><strong>Carpeta SharePoint</strong><span>{meta.sharepointUrl}</span></div></a> : renderEmpty('fa-folder-open', 'No hay documentos vinculados a este proyecto.', 'Añade una carpeta SharePoint en la edición del proyecto para verla aquí.')}</section>}
+    </div>;
+};
 // --- COMPONENTE: EDITOR DE PROYECTO ---
 const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme, onAddTimeEntry, onEditTimeEntry, onDeleteTimeEntry }) => {
     var _a;
@@ -1788,10 +2006,15 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                 React.createElement("p", { className: "font-medium" }, "PDF Oficial"),
                                 React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))
                 ))),
-        viewMode === 'preview' ? (React.createElement("div", { className: "py-8" },
-            React.createElement(ProjectPreview, { data: data }),
-            React.createElement("div", { className: "max-w-7xl mx-auto mt-6 px-6" },
-                React.createElement(ProjectTimeEntriesPanelV2, { project: data, onAdd: onAddTimeEntry, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry })))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" },
+        viewMode === 'preview' ? (React.createElement(ProjectDetailDashboard, {
+            project: data,
+            onEdit: () => setViewMode('edit'),
+            onAddTask: addTask,
+            onAddTimeEntry: onAddTimeEntry,
+            onEditTimeEntry: onEditTimeEntry,
+            onDeleteTimeEntry: onDeleteTimeEntry,
+            onPrint: printPDF
+        })) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" },
             React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" },
                 React.createElement("div", { className: "flex justify-between items-center mb-6 pb-2 border-b" },
                     React.createElement("h3", { className: "text-sm font-bold text-gray-500 uppercase tracking-wider" }, "Datos del Proyecto"),
@@ -3090,7 +3313,7 @@ quillRef.current.root.addEventListener("mouseup", () => {
       ...project,
       wiki: { ...currentWiki, content: html, tags: selectedTags, updatedAt: new Date().toISOString() }
     };
-    await onSave(updated);
+    await onSave(addActivityToProject(updated, "Wiki actualizada", "wiki"));
 
     // Tras guardar: modo vista
     setMode('view');
@@ -4659,7 +4882,12 @@ const normalized = (effectiveList || []).map(p => {
         const updatedList = projects.map(p => {
             const currentEntries = getProjectTimeEntries(p).filter(e => String(e.id) !== String(id));
             if (String(p.id) !== targetId) return { ...p, timeEntries: currentEntries };
-            return { ...p, timeEntries: [...currentEntries, entry] };
+            const nextProject = { ...p, timeEntries: [...currentEntries, entry] };
+            return addActivityToProject(
+                nextProject,
+                `${entryId ? 'Imputación actualizada' : 'Imputación añadida'}: ${entry.hours.toLocaleString('es-ES')} h${entry.mileageKm ? ` · ${entry.mileageKm.toLocaleString('es-ES')} km` : ''}`,
+                'time'
+            );
         });
         await saveProjectsLocal(updatedList);
         const updatedCurrent = updatedList.find(p => currentProject && String(p.id) === String(currentProject.id));

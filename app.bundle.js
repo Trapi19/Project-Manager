@@ -855,6 +855,335 @@ const ProjectPreview = ({ data }) => {
         React.createElement("td", { className: "px-4 py-3 align-top whitespace-normal break-words" }, React.createElement("span", { className: `text-sm ${(row.fechaLimite || '').includes('Dic') || (row.fechaLimite || '').includes('Urgente') ? 'text-red-600 font-medium' : 'text-gray-500'}` }, window.formatFechaES(row.fechaLimite)))));
     }))))))));
 };
+const buildProjectDetailModel = (project) => {
+    const tasks = Array.isArray(project && project.tasks) ? project.tasks : [];
+    const idx = buildTaskIndex(tasks);
+    const stats = computeProjectStats(tasks);
+    const wiki = getProjectWikiData(project);
+    const wikiDocumented = hasWikiDocumentation(project);
+    const rows = flattenTimeEntries([project]);
+    const totals = rows.reduce((acc, row) => {
+        acc.hours += toNumberOrZero(row.hours);
+        acc.km += toNumberOrZero(row.mileageKm);
+        if ((row.allowanceType && row.allowanceType !== 'Ninguna') || toNumberOrZero(row.allowanceAmount) > 0)
+            acc.allowanceCount += 1;
+        acc.allowance += toNumberOrZero(row.allowanceAmount);
+        return acc;
+    }, { hours: 0, km: 0, allowance: 0, allowanceCount: 0 });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueSoonLimit = new Date(today);
+    dueSoonLimit.setDate(today.getDate() + 14);
+    const openTasks = tasks.filter(t => effectiveEstado(t, idx) !== 'Completado');
+    const completedTasks = tasks.filter(t => effectiveEstado(t, idx) === 'Completado');
+    const overdueTasks = openTasks.filter(t => {
+        const d = parseDateOnly(t.fechaLimite);
+        return d && d < today;
+    });
+    const upcomingTasks = openTasks
+        .filter(t => {
+        const d = parseDateOnly(t.fechaLimite);
+        return d && d >= today && d <= dueSoonLimit;
+    })
+        .sort((a, b) => String(a.fechaLimite || '').localeCompare(String(b.fechaLimite || '')))
+        .slice(0, 6);
+    const blockedTasks = openTasks.filter(t => isTaskBlocked(t, idx));
+    const urgentTasks = openTasks.filter(t => ['Urgente', 'Alta'].includes(t.prioridad || ''));
+    const incidentItems = [
+        ...overdueTasks.map(t => ({ type: 'Vencida', tone: 'critical', task: t })),
+        ...blockedTasks.map(t => ({ type: 'Bloqueada', tone: 'warning', task: t })),
+        ...urgentTasks.map(t => ({ type: t.prioridad || 'Alta', tone: (t.prioridad === 'Urgente' ? 'critical' : 'warning'), task: t }))
+    ];
+    const progress = stats.progress || 0;
+    const status = getProjectStatus(project);
+    let health = { label: 'Correcto', tone: 'good', icon: 'fa-circle-check', text: 'El proyecto no presenta señales relevantes de riesgo.' };
+    if (status === 'Completado')
+        health = { label: 'Completado', tone: 'done', icon: 'fa-circle-check', text: 'El proyecto está completado. Mantén la documentación cerrada y accesible.' };
+    else if (status === 'En Pausa')
+        health = { label: 'En pausa', tone: 'paused', icon: 'fa-circle-pause', text: 'El proyecto está pausado. Conviene revisar próximos pasos antes de reactivarlo.' };
+    else if (overdueTasks.length || blockedTasks.length > 1 || urgentTasks.some(t => t.prioridad === 'Urgente'))
+        health = { label: 'Crítico', tone: 'critical', icon: 'fa-triangle-exclamation', text: 'Hay tareas vencidas, bloqueos o prioridades urgentes que requieren intervención.' };
+    else if (upcomingTasks.length || blockedTasks.length || !wikiDocumented || (status === 'En Ejecución' && rows.length === 0) || (tasks.length && progress < 35))
+        health = { label: 'Atención requerida', tone: 'warning', icon: 'fa-circle-exclamation', text: 'El proyecto avanza, pero hay elementos que conviene revisar para evitar desvíos.' };
+    const nextDueTask = upcomingTasks[0] || openTasks
+        .filter(t => parseDateOnly(t.fechaLimite))
+        .sort((a, b) => String(a.fechaLimite || '').localeCompare(String(b.fechaLimite || '')))[0];
+    const activity = [];
+    const audit = (project && project.audit && Array.isArray(project.audit.activity)) ? project.audit.activity : [];
+    audit.forEach(item => activity.push({ ts: item.ts, icon: 'fa-history', title: item.message || 'Actividad registrada', meta: item.user || 'Usuario' }));
+    rows.slice(0, 6).forEach(row => { var _g; return activity.push({ ts: ((_g = parseDateOnly(row.date)) === null || _g === void 0 ? void 0 : _g.getTime()) || 0, icon: 'fa-clock', title: `Imputación de ${toNumberOrZero(row.hours).toLocaleString('es-ES')} h`, meta: row.user || 'Sin persona' }); });
+    tasks.slice(-6).forEach(task => { var _g; return activity.push({ ts: ((_g = parseDateOnly(task.fechaLimite)) === null || _g === void 0 ? void 0 : _g.getTime()) || 0, icon: 'fa-list-check', title: task.tarea || 'Tarea del proyecto', meta: task.estado || 'Sin estado' }); });
+    if (wiki.updatedAt)
+        activity.push({ ts: new Date(wiki.updatedAt).getTime(), icon: 'fa-book', title: 'Wiki actualizada', meta: formatWikiDate(wiki.updatedAt) });
+    const activityList = activity
+        .filter(item => item.title)
+        .sort((a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0))
+        .slice(0, 8);
+    const recommendations = [];
+    if (overdueTasks.length)
+        recommendations.push(`Revisar ${overdueTasks.length} tarea${overdueTasks.length === 1 ? '' : 's'} vencida${overdueTasks.length === 1 ? '' : 's'}.`);
+    if (blockedTasks.length)
+        recommendations.push('Resolver tareas bloqueadas o completar sus dependencias.');
+    if (upcomingTasks.length)
+        recommendations.push(`Revisar ${upcomingTasks.length} tarea${upcomingTasks.length === 1 ? '' : 's'} próxima${upcomingTasks.length === 1 ? '' : 's'} a vencer.`);
+    if (!wikiDocumented)
+        recommendations.push('Completar documentación de la wiki.');
+    if (status === 'En Ejecución' && rows.length === 0)
+        recommendations.push('Añadir imputaciones si ya se ha trabajado en este proyecto.');
+    if (!recommendations.length)
+        recommendations.push('Mantener seguimiento periódico y actualizar la actividad relevante.');
+    return { tasks, idx, stats, wiki, wikiDocumented, rows, totals, openTasks, completedTasks, overdueTasks, upcomingTasks, blockedTasks, urgentTasks, incidentItems, progress, status, health, nextDueTask, activityList, recommendations };
+};
+const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, onEditTimeEntry, onDeleteTimeEntry, onPrint }) => {
+    var _g;
+    const [activeTab, setActiveTab] = React.useState('summary');
+    const [taskQuery, setTaskQuery] = React.useState('');
+    const [taskStatus, setTaskStatus] = React.useState('Todos');
+    const [taskAssignee, setTaskAssignee] = React.useState('Todos');
+    const [taskPriority, setTaskPriority] = React.useState('Todos');
+    const model = React.useMemo(() => buildProjectDetailModel(project), [project]);
+    const title = getProjectTitle(project);
+    const client = getProjectClient(project) || 'Sin cliente';
+    const meta = (project && project.meta) || {};
+    const assignees = React.useMemo(() => Array.from(new Set(model.tasks.map(t => t.asignadoA || '').filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es')), [model.tasks]);
+    const filteredTasks = React.useMemo(() => {
+        const q = taskQuery.trim().toLowerCase();
+        return model.tasks.filter(task => {
+            const effective = effectiveEstado(task, model.idx);
+            if (q && ![task.area, task.tarea, task.detalles, task.asignadoA].join(' ').toLowerCase().includes(q))
+                return false;
+            if (taskStatus !== 'Todos' && effective !== taskStatus)
+                return false;
+            if (taskAssignee !== 'Todos' && (task.asignadoA || '') !== taskAssignee)
+                return false;
+            if (taskPriority !== 'Todos' && (task.prioridad || 'Media') !== taskPriority)
+                return false;
+            return true;
+        });
+    }, [model, taskQuery, taskStatus, taskAssignee, taskPriority]);
+    const tabs = [
+        ['summary', 'Resumen', 'fa-chart-pie'],
+        ['tasks', 'Tareas', 'fa-list-check'],
+        ['gantt', 'Gantt', 'fa-timeline'],
+        ['imputations', 'Imputaciones', 'fa-business-time'],
+        ['wiki', 'Wiki', 'fa-book'],
+        ['incidents', 'Incidencias', 'fa-shield-halved'],
+        ['activity', 'Actividad', 'fa-clock-rotate-left'],
+        ['documents', 'Documentos', 'fa-folder-open']
+    ];
+    const kpis = [
+        ['Progreso', `${model.progress}%`, `${model.completedTasks.length} de ${model.tasks.length} tareas`, 'fa-gauge-high'],
+        ['Tareas abiertas', model.openTasks.length, `${model.overdueTasks.length} vencidas`, 'fa-list-check'],
+        ['Incidencias', model.incidentItems.length, `${model.blockedTasks.length} bloqueadas`, 'fa-shield-halved'],
+        ['Horas imputadas', model.totals.hours.toLocaleString('es-ES'), `${model.rows.length} registros`, 'fa-clock'],
+        ['Kilómetros', model.totals.km.toLocaleString('es-ES'), 'Km registrados', 'fa-route'],
+        ['Dietas', model.totals.allowanceCount.toLocaleString('es-ES'), `${model.totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'fa-utensils'],
+        ['Próximo vencimiento', model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos', model.nextDueTask ? (model.nextDueTask.tarea || 'Tarea') : 'No hay fechas próximas', 'fa-calendar-day']
+    ];
+    const renderEmpty = (icon, titleText, text) => (React.createElement("div", { className: "project-empty-state" },
+        React.createElement("i", { className: `fas ${icon}` }),
+        React.createElement("strong", null, titleText),
+        React.createElement("span", null, text)));
+    const renderTaskList = (items) => (items.length ? React.createElement("div", { className: "project-task-list" }, items.map(task => {
+        const blocked = isTaskBlocked(task, model.idx);
+        const due = task.fechaLimite ? (window.formatFechaES ? window.formatFechaES(task.fechaLimite) : task.fechaLimite) : 'Sin fecha';
+        return React.createElement("article", { className: `project-task-card ${blocked ? 'blocked' : ''}`, key: task.id },
+            React.createElement("div", { className: "project-task-card-main" },
+                React.createElement("span", null, task.area || 'General'),
+                React.createElement("strong", null, task.tarea || 'Tarea sin título'),
+                React.createElement("small", null, task.detalles || 'Sin detalles')),
+            React.createElement("div", { className: "project-task-card-meta" },
+                React.createElement("em", null, effectiveEstado(task, model.idx)),
+                React.createElement("em", null, task.prioridad || 'Media'),
+                React.createElement("em", null, task.asignadoA || 'Sin asignar'),
+                React.createElement("em", null, due)));
+    })) : renderEmpty('fa-list-check', 'Sin tareas', 'No hay tareas que coincidan con los filtros seleccionados.'));
+    const renderSummary = () => (React.createElement("div", { className: "project-summary-grid" },
+        React.createElement("section", { className: `project-health-card project-health-card--${model.health.tone}` },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Salud del proyecto"),
+                    React.createElement("h2", null, model.health.label)),
+                React.createElement("i", { className: `fas ${model.health.icon}` })),
+            React.createElement("p", null, model.health.text),
+            React.createElement("div", { className: "project-health-chips" },
+                React.createElement("span", null,
+                    model.openTasks.length,
+                    " tareas abiertas"),
+                React.createElement("span", null,
+                    model.overdueTasks.length,
+                    " vencida",
+                    model.overdueTasks.length === 1 ? '' : 's'),
+                React.createElement("span", null,
+                    model.totals.hours.toLocaleString('es-ES'),
+                    " h imputadas"),
+                React.createElement("span", null, model.wikiDocumented ? 'Wiki documentada' : 'Wiki pendiente'),
+                React.createElement("span", null, model.incidentItems.length ? `${model.incidentItems.length} incidencias` : 'Sin incidencias críticas'))),
+        React.createElement("section", { className: "project-panel" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Pr\u00F3ximos vencimientos"),
+                    React.createElement("h2", null, "Agenda inmediata"))),
+            model.upcomingTasks.length ? renderTaskList(model.upcomingTasks.slice(0, 4)) : renderEmpty('fa-calendar-check', 'Sin vencimientos próximos', 'No hay tareas con fecha límite en los próximos 14 días.')),
+        React.createElement("section", { className: "project-panel" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Riesgos"),
+                    React.createElement("h2", null, "Tareas cr\u00EDticas o bloqueadas"))),
+            (model.overdueTasks.length || model.blockedTasks.length || model.urgentTasks.length) ? renderTaskList([...model.overdueTasks, ...model.blockedTasks, ...model.urgentTasks].slice(0, 5)) : renderEmpty('fa-shield-heart', 'Sin riesgos destacados', 'No hay tareas vencidas, bloqueadas o urgentes.')),
+        React.createElement("section", { className: "project-panel" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "\u00DAltimas imputaciones"),
+                    React.createElement("h2", null, "Trabajo registrado")),
+                React.createElement("button", { type: "button", onClick: () => onAddTimeEntry(project.id) }, "+ A\u00F1adir")),
+            React.createElement(AdvancedTimeEntriesTable, { rows: model.rows.slice(0, 4), compact: true, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry, emptyText: "No hay imputaciones registradas en este proyecto." })),
+        React.createElement("section", { className: "project-panel" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Wiki"),
+                    React.createElement("h2", null, "Documentaci\u00F3n")),
+                React.createElement("button", { type: "button", onClick: () => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}` }, "Ver wiki")),
+            React.createElement("p", { className: "project-panel-text" }, model.wikiDocumented ? buildWikiExcerpt(project) : 'Este proyecto todavía no tiene documentación técnica.'),
+            React.createElement("div", { className: "project-chip-row" }, (model.wiki.tags || []).length ? model.wiki.tags.map(tag => React.createElement("span", { key: tag }, tag)) : React.createElement("span", null, "Sin categor\u00EDas"))),
+        React.createElement("section", { className: "project-panel" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Acciones recomendadas"),
+                    React.createElement("h2", null, "Siguientes pasos"))),
+            React.createElement("div", { className: "project-recommendations" }, model.recommendations.map((item, idx) => React.createElement("div", { key: idx },
+                React.createElement("i", { className: "fas fa-lightbulb" }),
+                React.createElement("span", null, item)))))));
+    return React.createElement("div", { className: "project-detail-page" },
+        React.createElement("header", { className: "project-detail-hero" },
+            React.createElement("div", { className: "project-detail-title" },
+                React.createElement("span", { className: "project-status-pill" }, model.status),
+                React.createElement("h1", null, title),
+                React.createElement("p", null,
+                    client,
+                    " \u00B7 Responsable: ",
+                    meta.responsableProyecto || meta.ejecutorProyecto || 'Sin asignar')),
+            React.createElement("div", { className: "project-detail-meta" },
+                React.createElement("span", null,
+                    React.createElement("strong", null, "Inicio"),
+                    ((_g = model.tasks.find(t => t.fechaInicio)) === null || _g === void 0 ? void 0 : _g.fechaInicio) ? (window.formatFechaES ? window.formatFechaES(model.tasks.find(t => t.fechaInicio).fechaInicio) : model.tasks.find(t => t.fechaInicio).fechaInicio) : 'Sin datos'),
+                React.createElement("span", null,
+                    React.createElement("strong", null, "Fin / vencimiento"),
+                    model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos'),
+                React.createElement("span", null,
+                    React.createElement("strong", null, "Progreso"),
+                    model.progress,
+                    "%")),
+            React.createElement("div", { className: "project-detail-actions no-print" },
+                React.createElement("button", { type: "button", onClick: onEdit },
+                    React.createElement("i", { className: "fas fa-pen" }),
+                    "Editar proyecto"),
+                React.createElement("button", { type: "button", onClick: () => { onAddTask(); setActiveTab('tasks'); } },
+                    React.createElement("i", { className: "fas fa-plus" }),
+                    "A\u00F1adir tarea"),
+                React.createElement("button", { type: "button", onClick: () => onAddTimeEntry(project.id) },
+                    React.createElement("i", { className: "fas fa-business-time" }),
+                    "A\u00F1adir imputaci\u00F3n"),
+                React.createElement("button", { type: "button", onClick: () => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}` },
+                    React.createElement("i", { className: "fas fa-book" }),
+                    "Ver wiki"),
+                React.createElement("button", { type: "button", onClick: onPrint },
+                    React.createElement("i", { className: "fas fa-print" }),
+                    "Imprimir"))),
+        React.createElement("div", { className: "project-detail-kpis" }, kpis.map(k => React.createElement("article", { key: k[0] },
+            React.createElement("i", { className: `fas ${k[3]}` }),
+            React.createElement("div", null,
+                React.createElement("strong", null, k[1]),
+                React.createElement("span", null, k[0]),
+                React.createElement("small", null, k[2]))))),
+        React.createElement("nav", { className: "project-detail-tabs no-print" }, tabs.map(tab => React.createElement("button", { key: tab[0], className: activeTab === tab[0] ? 'active' : '', onClick: () => setActiveTab(tab[0]) },
+            React.createElement("i", { className: `fas ${tab[2]}` }),
+            tab[1]))),
+        activeTab === 'summary' && renderSummary(),
+        activeTab === 'tasks' && React.createElement("section", { className: "project-panel project-panel-wide" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Plan de trabajo"),
+                    React.createElement("h2", null, "Tareas")),
+                React.createElement("button", { type: "button", onClick: onAddTask }, "A\u00F1adir tarea")),
+            React.createElement("div", { className: "project-task-filters no-print" },
+                React.createElement("input", { value: taskQuery, onChange: e => setTaskQuery(e.target.value), placeholder: "Buscar tarea, \u00E1rea, asignado..." }),
+                React.createElement("select", { value: taskStatus, onChange: e => setTaskStatus(e.target.value) },
+                    React.createElement("option", null, "Todos"),
+                    React.createElement("option", null, "Pendiente"),
+                    React.createElement("option", null, "En Curso"),
+                    React.createElement("option", null, "Completado")),
+                React.createElement("select", { value: taskAssignee, onChange: e => setTaskAssignee(e.target.value) },
+                    React.createElement("option", null, "Todos"),
+                    assignees.map(a => React.createElement("option", { key: a }, a))),
+                React.createElement("select", { value: taskPriority, onChange: e => setTaskPriority(e.target.value) },
+                    React.createElement("option", null, "Todos"),
+                    React.createElement("option", null, "Urgente"),
+                    React.createElement("option", null, "Alta"),
+                    React.createElement("option", null, "Media"),
+                    React.createElement("option", null, "Baja"))),
+            renderTaskList(filteredTasks)),
+        activeTab === 'gantt' && React.createElement("section", { className: "project-panel project-panel-wide" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Planificaci\u00F3n"),
+                    React.createElement("h2", null, "Gantt"))),
+            React.createElement("div", { className: "project-gantt-list" }, model.tasks.filter(t => t.fechaInicio || t.fechaLimite).map(t => React.createElement("div", { key: t.id },
+                React.createElement("strong", null, t.tarea || 'Tarea'),
+                React.createElement("span", null,
+                    window.formatFechaES ? window.formatFechaES(t.fechaInicio) : (t.fechaInicio || 'Sin inicio'),
+                    " \u2192 ",
+                    window.formatFechaES ? window.formatFechaES(t.fechaLimite) : (t.fechaLimite || 'Sin fin'))))),
+            !model.tasks.some(t => t.fechaInicio || t.fechaLimite) && renderEmpty('fa-timeline', 'Sin planificación', 'Añade fechas a las tareas para ver la planificación del proyecto.')),
+        activeTab === 'imputations' && React.createElement(ProjectTimeEntriesPanelV2, { project: project, onAdd: onAddTimeEntry, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry }),
+        activeTab === 'wiki' && React.createElement("section", { className: "project-panel project-panel-wide" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Documentaci\u00F3n t\u00E9cnica y notas de campo."),
+                    React.createElement("h2", null, "Wiki del proyecto")),
+                React.createElement("button", { type: "button", onClick: () => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}` }, "Abrir editor")),
+            React.createElement("p", { className: "project-panel-text" }, model.wikiDocumented ? buildWikiExcerpt(project) : 'No hay documentación registrada todavía.'),
+            React.createElement("div", { className: "project-chip-row" },
+                (model.wiki.tags || []).length ? model.wiki.tags.map(tag => React.createElement("span", { key: tag }, tag)) : React.createElement("span", null, "Sin categor\u00EDas"),
+                React.createElement("span", null,
+                    "Actualizada: ",
+                    formatWikiDate(model.wiki.updatedAt)))),
+        activeTab === 'incidents' && React.createElement("section", { className: "project-panel project-panel-wide" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Alertas del proyecto"),
+                    React.createElement("h2", null, "Incidencias"))),
+            model.incidentItems.length ? React.createElement("div", { className: "project-incident-list" }, model.incidentItems.map((item, idx) => React.createElement("article", { className: `project-incident project-incident--${item.tone}`, key: `${item.type}-${item.task.id}-${idx}` },
+                React.createElement("strong", null, item.type),
+                React.createElement("span", null, item.task.tarea || 'Tarea'),
+                React.createElement("small", null,
+                    item.task.asignadoA || 'Sin asignar',
+                    " \u00B7 ",
+                    item.task.fechaLimite ? (window.formatFechaES ? window.formatFechaES(item.task.fechaLimite) : item.task.fechaLimite) : 'Sin fecha')))) : renderEmpty('fa-shield-heart', 'No hay incidencias registradas en este proyecto.', 'No se detectan tareas vencidas, bloqueadas ni urgentes.')),
+        activeTab === 'activity' && React.createElement("section", { className: "project-panel project-panel-wide" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "\u00DAltimos eventos"),
+                    React.createElement("h2", null, "Actividad"))),
+            model.activityList.length ? React.createElement("div", { className: "project-activity-list" }, model.activityList.map((item, idx) => React.createElement("div", { key: `${item.title}-${idx}` },
+                React.createElement("i", { className: `fas ${item.icon}` }),
+                React.createElement("div", null,
+                    React.createElement("strong", null, item.title),
+                    React.createElement("span", null,
+                        item.meta,
+                        " \u00B7 ",
+                        item.ts ? new Date(item.ts).toLocaleString('es-ES') : 'Sin fecha'))))) : renderEmpty('fa-clock-rotate-left', 'Sin actividad todavía', 'La actividad aparecerá cuando se edite el proyecto, tareas, wiki o imputaciones.')),
+        activeTab === 'documents' && React.createElement("section", { className: "project-panel project-panel-wide" },
+            React.createElement("div", { className: "project-panel-head" },
+                React.createElement("div", null,
+                    React.createElement("span", null, "Enlaces vinculados"),
+                    React.createElement("h2", null, "Documentos"))),
+            meta.sharepointUrl ? React.createElement("a", { className: "project-doc-link", href: meta.sharepointUrl, target: "_blank", rel: "noopener noreferrer" },
+                React.createElement("i", { className: "fas fa-folder-open" }),
+                React.createElement("div", null,
+                    React.createElement("strong", null, "Carpeta SharePoint"),
+                    React.createElement("span", null, meta.sharepointUrl))) : renderEmpty('fa-folder-open', 'No hay documentos vinculados a este proyecto.', 'Añade una carpeta SharePoint en la edición del proyecto para verla aquí.')));
+};
 // --- COMPONENTE: EDITOR DE PROYECTO ---
 const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme, onAddTimeEntry, onEditTimeEntry, onDeleteTimeEntry }) => {
     var _a;
@@ -1252,7 +1581,15 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         type: "button",
         onClick: () => { window.location.hash = `#/wiki/${encodeURIComponent(String((data && data.id) || ''))}`; },
         className: "px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm"
-    }, React.createElement("i", { className: "fas fa-book" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Wiki")), React.createElement("div", { className: "relative" }, React.createElement("button", { onClick: () => setShowExportMenu(!showExportMenu), className: "px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" }, React.createElement("i", { className: "fas fa-share-square" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Exportar"), " ", React.createElement("i", { className: "fas fa-chevron-down text-xs" })), showExportMenu && (React.createElement("div", { className: "absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden" }, React.createElement("button", { onClick: exportHTML, className: "w-full text-left px-4 py-3 hover:bg-purple-50 text-sm text-gray-700 flex items-center gap-3 border-b border-gray-50" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-code" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "Web Cliente (HTML)"), React.createElement("p", { className: "text-xs text-gray-400" }, "S\u00F3lo lectura, incluye logo"))), React.createElement("button", { onClick: exportCSV, className: "w-full text-left px-4 py-3 hover:bg-green-50 text-sm text-gray-700 flex items-center gap-3 border-b border-gray-50" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-csv" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "Excel (CSV)"), React.createElement("p", { className: "text-xs text-gray-400" }, "Para hojas de c\u00E1lculo"))), React.createElement("button", { onClick: printPDF, className: "w-full text-left px-4 py-3 hover:bg-red-50 text-sm text-gray-700 flex items-center gap-3" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-pdf" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "PDF Oficial"), React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))))), viewMode === 'preview' ? (React.createElement("div", { className: "py-8" }, React.createElement(ProjectPreview, { data: data }), React.createElement("div", { className: "max-w-7xl mx-auto mt-6 px-6" }, React.createElement(ProjectTimeEntriesPanelV2, { project: data, onAdd: onAddTimeEntry, onEdit: onEditTimeEntry, onDelete: onDeleteTimeEntry })))) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex justify-between items-center mb-6 pb-2 border-b" }, React.createElement("h3", { className: "text-sm font-bold text-gray-500 uppercase tracking-wider" }, "Datos del Proyecto"), React.createElement("span", { className: "text-xs text-gray-400" }, "ID: ", data.id)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-8" }, React.createElement("div", { className: "space-y-4" }, React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "T\u00EDtulo"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.titulo, onChange: (e) => updateMeta('titulo', e.target.value), placeholder: "Ej: Renovaci\u00F3n Sede Central" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Subt\u00EDtulo / Fase"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.subtitulo, onChange: (e) => updateMeta('subtitulo', e.target.value), placeholder: "Ej: Fase 1 - Cableado Estructurado" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Cliente"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.cliente || '', onChange: (e) => handleClienteChange(e.target.value), placeholder: "Ej: RTVE / EITB / Mediaset..." })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Proyecto"), React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "" })), React.createElement("div", { className: "mt-4" }, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Ejecución / Técnico"), React.createElement("input", {
+    }, React.createElement("i", { className: "fas fa-book" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Wiki")), React.createElement("div", { className: "relative" }, React.createElement("button", { onClick: () => setShowExportMenu(!showExportMenu), className: "px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm" }, React.createElement("i", { className: "fas fa-share-square" }), " ", React.createElement("span", { className: "hidden sm:inline" }, "Exportar"), " ", React.createElement("i", { className: "fas fa-chevron-down text-xs" })), showExportMenu && (React.createElement("div", { className: "absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden" }, React.createElement("button", { onClick: exportHTML, className: "w-full text-left px-4 py-3 hover:bg-purple-50 text-sm text-gray-700 flex items-center gap-3 border-b border-gray-50" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-code" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "Web Cliente (HTML)"), React.createElement("p", { className: "text-xs text-gray-400" }, "S\u00F3lo lectura, incluye logo"))), React.createElement("button", { onClick: exportCSV, className: "w-full text-left px-4 py-3 hover:bg-green-50 text-sm text-gray-700 flex items-center gap-3 border-b border-gray-50" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-csv" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "Excel (CSV)"), React.createElement("p", { className: "text-xs text-gray-400" }, "Para hojas de c\u00E1lculo"))), React.createElement("button", { onClick: printPDF, className: "w-full text-left px-4 py-3 hover:bg-red-50 text-sm text-gray-700 flex items-center gap-3" }, React.createElement("div", { className: "w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center" }, React.createElement("i", { className: "fas fa-file-pdf" })), React.createElement("div", null, React.createElement("p", { className: "font-medium" }, "PDF Oficial"), React.createElement("p", { className: "text-xs text-gray-400" }, "Impresi\u00F3n optimizada")))))))), viewMode === 'preview' ? (React.createElement(ProjectDetailDashboard, {
+        project: data,
+        onEdit: () => setViewMode('edit'),
+        onAddTask: addTask,
+        onAddTimeEntry: onAddTimeEntry,
+        onEditTimeEntry: onEditTimeEntry,
+        onDeleteTimeEntry: onDeleteTimeEntry,
+        onPrint: printPDF
+    })) : (React.createElement("div", { className: "max-w-6xl mx-auto mt-8 px-6 space-y-8" }, React.createElement("div", { className: "bg-white p-6 rounded-xl shadow-sm border border-gray-200" }, React.createElement("div", { className: "flex justify-between items-center mb-6 pb-2 border-b" }, React.createElement("h3", { className: "text-sm font-bold text-gray-500 uppercase tracking-wider" }, "Datos del Proyecto"), React.createElement("span", { className: "text-xs text-gray-400" }, "ID: ", data.id)), React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-8" }, React.createElement("div", { className: "space-y-4" }, React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "T\u00EDtulo"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.titulo, onChange: (e) => updateMeta('titulo', e.target.value), placeholder: "Ej: Renovaci\u00F3n Sede Central" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Subt\u00EDtulo / Fase"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.subtitulo, onChange: (e) => updateMeta('subtitulo', e.target.value), placeholder: "Ej: Fase 1 - Cableado Estructurado" })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Cliente"), React.createElement("input", { type: "text", className: "w-full border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.cliente || '', onChange: (e) => handleClienteChange(e.target.value), placeholder: "Ej: RTVE / EITB / Mediaset..." })), React.createElement("div", null, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Proyecto"), React.createElement("input", { type: "text", className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow", value: data.meta.responsableProyecto || '', onChange: (e) => updateMeta('responsableProyecto', e.target.value), placeholder: "" })), React.createElement("div", { className: "mt-4" }, React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Responsable de Ejecución / Técnico"), React.createElement("input", {
         type: "text",
         className: "w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow",
         value: data.meta.ejecutorProyecto || '',
@@ -2232,7 +2569,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
             ...project,
             wiki: { ...currentWiki, content: html, tags: selectedTags, updatedAt: new Date().toISOString() }
         };
-        await onSave(updated);
+        await onSave(addActivityToProject(updated, "Wiki actualizada", "wiki"));
         // Tras guardar: modo vista
         setMode('view');
         setHasChanges(false);
@@ -3389,7 +3726,8 @@ const MainApp = () => {
             const currentEntries = getProjectTimeEntries(p).filter(e => String(e.id) !== String(id));
             if (String(p.id) !== targetId)
                 return { ...p, timeEntries: currentEntries };
-            return { ...p, timeEntries: [...currentEntries, entry] };
+            const nextProject = { ...p, timeEntries: [...currentEntries, entry] };
+            return addActivityToProject(nextProject, `${entryId ? 'Imputación actualizada' : 'Imputación añadida'}: ${entry.hours.toLocaleString('es-ES')} h${entry.mileageKm ? ` · ${entry.mileageKm.toLocaleString('es-ES')} km` : ''}`, 'time');
         });
         await saveProjectsLocal(updatedList);
         const updatedCurrent = updatedList.find(p => currentProject && String(p.id) === String(currentProject.id));
