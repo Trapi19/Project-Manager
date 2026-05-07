@@ -743,6 +743,236 @@ body {
 }
 
 
+/* =========================================================
+   EDITOR DE PROYECTO - AJUSTES SEGUROS
+   ---------------------------------------------------------
+   Controla la vista previa del logo y el selector de
+   dependencias sin rediseñar el resto de la pantalla.
+   ========================================================= */
+.project-edit-logo-row {
+    display: grid;
+    grid-template-columns: minmax(132px, 220px) minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+    max-width: 100%;
+}
+
+.project-edit-logo-preview {
+    width: 100%;
+    max-width: 220px;
+    height: 96px;
+    max-height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-lg);
+    background: var(--app-surface-soft);
+    color: var(--app-brand);
+    box-shadow: var(--app-shadow-sm);
+}
+
+.project-edit-logo-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    padding: 12px;
+}
+
+.project-edit-logo-preview span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--app-radius-md);
+    background: rgba(var(--app-brand-rgb), 0.12);
+    color: var(--app-brand);
+    font-weight: 800;
+    letter-spacing: 0;
+}
+
+.project-edit-logo-controls {
+    min-width: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.project-edit-logo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.project-dependency-field {
+    width: 100%;
+    min-width: 240px;
+    max-width: 100%;
+    display: grid;
+    gap: 5px;
+    padding-left: 40px;
+}
+
+.project-dependency-field label {
+    color: var(--app-muted);
+    font-size: 0.7rem;
+    font-weight: 760;
+    line-height: 1.1;
+    text-transform: uppercase;
+}
+
+.project-dependency-select {
+    width: 100%;
+    min-height: 34px;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-md);
+    background: var(--app-surface);
+    color: var(--app-text);
+    padding: 0 10px;
+    font-size: 0.82rem;
+    font-weight: 650;
+    outline: none;
+    transition: border-color var(--app-transition), box-shadow var(--app-transition), background-color var(--app-transition);
+}
+
+.project-dependency-select:focus {
+    border-color: var(--app-brand);
+    box-shadow: var(--app-focus);
+}
+
+.project-dependency-field small {
+    color: var(--app-muted);
+    font-size: 0.72rem;
+    line-height: 1.35;
+}
+
+.theme-dark .project-edit-logo-preview,
+.theme-dark .project-dependency-select {
+    background: var(--app-surface-soft);
+    color: var(--app-text);
+}
+
+.project-editor-screen {
+    background: var(--app-bg) !important;
+    color: var(--app-text);
+}
+
+.project-editor-screen > .bg-white.border-b {
+    gap: 12px;
+    flex-wrap: wrap;
+    border-color: var(--app-border) !important;
+    background: color-mix(in srgb, var(--app-surface) 92%, transparent) !important;
+    backdrop-filter: blur(14px);
+}
+
+.project-editor-screen > .bg-white.border-b > div {
+    flex-wrap: wrap;
+}
+
+.project-edit-toolbar-title {
+    min-width: 0;
+}
+
+.project-edit-toolbar-title strong {
+    display: block;
+    color: var(--app-text);
+    font-size: 0.95rem;
+    line-height: 1.15;
+}
+
+.project-edit-toolbar-title span {
+    display: block;
+    max-width: min(36vw, 420px);
+    overflow: hidden;
+    color: var(--app-muted);
+    font-size: 0.78rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-editor-screen .bg-white.rounded-xl.shadow-sm.border.border-gray-200 {
+    border-color: var(--app-border) !important;
+    border-radius: var(--app-radius-lg) !important;
+    background: var(--app-surface) !important;
+    box-shadow: var(--app-shadow-sm) !important;
+}
+
+.project-editor-screen .bg-gray-50 {
+    background: var(--app-surface-soft) !important;
+}
+
+.project-editor-screen input,
+.project-editor-screen select,
+.project-editor-screen textarea {
+    border-color: var(--app-border) !important;
+    background-color: var(--app-surface) !important;
+    color: var(--app-text) !important;
+}
+
+.project-editor-screen input:focus,
+.project-editor-screen select:focus,
+.project-editor-screen textarea:focus {
+    border-color: var(--app-brand) !important;
+    box-shadow: var(--app-focus) !important;
+}
+
+@media (max-width: 860px) {
+    .project-edit-logo-row {
+        grid-template-columns: minmax(118px, 180px) minmax(0, 1fr);
+    }
+
+    .project-edit-logo-preview {
+        max-width: 180px;
+        height: 72px;
+        max-height: 72px;
+    }
+
+    .project-edit-logo-preview img {
+        padding: 10px;
+    }
+
+    .project-editor-screen > .bg-white.border-b {
+        align-items: stretch;
+    }
+
+    .project-editor-screen > .bg-white.border-b > div {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 540px) {
+    .project-edit-logo-row {
+        grid-template-columns: 1fr;
+    }
+
+    .project-edit-logo-preview {
+        width: 140px;
+        max-width: 140px;
+        height: 56px;
+        max-height: 56px;
+    }
+
+    .project-edit-logo-preview img {
+        padding: 8px;
+    }
+
+    .project-dependency-field {
+        min-width: 0;
+        padding-left: 0;
+    }
+
+    .project-edit-toolbar-title span {
+        max-width: 70vw;
+    }
+}
+
+
 /* =========================================
    1B. MODO DÃA / NOCHE (NO AFECTA A IMPRESIÃ“N)
    ========================================= */
@@ -8841,5 +9071,3 @@ html:not(.theme-dark) .imput-header {
     white-space: normal;
   }
 }
-
-

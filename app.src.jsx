@@ -108,14 +108,17 @@ const normalizeProjectEstado = (estado) => {
 };
 const buildTaskIndex = (tasks) => {
     const idx = new Map();
-    tasks.forEach(t => idx.set(t.id, t));
+    tasks.forEach(t => {
+        if (t && t.id !== null && t.id !== undefined)
+            idx.set(String(t.id), t);
+    });
     return idx;
 };
 const isTaskBlocked = (task, taskIndex) => {
     const depId = task.dependsOn;
     if (!depId)
         return false;
-    const dep = taskIndex.get(depId);
+    const dep = taskIndex.get(String(depId));
     if (!dep)
         return false; // si no existe, no bloqueamos
     return normalizeEstado(dep.estado) !== 'Completado';
@@ -1538,10 +1541,49 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
 // --- COMPONENTE: EDITOR DE PROYECTO ---
 const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, onToggleTheme, onAddTimeEntry, onEditTimeEntry, onDeleteTimeEntry }) => {
     var _a;
-    const [data, setData] = useState(project);
+    const normalizeDependencyValue = (value) => {
+        const raw = value === null || value === undefined ? '' : String(value).trim();
+        if (!raw || raw === 'null' || raw === 'undefined' || raw === 'NaN')
+            return null;
+        return raw;
+    };
+    const normalizeEditorProject = (projectValue) => {
+        const source = projectValue || {};
+        const tasks = Array.isArray(source.tasks) ? source.tasks : [];
+        const usedIds = new Set();
+        let changed = false;
+        const normalizedTasks = tasks.map((task, index) => {
+            const baseTask = task || {};
+            let nextId = baseTask.id === null || baseTask.id === undefined || String(baseTask.id).trim() === ''
+                ? `task_${index + 1}`
+                : String(baseTask.id);
+            const originalId = nextId;
+            let suffix = 2;
+            while (usedIds.has(nextId)) {
+                nextId = `${originalId}_${suffix++}`;
+                changed = true;
+            }
+            usedIds.add(nextId);
+            const nextDependsOn = normalizeDependencyValue(baseTask.dependsOn);
+            if (nextId !== baseTask.id || nextDependsOn !== (baseTask.dependsOn || null))
+                changed = true;
+            return { ...baseTask, id: nextId, dependsOn: nextDependsOn };
+        });
+        const validIds = new Set(normalizedTasks.map(task => String(task.id)));
+        const cleanedTasks = normalizedTasks.map(task => {
+            if (!task.dependsOn || task.dependsOn === task.id || !validIds.has(String(task.dependsOn))) {
+                if (task.dependsOn)
+                    changed = true;
+                return { ...task, dependsOn: null };
+            }
+            return task;
+        });
+        return changed ? { ...source, tasks: cleanedTasks } : source;
+    };
+    const [data, setData] = useState(() => normalizeEditorProject(project));
     const [hasChanges, setHasChanges] = useState(false);
     React.useEffect(() => {
-        if (!hasChanges) setData(project);
+        if (!hasChanges) setData(normalizeEditorProject(project));
     }, [project]);
     const taskIndex = React.useMemo(() => buildTaskIndex(data.tasks || []), [data.tasks]);
     const activityList = React.useMemo(() => {
@@ -1774,6 +1816,24 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         updateMeta('clientLogoUrl', '');
         // Nota: no borramos el mapa global para no perder logos reutilizables.
     };
+    const editLogoSrc = getClientLogoSrc(data);
+    const [editLogoFailed, setEditLogoFailed] = React.useState(false);
+    React.useEffect(() => {
+        setEditLogoFailed(false);
+    }, [data && data.id, editLogoSrc]);
+    const createsCircularDependency = (tasks, taskId, dependsOnId) => {
+        const currentId = String(taskId);
+        let cursor = normalizeDependencyValue(dependsOnId);
+        const seen = new Set([currentId]);
+        while (cursor) {
+            if (seen.has(cursor))
+                return true;
+            seen.add(cursor);
+            const nextTask = tasks.find(t => String(t.id) === cursor);
+            cursor = nextTask ? normalizeDependencyValue(nextTask.dependsOn) : null;
+        }
+        return false;
+    };
     const updateTask = (id, field, value) => {
         const TASK_LABELS = {
             area: 'Área',
@@ -1789,13 +1849,29 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         };
         setData(prev => {
             const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
-            const targetTask = prevTasks.find(t => t.id === id);
+            let nextValue = value;
+            if (field === 'dependsOn') {
+                nextValue = normalizeDependencyValue(value);
+                if (nextValue && String(nextValue) === String(id)) {
+                    alert('Una tarea no puede depender de si misma.');
+                    return prev;
+                }
+                if (nextValue && !prevTasks.some(t => String(t.id) === String(nextValue)))
+                    nextValue = null;
+                if (nextValue && createsCircularDependency(prevTasks, id, nextValue)) {
+                    alert('No se puede crear esa dependencia porque generaria un ciclo.');
+                    return prev;
+                }
+            }
+            const targetTask = prevTasks.find(t => String(t.id) === String(id));
             const fromVal = targetTask ? targetTask[field] : undefined;
 
             const nextTasks = prevTasks.map(t => {
-                if (t.id !== id) return t;
+                if (String(t.id) !== String(id)) return t;
 
-                const updated = { ...t, [field]: value };
+                const updated = field === 'dependsOn'
+                    ? { ...t, dependsOn: nextValue || null }
+                    : { ...t, [field]: nextValue };
                 if (field === 'dependsOn') {
                     const idx = buildTaskIndex(prevTasks);
                     const blocked = isTaskBlocked(updated, idx);
@@ -1807,12 +1883,12 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
 
             let nextProject = { ...prev, tasks: nextTasks };
 
-            if (fromVal !== value) {
+            if (fromVal !== nextValue) {
                 const label = TASK_LABELS[field] || field;
                 const taskName = (targetTask && (targetTask.tarea || targetTask.detalles || targetTask.id)) ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
                 nextProject = addActivityToProject(
                     nextProject,
-                    `Tarea "${taskName}": ${label}: "${(fromVal ?? '')}" → "${(value ?? '')}"`,
+                    `Tarea "${taskName}": ${label}: "${(fromVal ?? '')}" → "${(nextValue ?? '')}"`,
                     'task'
                 );
             }
@@ -1846,9 +1922,11 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
         if (!confirm('¿Borrar tarea?')) return;
         setData(prev => {
             const prevTasks = Array.isArray(prev.tasks) ? prev.tasks : [];
-            const targetTask = prevTasks.find(t => t.id === id);
+            const targetTask = prevTasks.find(t => String(t.id) === String(id));
             const taskName = targetTask ? (targetTask.tarea || targetTask.detalles || targetTask.id) : String(id);
-            const nextTasks = prevTasks.filter(t => t.id !== id);
+            const nextTasks = prevTasks
+                .filter(t => String(t.id) !== String(id))
+                .map(t => String(t.dependsOn || '') === String(id) ? { ...t, dependsOn: null } : t);
             let nextProject = { ...prev, tasks: nextTasks };
             nextProject = addActivityToProject(nextProject, `Tarea eliminada: "${taskName}"`, 'task');
             return nextProject;
@@ -2107,8 +2185,9 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                             React.createElement("label", { className: "block text-xs font-semibold text-gray-600 uppercase mb-1" }, "Logo del cliente"),
                             React.createElement("div", { className: "project-edit-logo-row" },
                                 React.createElement("div", { className: "project-edit-logo-preview" },
-                                    React.createElement("span", null, getClientInitials(data)),
-                                    getClientLogoSrc(data) && React.createElement("img", { src: getClientLogoSrc(data), alt: "Logo cliente", onError: (e) => { e.currentTarget.style.display = 'none'; } })
+                                    editLogoSrc && !editLogoFailed
+                                        ? React.createElement("img", { src: editLogoSrc, alt: "Logo cliente", onError: () => setEditLogoFailed(true) })
+                                        : React.createElement("span", null, getClientInitials(data))
                                 ),
                                 React.createElement("div", { className: "project-edit-logo-controls" },
                                     React.createElement("input", {
@@ -2123,7 +2202,7 @@ const ProjectEditor = ({ project, onSave, onBack, onCancelNew, isSaving, theme, 
                                             React.createElement("i", { className: "fas fa-upload" }),
                                             "Subir logo",
                                             React.createElement("input", { type: "file", accept: "image/*", className: "hidden", onChange: (e) => { var _a; return handleClientLogoUpload((_a = e.target.files) === null || _a === void 0 ? void 0 : _a[0]); } })),
-                                        getClientLogoSrc(data) && (React.createElement("button", { type: "button", className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-700 transition", onClick: handleClientLogoRemove, title: "Quitar logo" },
+                                        editLogoSrc && (React.createElement("button", { type: "button", className: "inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-sm font-semibold text-gray-700 transition", onClick: handleClientLogoRemove, title: "Quitar logo" },
                                             React.createElement("i", { className: "fas fa-trash" }),
                                             "Quitar"))))),
                             React.createElement("p", { className: "text-xs text-gray-500 mt-2" }, "Puedes pegar una URL o subir una imagen. Si no hay logo, se mostrarán las iniciales del cliente.")),
@@ -2162,13 +2241,14 @@ React.createElement("th", { className: "px-6 py-3 font-semibold whitespace-nowra
                                             React.createElement("i", { className: "fas fa-grip-vertical" })),
                                         React.createElement(IconPicker, { value: task.iconType, open: openIconPickerId === task.id, onToggle: () => setOpenIconPickerId(prev => prev === task.id ? null : task.id), onChange: (newId) => { updateTask(task.id, 'iconType', newId); setOpenIconPickerId(null); } }),
                                         React.createElement("input", { type: "text", className: "flex-1 border border-gray-200 rounded text-sm p-1.5 focus:ring-1 focus:ring-blue-500 outline-none font-medium", value: task.area, onChange: (e) => updateTask(task.id, 'area', e.target.value) }),
-                                        React.createElement("div", { className: "flex flex-wrap items-center gap-2 pl-12 min-w-0" },
-                                            React.createElement("div", { className: "text-[11px] text-gray-500 shrink-0" }, "Depende de"),
-                                            React.createElement("select", { className: "flex-1 min-w-[240px] border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[color:var(--brand)]", value: task.dependsOn || '', onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value ? Number(e.target.value) : null) },
-                                                React.createElement("option", { value: "" }, "(ninguna)"),
+                                        React.createElement("div", { className: "project-dependency-field" },
+                                            React.createElement("label", null, "Depende de"),
+                                            React.createElement("select", { className: "project-dependency-select", value: task.dependsOn == null ? '' : String(task.dependsOn), onChange: (e) => updateTask(task.id, 'dependsOn', e.target.value || null) },
+                                                React.createElement("option", { value: "" }, "Ninguna"),
                                                 data.tasks
-                                                    .filter(t => t.id !== task.id)
-                                                    .map(t => (React.createElement("option", { key: t.id, value: t.id }, `${t.area || ''} - ${t.tarea || ''}`.slice(0, 60))))),
+                                                    .filter(t => String(t.id) !== String(task.id))
+                                                    .map(t => (React.createElement("option", { key: t.id, value: String(t.id) }, `${t.area || 'General'} - ${t.tarea || 'Tarea sin titulo'}`.slice(0, 90))))),
+                                            React.createElement("small", null, "Esta tarea quedara bloqueada hasta que la tarea seleccionada este completada."),
                                             isTaskBlocked(task, taskIndex) && (React.createElement("span", { className: "inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200", title: "Bloqueada: la tarea previa no est\u00E1 completada" },
                                                 React.createElement("i", { className: "fas fa-lock" }),
                                                 " Bloqueada")))))),
