@@ -1,4 +1,3 @@
-"use strict";
 // @ts-nocheck
 // Fuente editable de la aplicación React.
 // ---------------------------------------------------------
@@ -2077,21 +2076,68 @@ const sanitizeWikiHtml = (html) => {
         return "";
     }
 };
+const WIKI_TAG_OPTIONS = [
+    'Red/IP', 'ST 2110', 'Dante/AES67', 'NDI', 'Intercom', 'Audio', 'Vídeo',
+    'Servidores', 'Avid', 'Grafismo', 'Playout', 'Routing', 'Seguridad',
+    'Incidencia', 'Configuración', 'Material instalado', 'Pendiente de revisar',
+    'Cliente', 'Otro'
+];
+const getProjectWikiData = (project) => {
+    const wiki = project && project.wiki;
+    if (typeof wiki === 'string') {
+        return { content: wiki, tags: [], updatedAt: '' };
+    }
+    if (wiki && typeof wiki === 'object') {
+        return {
+            ...wiki,
+            content: typeof wiki.content === 'string' ? wiki.content : '',
+            tags: Array.isArray(wiki.tags) ? wiki.tags.filter(Boolean) : [],
+            updatedAt: typeof wiki.updatedAt === 'string' ? wiki.updatedAt : ''
+        };
+    }
+    return { content: '', tags: [], updatedAt: '' };
+};
+const getProjectTitle = (project) => ((project && project.meta && project.meta.titulo) || 'Proyecto sin título');
+const getProjectClient = (project) => ((project && project.meta && project.meta.cliente) || '');
+const getProjectStatus = (project) => normalizeProjectEstado(project && project.meta && project.meta.estado);
+const stripWikiHtml = (html) => {
+    try {
+        const template = document.createElement('template');
+        template.innerHTML = sanitizeWikiHtml(html || '');
+        return (template.content.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    catch (e) {
+        return String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+};
+const hasWikiDocumentation = (project) => stripWikiHtml(getProjectWikiData(project).content).length > 0;
+const formatWikiDate = (value) => {
+    if (!value)
+        return 'Sin datos';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime()))
+        return 'Sin datos';
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+const buildWikiExcerpt = (project) => {
+    const text = stripWikiHtml(getProjectWikiData(project).content);
+    if (!text)
+        return 'Este proyecto todavía no tiene wiki.';
+    return text.length > 190 ? text.slice(0, 190).trim() + '...' : text;
+};
 // --- VISTA: WIKI DE PROYECTO (VER / EDITAR como ProjectEditor) ---
 const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
-    var _g;
     // "view" = solo lectura, "edit" = editable
     const [mode, setMode] = React.useState('view');
     const [hasChanges, setHasChanges] = React.useState(false);
+    const [selectedTags, setSelectedTags] = React.useState(() => getProjectWikiData(project).tags);
     // Referencias a Quill
     const editorHostRef = React.useRef(null);
     const quillRef = React.useRef(null);
     const lastRangeRef = React.useRef(null);
     // Helper: obtener HTML guardado
     const getStoredHtml = () => {
-        const html = (project && project.wiki && typeof project.wiki.content === "string")
-            ? project.wiki.content
-            : "";
+        const html = getProjectWikiData(project).content;
         return sanitizeWikiHtml(html || "");
     };
     // Inicializar Quill una sola vez
@@ -2156,6 +2202,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
     React.useEffect(() => {
         setMode('view');
         setHasChanges(false);
+        setSelectedTags(getProjectWikiData(project).tags);
         if (quillRef.current) {
             quillRef.current.root.innerHTML = getStoredHtml();
             quillRef.current.enable(false);
@@ -2164,6 +2211,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
     const handleEdit = () => {
         setMode('edit');
         setHasChanges(false);
+        setSelectedTags(getProjectWikiData(project).tags);
         if (quillRef.current)
             quillRef.current.enable(true);
     };
@@ -2171,6 +2219,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         // Descarta cambios y vuelve a lo guardado
         setMode('view');
         setHasChanges(false);
+        setSelectedTags(getProjectWikiData(project).tags);
         if (quillRef.current) {
             quillRef.current.root.innerHTML = getStoredHtml();
             quillRef.current.enable(false);
@@ -2178,9 +2227,10 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
     };
     const handleSave = async () => {
         const html = sanitizeWikiHtml(quillRef.current ? quillRef.current.root.innerHTML : "");
+        const currentWiki = getProjectWikiData(project);
         const updated = {
             ...project,
-            wiki: { ...(project.wiki || {}), content: html }
+            wiki: { ...currentWiki, content: html, tags: selectedTags, updatedAt: new Date().toISOString() }
         };
         await onSave(updated);
         // Tras guardar: modo vista
@@ -2189,10 +2239,18 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         if (quillRef.current)
             quillRef.current.enable(false);
     };
+    const toggleTag = (tag) => {
+        if (mode !== 'edit')
+            return;
+        setSelectedTags((prev) => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+        setHasChanges(true);
+    };
     // En modo "view" ocultamos toolbar con estilo inline (sin tocar CSS)
     const toolbarStyle = (mode === 'view')
         ? { display: 'none' }
         : {};
+    const wikiData = getProjectWikiData(project);
+    const documented = hasWikiDocumentation(project);
     // Render principal
     return (React.createElement("div", null,
     // Barra superior (misma filosofía que ProjectEditor)
@@ -2202,7 +2260,7 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         type: "button",
         onClick: onBack,
         className: "text-gray-500 hover:text-gray-800 flex items-center gap-2 text-sm font-medium"
-    }, React.createElement("i", { className: "fas fa-arrow-left" }), React.createElement("span", { className: "hidden sm:inline" }, "Volver al proyecto")), React.createElement("div", { className: "h-6 w-px bg-gray-200" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold text-gray-800" }, "Wiki"), React.createElement("div", { className: "text-xs text-gray-500" }, (((_g = project === null || project === void 0 ? void 0 : project.meta) === null || _g === void 0 ? void 0 : _g.titulo) || "Proyecto")))), React.createElement("div", { className: "flex items-center gap-2" },
+    }, React.createElement("i", { className: "fas fa-arrow-left" }), React.createElement("span", { className: "hidden sm:inline" }, "Volver al proyecto")), React.createElement("div", { className: "h-6 w-px bg-gray-200" }), React.createElement("div", null, React.createElement("div", { className: "font-semibold text-gray-800" }, "Wiki del proyecto"), React.createElement("div", { className: "text-xs text-gray-500" }, "Documentación técnica y notas de campo."))), React.createElement("div", { className: "flex items-center gap-2" },
     // Botón Editar / Ver (como el de ProjectEditor)
     (mode === 'view')
         ? React.createElement("button", {
@@ -2225,9 +2283,15 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
         ? React.createElement("i", { className: "fas fa-circle-notch fa-spin" })
         : React.createElement("i", { className: "fas fa-save" }), React.createElement("span", { className: "hidden sm:inline" }, isSaving ? "Guardando..." : "Guardar")))),
     // Contenido
-    React.createElement("div", { className: "max-w-5xl mx-auto p-6" }, React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" }, React.createElement("div", { className: "font-semibold text-gray-800" }, mode === 'view' ? "Vista" : "Edición"), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, mode === 'view'
+    React.createElement("div", { className: "max-w-5xl mx-auto p-6" }, React.createElement("div", { className: "wiki-project-summary" }, React.createElement("div", { className: "wiki-project-summary-main" }, React.createElement("span", { className: "wiki-card-status" }, getProjectStatus(project)), React.createElement("h1", null, getProjectTitle(project)), React.createElement("p", null, documented ? "Wiki documentada y disponible en la base global de conocimiento." : "Este proyecto todavía no tiene wiki.")), React.createElement("div", { className: "wiki-project-summary-meta" }, React.createElement("span", null, "Última actualización"), React.createElement("strong", null, formatWikiDate(wikiData.updatedAt)))), React.createElement("div", { className: "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" }, React.createElement("div", { className: "px-6 py-4 border-b border-gray-200 bg-gray-50" }, React.createElement("div", { className: "font-semibold text-gray-800" }, mode === 'view' ? "Vista" : "Edición"), React.createElement("div", { className: "text-xs text-gray-500 mt-1" }, mode === 'view'
         ? "Pulsa “Editar” para modificar."
-        : "Usa la barra para negrita, listas y títulos.")),
+        : "Usa la barra para negrita, listas y títulos.")), React.createElement("div", { className: "wiki-tag-panel" }, React.createElement("div", { className: "wiki-tag-panel-head" }, React.createElement("div", null, React.createElement("div", { className: "wiki-tag-title" }, "Categorías técnicas"), React.createElement("div", { className: "wiki-tag-subtitle" }, mode === 'edit' ? "Selecciona una o varias categorías para clasificar esta wiki." : "Pulsa Editar para modificar las categorías."))), React.createElement("div", { className: "wiki-tag-cloud" }, WIKI_TAG_OPTIONS.map(tag => React.createElement("button", {
+        key: tag,
+        type: "button",
+        disabled: mode !== 'edit',
+        onClick: () => toggleTag(tag),
+        className: "wiki-tag-chip" + (selectedTags.includes(tag) ? " selected" : "") + (mode !== 'edit' ? " disabled" : "")
+    }, tag)))),
     // Zona Quill
     React.createElement("div", { className: "p-4" },
     // Truco: cuando está en view, escondemos la toolbar que Quill crea (ql-toolbar)
@@ -2255,6 +2319,78 @@ const ProjectWiki = ({ project, onSave, onBack, isSaving }) => {
     }))))));
 };
 // ─── VISTA: USUARIOS ─────────────────────────────────────────────────────────
+const ProjectWikiGlobalView = ({ projects, onOpenWiki, onOpenProjects }) => {
+    const [query, setQuery] = React.useState('');
+    const [projectId, setProjectId] = React.useState('');
+    const [status, setStatus] = React.useState('');
+    const [tag, setTag] = React.useState('');
+    const [dateFilter, setDateFilter] = React.useState('');
+    const wikiRows = React.useMemo(() => {
+        return (Array.isArray(projects) ? projects : []).map(project => {
+            const wiki = getProjectWikiData(project);
+            const text = stripWikiHtml(wiki.content);
+            const documented = text.length > 0;
+            const searchBlob = [
+                getProjectTitle(project),
+                getProjectClient(project),
+                getProjectStatus(project),
+                text,
+                (wiki.tags || []).join(' '),
+                project && project.meta ? JSON.stringify(project.meta) : ''
+            ].join(' ').toLowerCase();
+            return { project, wiki, text, documented, searchBlob };
+        });
+    }, [projects]);
+    const latestUpdate = React.useMemo(() => {
+        const dates = wikiRows
+            .map(row => row.wiki.updatedAt ? new Date(row.wiki.updatedAt) : null)
+            .filter(date => date && !Number.isNaN(date.getTime()))
+            .sort((a, b) => b - a);
+        return dates[0] ? dates[0].toISOString() : '';
+    }, [wikiRows]);
+    const filteredRows = React.useMemo(() => {
+        const q = query.trim().toLowerCase();
+        const now = new Date();
+        return wikiRows.filter(row => {
+            if (q && !row.searchBlob.includes(q))
+                return false;
+            if (projectId && String(row.project.id) !== String(projectId))
+                return false;
+            if (status && getProjectStatus(row.project) !== status)
+                return false;
+            if (tag && !(row.wiki.tags || []).includes(tag))
+                return false;
+            if (dateFilter) {
+                const date = row.wiki.updatedAt ? new Date(row.wiki.updatedAt) : null;
+                if (dateFilter === 'none')
+                    return !date || Number.isNaN(date.getTime());
+                if (!date || Number.isNaN(date.getTime()))
+                    return false;
+                const days = dateFilter === '7' ? 7 : 30;
+                const limit = new Date(now);
+                limit.setDate(limit.getDate() - days);
+                if (date < limit)
+                    return false;
+            }
+            return true;
+        });
+    }, [wikiRows, query, projectId, status, tag, dateFilter]);
+    const documentedCount = wikiRows.filter(row => row.documented).length;
+    const emptyCount = wikiRows.length - documentedCount;
+    const clearFilters = () => {
+        setQuery('');
+        setProjectId('');
+        setStatus('');
+        setTag('');
+        setDateFilter('');
+    };
+    const statuses = ['En Ejecución', 'En Revisión', 'Completado', 'En Pausa'];
+    return React.createElement('div', { className: 'wiki-global-page' }, React.createElement('div', { className: 'wiki-global-header' }, React.createElement('div', null, React.createElement('h1', null, 'Wiki de proyectos'), React.createElement('p', null, 'Documentación técnica, notas de campo y aprendizajes por proyecto.')), React.createElement('div', { className: 'wiki-global-actions' }, React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: onOpenProjects }, React.createElement('i', { className: 'fas fa-folder-open' }), 'Ver proyectos'))), React.createElement('div', { className: 'wiki-kpi-grid' }, React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Proyectos documentados'), React.createElement('strong', null, documentedCount)), React.createElement('div', { className: 'wiki-kpi-card warn' }, React.createElement('span', null, 'Proyectos sin documentación'), React.createElement('strong', null, emptyCount)), React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Total de notas/wiki'), React.createElement('strong', null, documentedCount)), React.createElement('div', { className: 'wiki-kpi-card' }, React.createElement('span', null, 'Última actualización'), React.createElement('strong', null, formatWikiDate(latestUpdate)))), React.createElement('div', { className: 'wiki-search-panel' }, React.createElement('div', { className: 'wiki-search-box' }, React.createElement('i', { className: 'fas fa-magnifying-glass' }), React.createElement('input', { value: query, onChange: e => setQuery(e.target.value), placeholder: 'Buscar en documentación, incidencias, configuraciones...' })), React.createElement('div', { className: 'wiki-filter-grid' }, React.createElement('select', { value: projectId, onChange: e => setProjectId(e.target.value) }, React.createElement('option', { value: '' }, 'Todos los proyectos'), wikiRows.map(row => React.createElement('option', { key: row.project.id, value: row.project.id }, getProjectTitle(row.project)))), React.createElement('select', { value: status, onChange: e => setStatus(e.target.value) }, React.createElement('option', { value: '' }, 'Todos los estados'), statuses.map(item => React.createElement('option', { key: item, value: item }, item))), React.createElement('select', { value: tag, onChange: e => setTag(e.target.value) }, React.createElement('option', { value: '' }, 'Todas las categorías'), WIKI_TAG_OPTIONS.map(item => React.createElement('option', { key: item, value: item }, item))), React.createElement('select', { value: dateFilter, onChange: e => setDateFilter(e.target.value) }, React.createElement('option', { value: '' }, 'Cualquier fecha'), React.createElement('option', { value: '7' }, 'Actualizado últimos 7 días'), React.createElement('option', { value: '30' }, 'Actualizado últimos 30 días'), React.createElement('option', { value: 'none' }, 'Sin fecha')), React.createElement('button', { type: 'button', className: 'wiki-clear-btn', onClick: clearFilters }, React.createElement('i', { className: 'fas fa-filter-circle-xmark' }), 'Limpiar filtros'))), React.createElement('div', { className: 'wiki-results-head' }, React.createElement('span', null, `${filteredRows.length} resultado${filteredRows.length === 1 ? '' : 's'}`), emptyCount > 0 ? React.createElement('span', { className: 'wiki-empty-hint' }, `${emptyCount} proyecto${emptyCount === 1 ? '' : 's'} sin documentación`) : null), filteredRows.length > 0
+        ? React.createElement('div', { className: 'wiki-card-grid' }, filteredRows.map(row => React.createElement('article', { key: row.project.id, className: 'wiki-card' + (row.documented ? '' : ' empty') }, React.createElement('div', { className: 'wiki-card-top' }, React.createElement('div', { className: 'wiki-card-title-wrap' }, React.createElement('span', { className: 'wiki-card-eyebrow' }, getProjectClient(row.project) || 'Sin cliente'), React.createElement('h2', { title: getProjectTitle(row.project) }, getProjectTitle(row.project))), React.createElement('span', { className: 'wiki-card-status' }, getProjectStatus(row.project))), React.createElement('p', { className: 'wiki-card-excerpt' }, buildWikiExcerpt(row.project)), React.createElement('div', { className: 'wiki-card-tags' }, (row.wiki.tags && row.wiki.tags.length)
+            ? row.wiki.tags.slice(0, 5).map(item => React.createElement('span', { key: item }, item))
+            : React.createElement('span', { className: 'muted' }, 'Sin categorías')), React.createElement('div', { className: 'wiki-card-footer' }, React.createElement('div', { className: 'wiki-card-meta' }, React.createElement('i', { className: row.documented ? 'fas fa-circle-check' : 'fas fa-circle-info' }), React.createElement('span', null, row.documented ? 'Documentada' : 'Sin documentación'), React.createElement('span', null, formatWikiDate(row.wiki.updatedAt))), React.createElement('button', { type: 'button', onClick: () => onOpenWiki(row.project), className: 'wiki-open-btn' }, React.createElement('i', { className: 'fas fa-arrow-up-right-from-square' }), 'Ver wiki')))))
+        : React.createElement('div', { className: 'wiki-no-results' }, React.createElement('i', { className: 'fas fa-book-open' }), React.createElement('h2', null, 'Sin resultados'), React.createElement('p', null, 'Prueba a limpiar filtros o buscar por otro término técnico.')));
+};
 const UsersView = () => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Usuarios'), React.createElement('p', { className: 'sb-page-sub' }, 'Gestión de accesos y roles del equipo')), React.createElement('div', { className: 'sb-placeholder' }, React.createElement('div', { className: 'sb-placeholder-icon' }, React.createElement('i', { className: 'fas fa-user-group' })), React.createElement('h2', { className: 'sb-placeholder-title' }, 'Gestión de usuarios'), React.createElement('p', { className: 'sb-placeholder-text' }, 'La administración de usuarios y roles estará disponible próximamente. Aquí podrás gestionar el acceso al panel, asignar permisos y ver la actividad por persona.'), React.createElement('span', { className: 'sb-placeholder-badge' }, 'Próximamente')));
 const ImportView = ({ onImport }) => React.createElement('div', { className: 'sb-page' }, React.createElement('div', { className: 'sb-page-header' }, React.createElement('h1', { className: 'sb-page-title' }, 'Importar'), React.createElement('p', { className: 'sb-page-sub' }, 'Restauración de backups de proyectos Unitecnic')), React.createElement('div', { className: 'sb-placeholder' }, React.createElement('div', { className: 'sb-placeholder-icon' }, React.createElement('i', { className: 'fas fa-file-arrow-up' })), React.createElement('h2', { className: 'sb-placeholder-title' }, 'Importar backup JSON'), React.createElement('p', { className: 'sb-placeholder-text' }, 'Selecciona un backup exportado desde esta aplicación. Antes de sobrescribir los datos actuales se mostrará una confirmación.'), React.createElement('button', { type: 'button', className: 'btn-apple-primary no-print', onClick: onImport }, React.createElement('i', { className: 'fas fa-file-arrow-up' }), 'Seleccionar archivo')));
 // ─── VISTA: PERFIL ────────────────────────────────────────────────────────────
@@ -2639,7 +2775,7 @@ const Sidebar = ({ view, projects, statusFilter, onNavigate, sidebarOpen, onClos
         className: 'sidebar-group-btn' + (isActive(['list', 'editor', 'wiki']) ? ' active' : ''),
         onClick: () => setProyectosOpen(function (o) { return !o; }),
         'aria-expanded': proyectosOpen
-    }, React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Proyectos'), React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })), proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' }, ni('fa-layer-group', 'Todos', () => { onNavigate('list', null); onClose(); }, counts.total, isActive('list', null), true), ni('fa-circle-play', 'En Ejecución', () => { onNavigate('list', 'En Ejecución'); onClose(); }, counts.active, isActive('list', 'En Ejecución'), true), ni('fa-magnifying-glass', 'En Revisión', () => { onNavigate('list', 'En Revisión'); onClose(); }, counts.review, isActive('list', 'En Revisión'), true), ni('fa-circle-check', 'Completados', () => { onNavigate('list', 'Completado'); onClose(); }, counts.completed, isActive('list', 'Completado'), true), ni('fa-circle-pause', 'En Pausa', () => { onNavigate('list', 'En Pausa'); onClose(); }, counts.paused, isActive('list', 'En Pausa'), true))), React.createElement('div', { className: 'sidebar-section-label' }, 'Análisis'), ni('fa-chart-bar', 'Gráficos', () => { onNavigate('charts', null); onClose(); }, null, isActive('charts'), false), ni('fa-shield-halved', 'Incidencias', () => { onNavigate('alerts', null); onClose(); }, null, isActive('alerts'), false), ni('fa-users', 'Carga de trabajo', () => { onNavigate('workload', null); onClose(); }, null, isActive('workload'), false), ni('fa-business-time', 'Imputaciones', () => { onNavigate('imputations', null); onClose(); }, null, isActive('imputations'), false), React.createElement('div', { className: 'sidebar-divider' }), React.createElement('div', { className: 'sidebar-section-label' }, 'Administración'), ni('fa-user-group', 'Usuarios', () => { onNavigate('users', null); onClose(); }, null, isActive('users'), false), ni('fa-file-arrow-up', 'Importar', () => { onNavigate('import', null); onClose(); }, null, isActive('import'), false), ni('fa-gear', 'Ajustes', () => { onNavigate('settings', null); onClose(); }, null, isActive('settings'), false)),
+    }, React.createElement('i', { className: 'fas fa-folder-open snav-icon', 'aria-hidden': 'true' }), React.createElement('span', { className: 'snav-label' }, 'Proyectos'), React.createElement('i', { className: 'fas fa-chevron-down sidebar-chevron' + (proyectosOpen ? ' open' : ''), 'aria-hidden': 'true' })), proyectosOpen && React.createElement('div', { className: 'sidebar-submenu' }, ni('fa-layer-group', 'Todos', () => { onNavigate('list', null); onClose(); }, counts.total, isActive('list', null), true), ni('fa-circle-play', 'En Ejecución', () => { onNavigate('list', 'En Ejecución'); onClose(); }, counts.active, isActive('list', 'En Ejecución'), true), ni('fa-magnifying-glass', 'En Revisión', () => { onNavigate('list', 'En Revisión'); onClose(); }, counts.review, isActive('list', 'En Revisión'), true), ni('fa-circle-check', 'Completados', () => { onNavigate('list', 'Completado'); onClose(); }, counts.completed, isActive('list', 'Completado'), true), ni('fa-circle-pause', 'En Pausa', () => { onNavigate('list', 'En Pausa'); onClose(); }, counts.paused, isActive('list', 'En Pausa'), true))), React.createElement('div', { className: 'sidebar-section-label' }, 'Análisis'), ni('fa-chart-bar', 'Gráficos', () => { onNavigate('charts', null); onClose(); }, null, isActive('charts'), false), ni('fa-shield-halved', 'Incidencias', () => { onNavigate('alerts', null); onClose(); }, null, isActive('alerts'), false), ni('fa-users', 'Carga de trabajo', () => { onNavigate('workload', null); onClose(); }, null, isActive('workload'), false), ni('fa-business-time', 'Imputaciones', () => { onNavigate('imputations', null); onClose(); }, null, isActive('imputations'), false), React.createElement('div', { className: 'sidebar-section-label' }, 'Conocimiento'), ni('fa-book-open', 'Wiki de proyectos', () => { onNavigate('wikiProjects', null); onClose(); }, null, isActive('wikiProjects'), false), React.createElement('div', { className: 'sidebar-divider' }), React.createElement('div', { className: 'sidebar-section-label' }, 'Administración'), ni('fa-user-group', 'Usuarios', () => { onNavigate('users', null); onClose(); }, null, isActive('users'), false), ni('fa-file-arrow-up', 'Importar', () => { onNavigate('import', null); onClose(); }, null, isActive('import'), false), ni('fa-gear', 'Ajustes', () => { onNavigate('settings', null); onClose(); }, null, isActive('settings'), false)),
     // PIE
     React.createElement('div', { className: 'sidebar-foot' }, React.createElement('div', { className: 'sidebar-user-row' }, React.createElement('div', { className: 'sidebar-avatar' }, (userLabel || 'U').charAt(0).toUpperCase()), React.createElement('div', { className: 'sidebar-user-info' }, React.createElement('div', { className: 'sidebar-user-name', title: userLabel }, userLabel), React.createElement('div', { className: 'sidebar-user-role' }, 'Administrador'))), React.createElement('div', { className: 'sidebar-foot-actions' }, React.createElement('button', {
         className: 'sfab' + (isActive('profile') ? ' active' : ''),
@@ -2815,7 +2951,7 @@ const MainApp = () => {
             pep: "",
             sharepointUrl: "" // <--- Nuevo campo
         },
-        wiki: { content: "" },
+        wiki: { content: "", tags: [], updatedAt: "" },
         tasks: []
     });
     const applyRouteFromHash = (list) => {
@@ -2840,6 +2976,11 @@ const MainApp = () => {
             if (parts[0] === 'charts') {
                 setCurrentProject(null);
                 setView('charts');
+                return;
+            }
+            if (parts[0] === 'wiki-projects' || parts[0] === 'project-wiki' || parts[0] === 'wiki-global' || parts[0] === 'wikiProjects') {
+                setCurrentProject(null);
+                setView('wikiProjects');
                 return;
             }
             if (parts[0] === 'users') {
@@ -2928,11 +3069,7 @@ const MainApp = () => {
             const normalized = (effectiveList || []).map(p => {
                 if (!p)
                     return p;
-                if (!p.wiki)
-                    return { ...p, wiki: { content: "" } };
-                if (typeof p.wiki.content !== "string")
-                    return { ...p, wiki: { ...(p.wiki || {}), content: "" } };
-                return p;
+                return { ...p, wiki: getProjectWikiData(p) };
             });
             setProjects(normalized);
             try {
@@ -3101,6 +3238,11 @@ const MainApp = () => {
             const hash = targetFilter ? '#/proj/' + encodeURIComponent(targetFilter) : '#/list';
             setRoute(hash);
         }
+        else if (targetView === 'wikiProjects') {
+            setCurrentProject(null);
+            setView('wikiProjects');
+            setRoute('#/wiki-projects');
+        }
         else {
             setCurrentProject(null);
             setView(targetView);
@@ -3150,6 +3292,25 @@ const MainApp = () => {
         catch (e) {
             console.error(e);
             alert('Error al guardar');
+            return { created: false, project: null, error: true };
+        }
+        finally {
+            setIsSaving(false);
+        }
+    };
+    const saveProjectWiki = async (updatedData) => {
+        setIsSaving(true);
+        try {
+            const clean = { ...updatedData, wiki: getProjectWikiData(updatedData) };
+            const updatedList = projects.map(p => p.id === clean.id ? clean : p);
+            await saveProjectsLocal(updatedList);
+            setCurrentProject(clean);
+            await new Promise(r => setTimeout(r, 300));
+            return { created: false, project: clean };
+        }
+        catch (e) {
+            console.error(e);
+            alert('Error al guardar la wiki');
             return { created: false, project: null, error: true };
         }
         finally {
@@ -3278,9 +3439,13 @@ const MainApp = () => {
         onClick: function () { setSidebarOpen(true); },
         "aria-label": "Abrir menú",
         "aria-expanded": sidebarOpen
-    }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })), view === 'workload' && (React.createElement(WorkloadDashboardView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'imputations' && (React.createElement(AdvancedImputationsView, { projects: projects, onBack: () => { setView('home'); setRoute('#/home'); }, onCreate: openTimeEntryModal, onEdit: (entry) => openTimeEntryModal(entry.projectId, entry), onDelete: deleteTimeEntry })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'users' && React.createElement(UsersView, null), view === 'import' && React.createElement(ImportView, { onImport: openImportPicker }), view === 'profile' && React.createElement(ProfileView, null), view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }), view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })), view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme, onAddTimeEntry: openTimeEntryModal, onEditTimeEntry: (entry) => openTimeEntryModal(entry.projectId, entry), onDeleteTimeEntry: deleteTimeEntry })), view === 'wiki' && currentProject && (React.createElement(ProjectWiki, {
+    }, React.createElement("i", { className: "fas fa-bars" })), React.createElement("input", { ref: importFileInputRef, type: "file", accept: "application/json,.json", className: "hidden", onChange: handleImportFileSelected }), view === 'home' && (React.createElement(HomeView, { projects: projects, onCreate: createProject, onNavigate: handleSidebarNavigate })), view === 'workload' && (React.createElement(WorkloadDashboardView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'imputations' && (React.createElement(AdvancedImputationsView, { projects: projects, onBack: () => { setView('home'); setRoute('#/home'); }, onCreate: openTimeEntryModal, onEdit: (entry) => openTimeEntryModal(entry.projectId, entry), onDelete: deleteTimeEntry })), view === 'alerts' && (React.createElement(AlertsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'charts' && (React.createElement(ChartsView, { projects: projects, onBack: () => { setView('list'); setRoute('#/list'); } })), view === 'wikiProjects' && (React.createElement(ProjectWikiGlobalView, {
+        projects: projects,
+        onOpenProjects: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); },
+        onOpenWiki: (project) => { setCurrentProject(project); setView('wiki'); setRoute(`#/wiki/${encodeURIComponent(String(project.id || ''))}`); }
+    })), view === 'users' && React.createElement(UsersView, null), view === 'import' && React.createElement(ImportView, { onImport: openImportPicker }), view === 'profile' && React.createElement(ProfileView, null), view === 'settings' && React.createElement(SettingsView, { theme: theme, onToggleTheme: toggleTheme }), view === 'list' && (React.createElement(ProjectList, { projects: projects, onCreate: createProject, onSelect: selectProject, onDelete: deleteProject, onMoveProject: moveProject, onBackup: exportBackupJSON, onExportCSV: exportCSV, onImport: openImportPicker, theme: theme, onToggleTheme: toggleTheme, storagePercent: storagePercent, statusFilter: statusFilter })), view === 'editor' && currentProject && (React.createElement(ProjectEditor, { project: currentProject, onSave: saveProject, onBack: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, onCancelNew: () => { setCurrentProject(null); setView('list'); setRoute('#/list'); }, isSaving: isSaving, theme: theme, onToggleTheme: toggleTheme, onAddTimeEntry: openTimeEntryModal, onEditTimeEntry: (entry) => openTimeEntryModal(entry.projectId, entry), onDeleteTimeEntry: deleteTimeEntry })), view === 'wiki' && currentProject && (React.createElement(ProjectWiki, {
         project: currentProject,
-        onSave: saveProject,
+        onSave: saveProjectWiki,
         onBack: () => { setView('editor'); setRoute(`#/project/${currentProject.id}`); },
         isSaving: isSaving
     })), timeEntryModal && React.createElement(AdvancedTimeEntryModal, {
