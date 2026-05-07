@@ -5801,8 +5801,8 @@ input:focus, textarea:focus, select:focus {
 }
 .project-detail-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+  gap: 16px 22px;
   align-items: start;
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -5811,6 +5811,8 @@ input:focus, textarea:focus, select:focus {
   padding: 20px;
 }
 .project-detail-title {
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
 }
 .project-detail-title h1 {
@@ -5848,22 +5850,24 @@ input:focus, textarea:focus, select:focus {
 }
 .project-detail-side {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  grid-template-columns: 1fr;
+  align-items: start;
   gap: 12px;
   min-width: 0;
+  width: 100%;
 }
 .project-client-logo {
-  order: 2;
   display: flex;
   align-items: center;
   justify-content: center;
   justify-self: end;
-  width: clamp(156px, 15vw, 220px);
-  max-width: 220px;
-  height: 88px;
-  max-height: 88px;
-  padding: 12px 16px;
+  width: 180px;
+  max-width: 180px;
+  height: 72px;
+  max-height: 72px;
+  padding: 10px 14px;
   border: 1px solid var(--app-border, var(--border));
   border-radius: var(--app-radius-lg, 16px);
   background: color-mix(in srgb, var(--surface) 90%, #0888C8 10%);
@@ -5889,10 +5893,10 @@ input:focus, textarea:focus, select:focus {
   object-fit: contain;
 }
 .project-detail-meta {
-  order: 1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(112px, 1fr));
   gap: 10px;
+  min-width: 0;
 }
 .project-detail-meta span {
   min-width: 0;
@@ -5903,8 +5907,10 @@ input:focus, textarea:focus, select:focus {
   color: var(--text);
   font-size: 13px;
   font-weight: 750;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 .project-detail-meta strong {
   display: block;
@@ -5913,13 +5919,16 @@ input:focus, textarea:focus, select:focus {
   text-transform: uppercase;
   letter-spacing: 0;
   margin-bottom: 4px;
+  white-space: nowrap;
 }
 .project-detail-actions {
-  grid-column: 1 / -1;
+  grid-column: 1;
+  grid-row: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
-  padding-top: 2px;
+  align-self: end;
+  padding-top: 0;
 }
 .project-detail-actions button,
 .project-panel-head button {
@@ -6305,15 +6314,25 @@ input:focus, textarea:focus, select:focus {
   .project-summary-grid {
     grid-template-columns: 1fr;
   }
+  .project-detail-title,
+  .project-detail-side,
+  .project-detail-actions {
+    grid-column: 1;
+    grid-row: auto;
+  }
   .project-detail-side {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 1fr;
+    max-width: none;
   }
   .project-client-logo {
-    width: 180px;
-    max-width: 180px;
-    height: 64px;
-    max-height: 64px;
+    width: 150px;
+    max-width: 150px;
+    height: 60px;
+    max-height: 60px;
     padding: 9px 12px;
+  }
+  .project-detail-meta {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
   }
   .project-detail-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6340,8 +6359,8 @@ input:focus, textarea:focus, select:focus {
   }
   .project-client-logo {
     justify-self: start;
-    width: 140px;
-    max-width: 140px;
+    width: 120px;
+    max-width: 120px;
     height: 48px;
     max-height: 48px;
     padding: 7px 10px;
