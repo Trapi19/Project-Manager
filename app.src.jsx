@@ -1375,6 +1375,10 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
     const meta = (project && project.meta) || {};
     const clientLogoSrc = getClientLogoSrc(project);
     const clientInitials = getClientInitials(project);
+    const [clientLogoFailed, setClientLogoFailed] = React.useState(false);
+    React.useEffect(() => {
+        setClientLogoFailed(false);
+    }, [project && project.id, clientLogoSrc]);
     const assignees = React.useMemo(() => Array.from(new Set(model.tasks.map(t => t.asignadoA || '').filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es')), [model.tasks]);
     const filteredTasks = React.useMemo(() => {
         const q = taskQuery.trim().toLowerCase();
@@ -1489,8 +1493,7 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
             </div>
             <div className="project-detail-side">
                 <div className="project-client-logo" title={client}>
-                    <span>{clientInitials}</span>
-                    {clientLogoSrc && <img src={clientLogoSrc} alt={`Logo ${client}`} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
+                    {clientLogoSrc && !clientLogoFailed ? <img src={clientLogoSrc} alt={`Logo ${client}`} onError={() => setClientLogoFailed(true)} /> : <span>{clientInitials}</span>}
                 </div>
                 <div className="project-detail-meta">
                     <span><strong>Inicio</strong>{model.tasks.find(t => t.fechaInicio)?.fechaInicio ? (window.formatFechaES ? window.formatFechaES(model.tasks.find(t => t.fechaInicio).fechaInicio) : model.tasks.find(t => t.fechaInicio).fechaInicio) : 'Sin datos'}</span>
@@ -5111,4 +5114,3 @@ class ErrorBoundary extends React.Component {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(ErrorBoundary, null, React.createElement(MainApp, null)));
-

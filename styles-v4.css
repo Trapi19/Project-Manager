@@ -6010,8 +6010,10 @@ input:focus, textarea:focus, select:focus {
 }
 .project-detail-kpis article {
   display: flex;
+  align-items: center;
   gap: 10px;
   min-width: 0;
+  min-height: 86px;
   border: 1px solid var(--border);
   border-radius: 13px;
   background: var(--surface);
@@ -6031,6 +6033,8 @@ input:focus, textarea:focus, select:focus {
 }
 .project-detail-kpis div {
   min-width: 0;
+  display: grid;
+  gap: 2px;
 }
 .project-detail-kpis strong,
 .project-detail-kpis span,
@@ -6089,13 +6093,20 @@ input:focus, textarea:focus, select:focus {
 }
 .project-summary-grid--executive {
   align-items: start;
+  grid-auto-rows: minmax(168px, auto);
 }
 .project-summary-grid--executive .project-panel,
 .project-summary-grid--executive .project-health-card {
-  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 168px;
+  height: 100%;
+  padding: 16px;
+  border-radius: 14px;
 }
 .project-summary-risks {
   grid-column: 1 / -1;
+  min-height: 0;
 }
 .project-summary-risks .project-task-list {
   gap: 8px;
@@ -6116,9 +6127,10 @@ input:focus, textarea:focus, select:focus {
 }
 .project-summary-mini-grid button {
   display: grid;
+  align-content: center;
   gap: 3px;
   min-width: 0;
-  min-height: 62px;
+  min-height: 74px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: color-mix(in srgb, var(--surface) 96%, #0888C8 4%);
@@ -6150,6 +6162,7 @@ input:focus, textarea:focus, select:focus {
   display: flex;
   align-items: flex-start;
   gap: 10px;
+  margin-top: auto;
   color: var(--text);
   font-size: 13px;
   line-height: 1.45;
@@ -6260,6 +6273,7 @@ input:focus, textarea:focus, select:focus {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
+  min-height: 42px;
 }
 .project-panel-head span {
   display: block;
@@ -6286,12 +6300,23 @@ input:focus, textarea:focus, select:focus {
   font-size: 13px;
   line-height: 1.55;
 }
+.project-summary-grid--executive .project-health-card p,
+.project-summary-grid--executive .project-panel-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
 .project-health-chips,
 .project-chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
   margin-top: 12px;
+}
+.project-summary-grid--executive .project-health-chips {
+  margin-top: auto;
+  padding-top: 12px;
 }
 .project-health-chips span,
 .project-chip-row span {
@@ -6672,6 +6697,13 @@ input:focus, textarea:focus, select:focus {
   }
   .project-summary-mini-grid {
     grid-template-columns: 1fr;
+  }
+  .project-summary-grid--executive {
+    grid-auto-rows: auto;
+  }
+  .project-summary-grid--executive .project-panel,
+  .project-summary-grid--executive .project-health-card {
+    min-height: 0;
   }
 }
 @media (max-width: 640px) {

@@ -960,6 +960,10 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
     const meta = (project && project.meta) || {};
     const clientLogoSrc = getClientLogoSrc(project);
     const clientInitials = getClientInitials(project);
+    const [clientLogoFailed, setClientLogoFailed] = React.useState(false);
+    React.useEffect(() => {
+        setClientLogoFailed(false);
+    }, [project && project.id, clientLogoSrc]);
     const assignees = React.useMemo(() => Array.from(new Set(model.tasks.map(t => t.asignadoA || '').filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es')), [model.tasks]);
     const filteredTasks = React.useMemo(() => {
         const q = taskQuery.trim().toLowerCase();
@@ -1103,9 +1107,7 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                     " \u00B7 Responsable: ",
                     meta.responsableProyecto || meta.ejecutorProyecto || 'Sin asignar')),
             React.createElement("div", { className: "project-detail-side" },
-                React.createElement("div", { className: "project-client-logo", title: client },
-                    React.createElement("span", null, clientInitials),
-                    clientLogoSrc && React.createElement("img", { src: clientLogoSrc, alt: `Logo ${client}`, onError: (e) => { e.currentTarget.style.display = 'none'; } })),
+                React.createElement("div", { className: "project-client-logo", title: client }, clientLogoSrc && !clientLogoFailed ? React.createElement("img", { src: clientLogoSrc, alt: `Logo ${client}`, onError: () => setClientLogoFailed(true) }) : React.createElement("span", null, clientInitials)),
                 React.createElement("div", { className: "project-detail-meta" },
                     React.createElement("span", null,
                         React.createElement("strong", null, "Inicio"),
