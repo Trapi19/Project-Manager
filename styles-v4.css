@@ -8027,3 +8027,480 @@ html:not(.theme-dark) .imput-header {
     padding: 4px;
   }
 }
+
+/* =========================================================
+   Sistema visual unificado · Unitecnic PM
+   Capa final de coherencia visual para pantalla.
+   ========================================================= */
+:root {
+  --ui-brand: #0888C8;
+  --ui-brand-strong: #0369a1;
+  --ui-brand-soft: rgba(8, 136, 200, .11);
+  --ui-ok: #10b981;
+  --ui-ok-soft: rgba(16, 185, 129, .12);
+  --ui-warn: #f59e0b;
+  --ui-warn-soft: rgba(245, 158, 11, .13);
+  --ui-danger: #e11d48;
+  --ui-danger-soft: rgba(225, 29, 72, .12);
+  --ui-info: #0ea5e9;
+  --ui-info-soft: rgba(14, 165, 233, .12);
+  --ui-page-max: 1240px;
+  --ui-radius-sm: 8px;
+  --ui-radius: 12px;
+  --ui-radius-lg: 16px;
+  --ui-border: color-mix(in srgb, var(--border) 86%, transparent 14%);
+  --ui-card-bg: color-mix(in srgb, var(--surface) 96%, var(--ui-brand) 4%);
+  --ui-card-shadow: 0 8px 24px rgba(15, 23, 42, .07);
+  --ui-card-shadow-hover: 0 14px 34px rgba(15, 23, 42, .11);
+  --ui-focus: 0 0 0 3px rgba(8, 136, 200, .18);
+}
+
+.theme-dark {
+  --ui-card-bg: color-mix(in srgb, var(--surface) 94%, var(--ui-brand) 6%);
+  --ui-card-shadow: 0 12px 30px rgba(0, 0, 0, .24);
+  --ui-card-shadow-hover: 0 16px 40px rgba(0, 0, 0, .34);
+  --ui-border: rgba(148, 163, 184, .18);
+}
+
+.sidebar-main {
+  background:
+    radial-gradient(900px circle at 16% -6%, rgba(8, 136, 200, .08), transparent 38%),
+    var(--bg-gradient);
+}
+
+.sb-page,
+.project-list-view,
+.imput-page,
+.wiki-global-page,
+.workload-page,
+.project-detail-page {
+  width: min(var(--ui-page-max), calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.sb-page-header,
+.imput-header,
+.wiki-global-header,
+.workload-hero,
+.home-hero,
+.project-detail-hero {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius-lg) !important;
+  background: var(--ui-card-bg) !important;
+  box-shadow: var(--ui-card-shadow) !important;
+}
+
+.sb-page-title,
+.wiki-global-header h1,
+.workload-hero h1,
+.home-hero h1,
+.project-detail-title h1 {
+  color: var(--text) !important;
+  font-weight: 820 !important;
+  letter-spacing: 0 !important;
+}
+
+.sb-page-sub,
+.wiki-global-header p,
+.workload-hero p,
+.home-hero p,
+.project-detail-title p,
+.settings-row-sub,
+.profile-meta {
+  color: var(--muted) !important;
+}
+
+.btn-apple,
+.btn-apple-primary,
+.home-action,
+.wiki-clear-btn,
+.wiki-open-btn,
+.project-detail-actions button,
+.project-panel-head button,
+.imput-header-actions button,
+.imput-calendar-actions button,
+.workload-back,
+.sidebar-nav-item,
+.sidebar-group-btn,
+.project-editor-screen button,
+.modal-actions button {
+  min-height: 36px;
+  border-radius: var(--ui-radius-sm) !important;
+  font-weight: 760 !important;
+  letter-spacing: 0 !important;
+  transition: background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.btn-apple-primary,
+.home-action.primary,
+.project-detail-actions button:first-child,
+.imput-header-actions .btn-apple-primary,
+.project-panel-head button,
+.modal-actions button[type="submit"],
+.project-editor-screen button:has(.fa-save) {
+  background: var(--ui-brand) !important;
+  border-color: var(--ui-brand) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px rgba(8, 136, 200, .18) !important;
+}
+
+.btn-apple,
+.home-action:not(.primary),
+.wiki-clear-btn,
+.wiki-open-btn,
+.project-detail-actions button:not(:first-child),
+.imput-header-actions .btn-apple,
+.project-editor-screen button:not(:has(.fa-save)),
+.modal-actions button[type="button"] {
+  background: color-mix(in srgb, var(--surface) 94%, var(--ui-brand) 6%) !important;
+  border: 1px solid var(--ui-border) !important;
+  color: color-mix(in srgb, var(--text) 78%, var(--ui-brand) 22%) !important;
+  box-shadow: none !important;
+}
+
+button:hover,
+.btn-apple:hover,
+.btn-apple-primary:hover,
+.home-action:hover,
+.wiki-open-btn:hover,
+.wiki-clear-btn:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled,
+.btn-apple:disabled,
+.btn-apple-primary:disabled {
+  opacity: .58 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: none !important;
+  box-shadow: var(--ui-focus) !important;
+}
+
+.home-kpi,
+.exec-card,
+.project-card,
+.wiki-kpi-card,
+.wiki-card,
+.imput-kpi,
+.imput-card,
+.workload-kpi,
+.workload-panel,
+.workload-detail-card,
+.project-panel,
+.project-health-card,
+.settings-group,
+.profile-card,
+.sb-placeholder,
+.modal-card {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius) !important;
+  background: var(--ui-card-bg) !important;
+  box-shadow: var(--ui-card-shadow) !important;
+}
+
+.project-card:hover,
+.wiki-card:hover,
+.workload-detail-card:hover,
+.home-panel:hover {
+  box-shadow: var(--ui-card-shadow-hover) !important;
+}
+
+.home-kpi strong,
+.project-detail-kpis strong,
+.wiki-kpi-card strong,
+.imput-kpi strong,
+.workload-kpi strong,
+.exec-value {
+  color: var(--text) !important;
+  font-size: clamp(18px, 2vw, 24px) !important;
+  line-height: 1.05 !important;
+  font-weight: 840 !important;
+}
+
+.home-kpi span,
+.project-detail-kpis span,
+.wiki-kpi-card span,
+.imput-kpi span,
+.workload-kpi span,
+.exec-label,
+.project-panel-head span,
+.workload-panel-head span,
+.imput-card-head p,
+.wiki-card-eyebrow {
+  color: var(--muted) !important;
+  font-size: 11px !important;
+  font-weight: 790 !important;
+  letter-spacing: 0 !important;
+}
+
+.project-detail-kpis article,
+.wiki-kpi-card,
+.imput-kpi,
+.workload-kpi,
+.home-kpi {
+  min-height: 72px !important;
+  padding: 12px !important;
+}
+
+.project-detail-tabs,
+.wiki-filter-grid,
+.project-task-filters,
+.imput-filters,
+.workload-filters {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: var(--ui-radius) !important;
+  background: color-mix(in srgb, var(--surface) 95%, var(--ui-brand) 5%) !important;
+}
+
+.project-detail-tabs button,
+.workload-filters select,
+.wiki-filter-grid select,
+.project-task-filters select,
+.project-task-filters input,
+.imput-filters input,
+.imput-filters select,
+.imput-filters button {
+  min-height: 36px !important;
+  border-radius: var(--ui-radius-sm) !important;
+}
+
+.project-detail-tabs button.active {
+  background: var(--surface) !important;
+  color: var(--ui-brand) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .08) !important;
+}
+
+input,
+select,
+textarea {
+  border-color: var(--ui-border) !important;
+  border-radius: var(--ui-radius-sm) !important;
+  background: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 82%, transparent 18%) !important;
+}
+
+label {
+  color: var(--muted);
+  font-weight: 720;
+}
+
+.imput-table-wrap,
+.wiki-search-panel,
+.modal-card,
+.actions-popover {
+  border-color: var(--ui-border) !important;
+  border-radius: var(--ui-radius) !important;
+}
+
+table,
+.imput-table {
+  color: var(--text);
+}
+
+table th,
+.imput-table th {
+  color: var(--muted) !important;
+  background: color-mix(in srgb, var(--surface) 93%, var(--ui-brand) 7%) !important;
+  font-size: 11px !important;
+  letter-spacing: 0 !important;
+  font-weight: 800 !important;
+}
+
+table td,
+.imput-table td {
+  border-color: var(--ui-border) !important;
+}
+
+tbody tr:hover,
+.imput-table tbody tr:hover {
+  background: color-mix(in srgb, var(--surface) 94%, var(--ui-brand) 6%) !important;
+}
+
+.status-pill,
+.project-status-pill,
+.wiki-card-status,
+.snav-badge,
+.task-state,
+.task-priority,
+.project-health-chips span,
+.project-chip-row span,
+.wiki-card-tags span,
+.wiki-tag-chip,
+.imput-project-totals span {
+  border-radius: 999px !important;
+  border-color: var(--ui-border) !important;
+  font-weight: 780 !important;
+  letter-spacing: 0 !important;
+}
+
+.project-health-card--good,
+.home-health--good,
+.workload-positive,
+.status-completed {
+  background: color-mix(in srgb, var(--surface) 88%, var(--ui-ok) 12%) !important;
+  color: color-mix(in srgb, var(--text) 76%, var(--ui-ok) 24%) !important;
+}
+
+.project-health-card--warning,
+.home-list-row--warning,
+.workload-alert,
+.task-due--soon {
+  background: color-mix(in srgb, var(--surface) 88%, var(--ui-warn) 12%) !important;
+  color: color-mix(in srgb, var(--text) 74%, var(--ui-warn) 26%) !important;
+}
+
+.project-health-card--critical,
+.home-incident--critical,
+.alert-critical-card,
+.task-due--overdue {
+  background: color-mix(in srgb, var(--surface) 88%, var(--ui-danger) 12%) !important;
+  color: color-mix(in srgb, var(--text) 72%, var(--ui-danger) 28%) !important;
+}
+
+.project-empty-state,
+.imput-empty,
+.wiki-no-results,
+.workload-empty,
+.home-empty,
+.sb-placeholder {
+  border: 1px dashed var(--ui-border) !important;
+  border-radius: var(--ui-radius) !important;
+  background: color-mix(in srgb, var(--surface) 94%, var(--ui-brand) 6%) !important;
+  color: var(--muted) !important;
+}
+
+.project-empty-state i,
+.imput-empty i,
+.wiki-no-results i,
+.workload-empty i,
+.home-empty i,
+.sb-placeholder-icon {
+  color: var(--ui-brand) !important;
+}
+
+.modal-overlay {
+  background: rgba(2, 6, 23, .62) !important;
+  backdrop-filter: blur(12px);
+}
+
+.modal-card {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+.sidebar {
+  border-right: 1px solid var(--ui-border) !important;
+  background: color-mix(in srgb, #07111f 88%, var(--ui-brand) 12%) !important;
+}
+
+.sidebar-section-label {
+  color: rgba(226, 232, 240, .52) !important;
+  letter-spacing: .08em !important;
+}
+
+.sidebar-nav-item,
+.sidebar-group-btn {
+  border-radius: var(--ui-radius-sm) !important;
+}
+
+.sidebar-nav-item.active,
+.sidebar-group-btn.active {
+  background: rgba(8, 136, 200, .18) !important;
+  color: #f8fafc !important;
+}
+
+.sidebar-nav-item:hover,
+.sidebar-group-btn:hover {
+  background: rgba(148, 163, 184, .11) !important;
+}
+
+.sidebar-divider {
+  background: rgba(148, 163, 184, .16) !important;
+}
+
+.home-panel,
+.workload-panel,
+.imput-card,
+.wiki-search-panel,
+.project-panel {
+  overflow: hidden;
+}
+
+.home-panel-head h2,
+.workload-panel-head h2,
+.imput-card-head h2,
+.wiki-global-header h1,
+.project-panel-head h2 {
+  color: var(--text) !important;
+}
+
+.home-progress,
+.workload-bar,
+.imput-day em,
+.project-detail-kpis article {
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .sb-page,
+  .project-list-view,
+  .imput-page,
+  .wiki-global-page,
+  .workload-page,
+  .project-detail-page {
+    width: min(100% - 24px, var(--ui-page-max));
+  }
+  .sb-page-header,
+  .imput-header,
+  .wiki-global-header,
+  .workload-hero,
+  .home-hero {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .home-kpi-grid,
+  .project-detail-kpis,
+  .wiki-kpi-grid,
+  .imput-kpis,
+  .workload-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .home-kpi-grid,
+  .project-detail-kpis,
+  .wiki-kpi-grid,
+  .imput-kpis,
+  .workload-kpi-grid,
+  .wiki-filter-grid,
+  .project-task-filters,
+  .imput-filters {
+    grid-template-columns: 1fr !important;
+  }
+  .btn-apple,
+  .btn-apple-primary,
+  .home-action,
+  .project-detail-actions button,
+  .imput-header-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  .project-detail-tabs,
+  .sidebar-nav {
+    scrollbar-width: thin;
+  }
+}
