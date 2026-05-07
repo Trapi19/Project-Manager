@@ -1,14 +1,14 @@
-/* =========================================================
-   CSS CONSOLIDADO — SISTEMA VISUAL PRINCIPAL V4
+﻿/* =========================================================
+   CSS CONSOLIDADO â€” SISTEMA VISUAL PRINCIPAL V4
    ---------------------------------------------------------
-   Este es el único CSS de pantalla que carga index.html.
-   Mantiene el orden histórico de las capas anteriores para no
-   romper la apariencia existente y deja V4 como última capa,
-   es decir, como fuente principal de diseño.
+   Este es el Ãºnico CSS de pantalla que carga index.html.
+   Mantiene el orden histÃ³rico de las capas anteriores para no
+   romper la apariencia existente y deja V4 como Ãºltima capa,
+   es decir, como fuente principal de diseÃ±o.
 
    Si necesitas cambiar colores, tarjetas, tablas, formularios
-   o responsive, hazlo aquí y no en app.bundle.js.
-   La impresión sigue separada en styles-print.css.
+   o responsive, hazlo aquÃ­ y no en app.bundle.js.
+   La impresiÃ³n sigue separada en styles-print.css.
    ========================================================= */
 
 
@@ -17,7 +17,7 @@
    Origen consolidado: styles-base.css
    ========================================================= */
 
-/* Estilos base (tokens de tema, tipografía, tablas, impresión, botón de tema, etc.) */
+/* Estilos base (tokens de tema, tipografÃ­a, tablas, impresiÃ³n, botÃ³n de tema, etc.) */
 /* =========================================
    1. VARIABLES Y ESTILOS GENERALES
    ========================================= */
@@ -40,9 +40,9 @@
 
 
 /* State section accents (Dashboard) */
---color-ejecucion-rgb: 59, 130, 246;    /* Azul (En Ejecución) */
+--color-ejecucion-rgb: 59, 130, 246;    /* Azul (En EjecuciÃ³n) */
 --color-completado-rgb: 16, 185, 129;  /* Verde (Completado) */
---color-revision-rgb: 139, 92, 246;    /* Morado (En Revisión) */
+--color-revision-rgb: 139, 92, 246;    /* Morado (En RevisiÃ³n) */
 --color-pausa-rgb: 239, 68, 68;        /* Rojo (En Pausa) */
 }
 
@@ -81,7 +81,7 @@ body {
 
 
 /* =========================================
-   1B. MODO DÍA / NOCHE (NO AFECTA A IMPRESIÓN)
+   1B. MODO DÃA / NOCHE (NO AFECTA A IMPRESIÃ“N)
    ========================================= */
 
 /* Superficies */
@@ -102,23 +102,23 @@ body {
 .theme-dark .text-gray-800,
 .theme-dark .text-gray-700 { color: var(--text) !important; }
 
-/* Título de En Pausa (Rojo para modo claro y oscuro) */
+/* TÃ­tulo de En Pausa (Rojo para modo claro y oscuro) */
 .section--pausa h2 {
     color: #ef4444 !important;
 }
-/* --- Mejora de brillo para títulos en modo oscuro --- */
+/* --- Mejora de brillo para tÃ­tulos en modo oscuro --- */
 
-/* Título de En Ejecución (Azul brillante) */
+/* TÃ­tulo de En EjecuciÃ³n (Azul brillante) */
 .theme-dark .text-blue-900 {
     color: #3b82f6 !important;
 }
 
-/* Título de En Revisión (Violeta brillante) */
+/* TÃ­tulo de En RevisiÃ³n (Violeta brillante) */
 .theme-dark .text-violet-900 {
     color: #a78bfa !important;
 }
 
-/* Título de Completado (Verde brillante) */
+/* TÃ­tulo de Completado (Verde brillante) */
 .theme-dark .section--completado h2 {
     color: #10b981 !important;
 }
@@ -127,7 +127,7 @@ body {
 .theme-dark .text-gray-500,
 .theme-dark .text-gray-400 { color: var(--muted) !important; }
 
-/* Píldoras y fondos suaves */
+/* PÃ­ldoras y fondos suaves */
 .theme-dark .bg-slate-100 { background-color: rgba(148,163,184,0.12) !important; }
 .theme-dark .text-slate-600 { color: var(--muted) !important; }
 
@@ -135,7 +135,7 @@ body {
 .theme-dark .shadow-sm,
 .theme-dark .shadow-lg { box-shadow: 0 10px 15px -3px var(--shadow), 0 4px 6px -2px rgba(0,0,0,0.05) !important; }
 
-/* Botón de tema (por si Tailwind cambia) */
+/* BotÃ³n de tema (por si Tailwind cambia) */
 .theme-toggle i { font-size: 14px; }
 
 .card-hover:hover {
@@ -150,7 +150,7 @@ body {
 }
 
 /* =========================================
-   BOTÓN  (BACKUP)
+   BOTÃ“N  (BACKUP)
    ========================================= */
 .btn-apple{
     display: inline-flex;
@@ -191,7 +191,7 @@ body {
     background: rgba(17,24,39,0.78);
 }
 
-/* Loader (círculo de carga) */
+/* Loader (cÃ­rculo de carga) */
 .loader {
     border: 4px solid #f3f3f3;
     border-radius: 50%;
@@ -207,7 +207,7 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* MEJORA: Píldoras de estado con estilo moderno y limpio */
+/* MEJORA: PÃ­ldoras de estado con estilo moderno y limpio */
 .status-pill {
     display: inline-flex;
     justify-content: center;
@@ -220,12 +220,12 @@ body {
     font-weight: 700 !important;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    border-radius: 9999px; /* Forma de cápsula perfecta */
+    border-radius: 9999px; /* Forma de cÃ¡psula perfecta */
     border: 1px solid transparent;
     transition: all 0.2s ease;
 }
 
-/* Colores en Modo Día */
+/* Colores en Modo DÃ­a */
 .status-completed {
     background-color: #ecfdf5 !important;
     color: #065f46 !important;
@@ -271,11 +271,11 @@ body {
 
 
 /* =========================================
-   2. ESTILOS DE IMPRESIÓN (PDF OPTIMIZADO)
+   2. ESTILOS DE IMPRESIÃ“N (PDF OPTIMIZADO)
    ========================================= */
 
 
-/* Píldora de bloqueo por dependencia (mejor contraste en modo oscuro) */
+/* PÃ­ldora de bloqueo por dependencia (mejor contraste en modo oscuro) */
 .dependency-pill{
     display: inline-flex;
     align-items: center;
@@ -293,7 +293,7 @@ body {
 
 
 /* =========================================
-   BOTÓN FLOTANTE MODO DÍA/NOCHE PROFESIONAL
+   BOTÃ“N FLOTANTE MODO DÃA/NOCHE PROFESIONAL
    ========================================= */
 .theme-fab {
     position: fixed;
@@ -314,7 +314,7 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 
-/* Estilo Modo Día (Vidrio claro) */
+/* Estilo Modo DÃ­a (Vidrio claro) */
 .theme-fab.day {
     background: rgba(255, 255, 255, 0.65);
     color: #f59e0b; /* Naranja/Sol sutil */
@@ -338,7 +338,7 @@ body {
     filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.3));
 }
 
-/* Interacción Profesional */
+/* InteracciÃ³n Profesional */
 .theme-fab:hover {
     transform: translateY(-4px) scale(1.05);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
@@ -669,17 +669,17 @@ body {
 }
 .apple-link:hover{ opacity: 0.95; transform: translateX(2px); }
 
-/* MEJORA: Filas de tabla más elegantes y espaciosas */
+/* MEJORA: Filas de tabla mÃ¡s elegantes y espaciosas */
 table tbody tr {
     transition: background-color 0.2s ease !important;
 }
 
-/* Resaltado sutil al pasar el ratón por una fila de la tabla */
+/* Resaltado sutil al pasar el ratÃ³n por una fila de la tabla */
 table tbody tr:hover {
     background-color: rgba(8, 136, 200, 0.04) !important;
 }
 
-/* Más espacio en las celdas */
+/* MÃ¡s espacio en las celdas */
 table td {
     padding: 14px 12px !important;
     border-top: 1px solid rgba(0, 0, 0, 0.03) !important;
@@ -693,12 +693,12 @@ table td {
     background-color: rgba(255, 255, 255, 0.02) !important;
 }
 
-/* MEJORA: Efecto de pulsación física en botones */
+/* MEJORA: Efecto de pulsaciÃ³n fÃ­sica en botones */
 .btn-apple, .btn-apple-primary, .btn-apple-danger, .btn-apple-icon, .btn-apple-secondary {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Al mantener pulsado, el botón se encoge un 5% y baja 1 píxel */
+/* Al mantener pulsado, el botÃ³n se encoge un 5% y baja 1 pÃ­xel */
 .btn-apple:active, .btn-apple-primary:active, .btn-apple-danger:active, .btn-apple-icon:active {
     transform: scale(0.95) translateY(1px) !important;
     filter: brightness(0.9); /* Se oscurece un poco al pulsar */
@@ -725,7 +725,7 @@ table td {
 }
 
 
-/* --- BOTÓN SHAREPOINT EN MODO OSCURO (Azul legible) --- */
+/* --- BOTÃ“N SHAREPOINT EN MODO OSCURO (Azul legible) --- */
 .theme-dark .bg-blue-50 {
     background-color: rgba(8, 136, 200, 0.1) !important; /* Fondo azul de marca muy suave */
     border-color: rgba(8, 136, 200, 0.2) !important;      /* Borde azulado sutil */
@@ -737,7 +737,7 @@ table td {
     color: #38bdf8 !important;
 }
 
-/* Efecto hover: se ilumina un poco más al pasar el ratón */
+/* Efecto hover: se ilumina un poco mÃ¡s al pasar el ratÃ³n */
 .theme-dark .bg-blue-50:hover {
     background-color: rgba(8, 136, 200, 0.2) !important;
     border-color: #38bdf8 !important;
@@ -749,15 +749,15 @@ table td {
    Origen consolidado: styles-dashboard.css
    ========================================================= */
 
-/* Estilos específicos del Dashboard (resumen, secciones, layout)
-   Objetivo: misma apariencia + menos duplicados y mejor organización */
+/* Estilos especÃ­ficos del Dashboard (resumen, secciones, layout)
+   Objetivo: misma apariencia + menos duplicados y mejor organizaciÃ³n */
 
 /* ================================
    Dashboard: secciones por estado
    ================================ */
 
 .section-tapiz{
-  /* Fondo homogéneo día/noche para las “cajas” de estado */
+  /* Fondo homogÃ©neo dÃ­a/noche para las â€œcajasâ€ de estado */
   background: rgba(255, 255, 255, 0.70) !important;
 
   /* Apple uniform: tapices y contenedores */
@@ -840,7 +840,7 @@ table td {
   white-space: nowrap;
 }
 
-/* Iconos “glass” reutilizados */
+/* Iconos â€œglassâ€ reutilizados */
 .exec-title-icon,
 .exec-card-icon{
   width: 40px;
@@ -860,7 +860,7 @@ table td {
 
 .exec-card-icon i{ opacity: 0.92; }
 
-/* Icono de alerta (versión “pro” en rojo) */
+/* Icono de alerta (versiÃ³n â€œproâ€ en rojo) */
 .exec-card-icon-warn{
   background: rgba(239, 68, 68, 0.08) !important;
   border: 1px solid rgba(239, 68, 68, 0.2) !important;
@@ -871,12 +871,12 @@ table td {
   backdrop-filter: blur(4px);
 }
 
-/* CUADRÍCULA INTELIGENTE (móvil -> tablet -> escritorio) */
+/* CUADRÃCULA INTELIGENTE (mÃ³vil -> tablet -> escritorio) */
 .exec-grid{
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1fr; /* móvil */
+  grid-template-columns: 1fr; /* mÃ³vil */
   gap: 16px;
 }
 
@@ -948,7 +948,7 @@ table td {
   overflow: hidden;
 }
 
-/* Barra de progreso con “sheen” */
+/* Barra de progreso con â€œsheenâ€ */
 .exec-progress-fill{
   position: relative;
   overflow: hidden;
@@ -1026,7 +1026,7 @@ table td {
 
 .apple-search-input{
   height: 42px !important;
-  width: 100% !important;      /* móvil */
+  width: 100% !important;      /* mÃ³vil */
   max-width: 260px !important; /* escritorio */
   padding: 0 16px 0 52px !important;
   font-size: 14px !important;
@@ -1042,7 +1042,7 @@ table td {
   background-size: 20px !important;
 }
 
-/* RECUPERADO: Efecto de hacerse más grande al pinchar */
+/* RECUPERADO: Efecto de hacerse mÃ¡s grande al pinchar */
 .apple-search-input:focus{
   width: 320px !important;
   background-color: #ffffff !important;
@@ -1086,7 +1086,7 @@ table td {
 }
 
 /* ================================
-   Tarjetas de proyecto (hover, animación, estados)
+   Tarjetas de proyecto (hover, animaciÃ³n, estados)
    ================================ */
 
 .project-card:hover{
@@ -1094,8 +1094,8 @@ table td {
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Colores de borde específicos según el estado */
-.project-card[data-estado="En Ejecución"]:hover{
+/* Colores de borde especÃ­ficos segÃºn el estado */
+.project-card[data-estado="En EjecuciÃ³n"]:hover{
   border-color: rgba(var(--color-ejecucion-rgb), 1) !important;
   box-shadow: 0 20px 40px rgba(var(--color-ejecucion-rgb), 0.15) !important;
 }
@@ -1110,7 +1110,7 @@ table td {
   box-shadow: 0 20px 40px rgba(var(--color-pausa-rgb), 0.15) !important;
 }
 
-.project-card[data-estado="En Revisión"]:hover{
+.project-card[data-estado="En RevisiÃ³n"]:hover{
   border-color: rgba(var(--color-revision-rgb), 1) !important;
   box-shadow: 0 20px 40px rgba(var(--color-revision-rgb), 0.15) !important;
 }
@@ -1130,7 +1130,7 @@ table td {
 .project-card:nth-child(4){ animation-delay: 0.25s; }
 
 /* ================================
-   “Tematización” del Resumen Ejecutivo por tarjeta (1..6)
+   â€œTematizaciÃ³nâ€ del Resumen Ejecutivo por tarjeta (1..6)
    ================================ */
 
 /* 1: Proyectos (Azul) */
@@ -1165,7 +1165,7 @@ table td {
 .exec-grid .exec-card:nth-child(4) .exec-value{ color: #dc2626; }
 .exec-card:nth-child(4):hover{ box-shadow: 0 20px 40px rgba(239, 68, 68, 0.2); }
 
-/* 5: Carga de Trabajo (Índigo) */
+/* 5: Carga de Trabajo (Ãndigo) */
 .exec-grid .exec-card:nth-child(5){
   border-left: 4px solid #6366f1 !important;
   background: linear-gradient(to right, rgba(99, 102, 241, 0.05), transparent) !important;
@@ -1194,7 +1194,7 @@ table td {
   }
 }
 
-/* Forzar normalidad en móvil */
+/* Forzar normalidad en mÃ³vil */
 @media (max-width: 640px){
   .exec-grid .exec-card:nth-child(5),
   .exec-grid .exec-card:nth-child(6){
@@ -1208,14 +1208,14 @@ table td {
   box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
 }
 
-/* Animación sutil de los iconos al hacer hover en la tarjeta */
+/* AnimaciÃ³n sutil de los iconos al hacer hover en la tarjeta */
 .exec-card:hover .exec-card-icon i{
   transform: scale(1.1) rotate(5deg);
   transition: transform 0.3s ease;
 }
 
 /* ================================
-   Estados vacíos (“No hay proyectos”)
+   Estados vacÃ­os (â€œNo hay proyectosâ€)
    ================================ */
 
 .section-tapiz p.italic{
@@ -1250,15 +1250,15 @@ table td {
 }
 /* Mejora de legibilidad en tarjetas de Resumen Ejecutivo */
 .exec-card.md\:col-span-2 .flex.justify-between {
-    margin-bottom: 8px !important; /* Más espacio sobre la barra */
+    margin-bottom: 8px !important; /* MÃ¡s espacio sobre la barra */
 }
 
 .exec-card.md\:col-span-2 .space-y-2 > div {
-    padding: 10px 14px !important; /* Más espacio interno en vencimientos */
+    padding: 10px 14px !important; /* MÃ¡s espacio interno en vencimientos */
     margin-bottom: 4px;
 }
 
-/* Hacer los textos un poco más nítidos en modo oscuro */
+/* Hacer los textos un poco mÃ¡s nÃ­tidos en modo oscuro */
 .theme-dark .exec-card .text-gray-500 {
     color: rgba(255, 255, 255, 0.6) !important;
 }
@@ -1276,7 +1276,7 @@ table td {
 }
 
 .wl-header-sticky {
-    background-color: var(--surface); /* Blanco en día, Oscuro en noche */
+    background-color: var(--surface); /* Blanco en dÃ­a, Oscuro en noche */
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
@@ -1400,7 +1400,7 @@ table td {
     align-items: flex-start;
     gap: 8px;
     padding-top: 8px;
-    border-top: 1px solid var(--border); /* Línea divisoria sutil */
+    border-top: 1px solid var(--border); /* LÃ­nea divisoria sutil */
     margin-top: 8px;
     font-size: 0.85rem;
 }
@@ -1465,12 +1465,12 @@ table td {
 .wl-tag-issue.overdue { background: rgba(239, 68, 68, 0.15); color: #b91c1c; }
 .dark .wl-tag-issue.overdue { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
 
-/* --- ESTILOS PARA SUBTAREAS (Jerarquía) --- */
+/* --- ESTILOS PARA SUBTAREAS (JerarquÃ­a) --- */
 
 .wl-subtask-container {
     margin-top: 12px;
     padding-left: 12px;
-    border-left: 2px solid var(--border); /* Línea vertical de jerarquía */
+    border-left: 2px solid var(--border); /* LÃ­nea vertical de jerarquÃ­a */
 }
 
 .wl-subtask-header {
@@ -1514,7 +1514,7 @@ table td {
     width: 16px;
     height: 16px;
     border: 1.5px solid var(--muted);
-    border-radius: 50%; /* Círculo */
+    border-radius: 50%; /* CÃ­rculo */
     cursor: pointer;
     position: relative;
     transition: all 0.2s ease;
@@ -1523,12 +1523,12 @@ table td {
 }
 
 .wl-subtask-check:checked {
-    background-color: #10b981; /* Verde éxito */
+    background-color: #10b981; /* Verde Ã©xito */
     border-color: #10b981;
 }
 
 .wl-subtask-check:checked::after {
-    content: '✔';
+    content: 'âœ”';
     font-size: 10px;
     color: white;
     position: absolute;
@@ -1558,7 +1558,7 @@ table td {
     color: var(--muted);
 }
 
-/* Botón sutil para añadir */
+/* BotÃ³n sutil para aÃ±adir */
 .wl-btn-add-sub {
     margin-top: 8px;
     font-size: 0.75rem;
@@ -1586,7 +1586,7 @@ table td {
   margin-top: 10px;
 }
 
-/* Base para modo oscuro: más contraste */
+/* Base para modo oscuro: mÃ¡s contraste */
 .theme-dark .exec-chips span{
   background: rgba(255,255,255,0.08) !important;
   border-color: rgba(255,255,255,0.18) !important;
@@ -1594,14 +1594,14 @@ table td {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 10px 24px rgba(0,0,0,0.25);
 }
 
-/* 1ª píldora: Eje (azul) */
+/* 1Âª pÃ­ldora: Eje (azul) */
 .theme-dark .exec-chips span:nth-child(1){
   background: rgba(59,130,246,0.18) !important;
   border-color: rgba(59,130,246,0.42) !important;
   color: #93c5fd !important;
 }
 
-/* 2ª píldora: Pausa (rojo) */
+/* 2Âª pÃ­ldora: Pausa (rojo) */
 .theme-dark .exec-chips span:nth-child(2){
   background: rgba(239,68,68,0.18) !important;
   border-color: rgba(239,68,68,0.42) !important;
@@ -1609,7 +1609,7 @@ table td {
 }
 
 /* ==========================
-   Píldoras de prioridad (Alerts / Workload)
+   PÃ­ldoras de prioridad (Alerts / Workload)
    ========================== */
 .wl-prio-pill{
   display: inline-flex;
@@ -1684,7 +1684,7 @@ table td {
 }
 
 .alert-urgent-card{
-  border-left: 4px solid #f59e0b; /* ámbar */
+  border-left: 4px solid #f59e0b; /* Ã¡mbar */
 }
 
 .alert-urgent-item{
@@ -1699,7 +1699,7 @@ table td {
   border: 1px solid rgba(245,158,11,0.22);
   color: var(--text);
 
-  /* para que no parezca "barra marrón" */
+  /* para que no parezca "barra marrÃ³n" */
   font-weight: 700;
 }
 
@@ -1709,7 +1709,7 @@ table td {
 }
 
 /* ==========================
-   Alerts: Críticas (uniforme)
+   Alerts: CrÃ­ticas (uniforme)
    ========================== */
 
 .alert-critical-card{
@@ -1743,8 +1743,8 @@ table td {
    Origen consolidado: styles-states.css
    ========================================================= */
 
-/* Estilos específicos de Estados (tapiz por estado, colores) */
-/* Borde (perímetro) del “tapiz” por estado: acento sutil, estilo Apple */
+/* Estilos especÃ­ficos de Estados (tapiz por estado, colores) */
+/* Borde (perÃ­metro) del â€œtapizâ€ por estado: acento sutil, estilo Apple */
 .section-tapiz.section--ejecucion{
   border-color: rgba(var(--color-ejecucion-rgb), 0.68) !important; /* Azul */
   box-shadow: var(--shadow-elev-2), 0 0 0 1px rgba(var(--color-ejecucion-rgb), 0.18) inset, 0 0 22px rgba(var(--color-ejecucion-rgb), 0.08);
@@ -1781,7 +1781,7 @@ textarea {
     background-color: #ffffff !important;
     border: 1px solid rgba(0, 0, 0, 0.1) !important;
 
-    /* QUITAMOS EL !important DE AQUÍ PARA QUE EL BUSCADOR PUEDA TENER SU PROPIO PADDING */
+    /* QUITAMOS EL !important DE AQUÃ PARA QUE EL BUSCADOR PUEDA TENER SU PROPIO PADDING */
     padding: 10px 14px;
 
     border-radius: 12px !important;
@@ -1807,7 +1807,7 @@ input:focus, textarea:focus, select:focus {
 }
 /* --- ARREGLO PARA MODO OSCURO EN TAREAS --- */
 
-/* 1. Arregla el color de las opciones dentro del menú desplegable */
+/* 1. Arregla el color de las opciones dentro del menÃº desplegable */
 .theme-dark select option {
     background-color: #111827 !important; /* Color oscuro de fondo */
     color: #ffffff !important;           /* Texto blanco */
@@ -1843,9 +1843,9 @@ input:focus, textarea:focus, select:focus {
 .theme-dark select {
     color: #ffffff !important;
 }
-/* --- ARREGLO PARA BOTÓN VISTA PREVIA EN MODO OSCURO --- */
+/* --- ARREGLO PARA BOTÃ“N VISTA PREVIA EN MODO OSCURO --- */
 
-/* Cambia el fondo gris claro por uno oscuro traslúcido */
+/* Cambia el fondo gris claro por uno oscuro traslÃºcido */
 .theme-dark .bg-gray-100 {
     background-color: rgba(255, 255, 255, 0.1) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -1856,17 +1856,17 @@ input:focus, textarea:focus, select:focus {
     color: #ffffff !important;
 }
 
-/* Efecto al pasar el ratón para que se ilumine un poco */
+/* Efecto al pasar el ratÃ³n para que se ilumine un poco */
 .theme-dark .hover\:bg-gray-200:hover {
     background-color: rgba(255, 255, 255, 0.18) !important;
 }
 
-/* Arregla el separador vertical al lado del botón */
+/* Arregla el separador vertical al lado del botÃ³n */
 .theme-dark .bg-gray-200 {
     background-color: rgba(255, 255, 255, 0.2) !important;
 }
 
-/* --- ESTILOS PARA SUBTAREAS (Añadido) --- */
+/* --- ESTILOS PARA SUBTAREAS (AÃ±adido) --- */
 .subtasks-container {
     margin-top: 8px;
     padding-left: 2px;
@@ -1973,30 +1973,30 @@ input:focus, textarea:focus, select:focus {
   border-color: rgba(148, 163, 184, 0.22) !important;
 }
 
-/* --- WIKI (Quill): quitar el rectángulo/borde por defecto --- */
+/* --- WIKI (Quill): quitar el rectÃ¡ngulo/borde por defecto --- */
 .ql-toolbar.ql-snow,
 .ql-container.ql-snow {
   border: none !important;
 }
 
-/* Opcional: si queda una línea superior, elimínala también */
+/* Opcional: si queda una lÃ­nea superior, elimÃ­nala tambiÃ©n */
 .ql-toolbar.ql-snow {
   border-bottom: 1px solid rgba(255,255,255,0.10) !important;
 }
-/* Quill: toolbar más integrada en el tema */
+/* Quill: toolbar mÃ¡s integrada en el tema */
 .ql-toolbar.ql-snow {
   background: rgba(255,255,255,0.04) !important;
   border-radius: 12px !important;
   padding: 8px !important;
 }
 
-/* Área de edición: fondo suave y texto legible */
+/* Ãrea de ediciÃ³n: fondo suave y texto legible */
 .ql-container .ql-editor {
   padding: 12px !important;
 }
-/* --- WIKI (Quill): evitar “caja” rara dentro del editor --- */
+/* --- WIKI (Quill): evitar â€œcajaâ€ rara dentro del editor --- */
 
-/* El área editable debe ser un lienzo, no un input */
+/* El Ã¡rea editable debe ser un lienzo, no un input */
 .ql-editor {
   background: transparent !important;
   border: none !important;
@@ -2012,7 +2012,7 @@ input:focus, textarea:focus, select:focus {
   color: #ffffff !important;
 }
 
-/* A veces Quill mete un <p><br></p> que puede “parecer” una caja si hereda estilos */
+/* A veces Quill mete un <p><br></p> que puede â€œparecerâ€ una caja si hereda estilos */
 .ql-editor p {
   margin: 0 0 8px 0 !important;
 }
@@ -2028,17 +2028,17 @@ input:focus, textarea:focus, select:focus {
    ========================================================= */
 
 /* =========================================================
-   DISEÑO V3 / OVERHAUL VISUAL
+   DISEÃ‘O V3 / OVERHAUL VISUAL
    ---------------------------------------------------------
-   Esta hoja se carga al final del <head> y por tanto actúa
-   como capa de presentación. No cambia la lógica ni los datos.
+   Esta hoja se carga al final del <head> y por tanto actÃºa
+   como capa de presentaciÃ³n. No cambia la lÃ³gica ni los datos.
 
    Objetivos:
-   1) Rediseño más editorial y profesional para dashboard.
+   1) RediseÃ±o mÃ¡s editorial y profesional para dashboard.
    2) Mejor lectura de tarjetas, tablas, formularios y vistas auxiliares.
-   3) Modo oscuro más consistente.
-   4) Móvil más cómodo.
-   5) Mantener impresión limpia: casi todo queda limitado a @media screen.
+   3) Modo oscuro mÃ¡s consistente.
+   4) MÃ³vil mÃ¡s cÃ³modo.
+   5) Mantener impresiÃ³n limpia: casi todo queda limitado a @media screen.
    ========================================================= */
 
 :root{
@@ -2096,7 +2096,7 @@ input:focus, textarea:focus, select:focus {
       var(--bg-gradient) !important;
   }
 
-  /* Contenedor general: más anchura útil y ritmo vertical. */
+  /* Contenedor general: mÃ¡s anchura Ãºtil y ritmo vertical. */
   #root .max-w-7xl{
     max-width:1500px !important;
   }
@@ -2138,7 +2138,7 @@ input:focus, textarea:focus, select:focus {
     font-weight:850 !important;
   }
 
-  /* Logo/ícono del header: más integrado, menos cuadrado genérico. */
+  /* Logo/Ã­cono del header: mÃ¡s integrado, menos cuadrado genÃ©rico. */
   #root .w-14.h-14.rounded-2xl{
     border-radius:20px !important;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.75), 0 14px 30px rgba(15,23,42,.10) !important;
@@ -2150,7 +2150,7 @@ input:focus, textarea:focus, select:focus {
     box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 16px 36px rgba(0,0,0,.38) !important;
   }
 
-  /* Buscador y filtros: altura homogénea, sombra interna y foco consistente. */
+  /* Buscador y filtros: altura homogÃ©nea, sombra interna y foco consistente. */
   .apple-search-input,
   .apple-select-filter,
   input[type="text"],
@@ -2183,7 +2183,7 @@ input:focus, textarea:focus, select:focus {
     box-shadow:var(--v3-shadow-focus), inset 0 1px 0 rgba(255,255,255,.60) !important;
   }
 
-  /* Botones: más consistentes y con feedback físico. */
+  /* Botones: mÃ¡s consistentes y con feedback fÃ­sico. */
   .btn-apple,
   .btn-apple-primary,
   .btn-apple-danger,
@@ -2210,7 +2210,7 @@ input:focus, textarea:focus, select:focus {
     transform:translateY(0) scale(.985);
   }
 
-  /* Menú de acciones: lo acercamos a un popover real. */
+  /* MenÃº de acciones: lo acercamos a un popover real. */
   .actions-popover{
     border-radius:20px !important;
     border:1px solid var(--v3-border) !important;
@@ -2313,7 +2313,7 @@ input:focus, textarea:focus, select:focus {
     background:linear-gradient(145deg, rgba(255,255,255,.10), rgba(255,255,255,.03)) !important;
   }
 
-  /* Secciones por estado: menos bloque de color, más panel organizado. */
+  /* Secciones por estado: menos bloque de color, mÃ¡s panel organizado. */
   .section-tapiz{
     border-radius:var(--v3-radius-xl) !important;
     background:var(--v3-panel) !important;
@@ -2339,7 +2339,7 @@ input:focus, textarea:focus, select:focus {
   .section-tapiz.section--revision{ box-shadow:var(--v3-shadow-1), inset 4px 0 0 rgba(var(--color-revision-rgb, 139,92,246), .55) !important; }
   .section-tapiz.section--pausa{ box-shadow:var(--v3-shadow-1), inset 4px 0 0 rgba(var(--color-pausa-rgb, 239,68,68), .55) !important; }
 
-  /* Tarjetas de proyecto: mayor jerarquía, borde por estado y CTA más claro. */
+  /* Tarjetas de proyecto: mayor jerarquÃ­a, borde por estado y CTA mÃ¡s claro. */
   .project-card{
     border-radius:26px !important;
     padding:22px !important;
@@ -2363,7 +2363,7 @@ input:focus, textarea:focus, select:focus {
 
   .project-card[data-estado="Completado"]::before{ background:#10b981; }
   .project-card[data-estado="En Pausa"]::before{ background:#64748b; }
-  .project-card[data-estado="En Revisión"]::before{ background:#8b5cf6; }
+  .project-card[data-estado="En RevisiÃ³n"]::before{ background:#8b5cf6; }
 
   .theme-dark .project-card{
     background:linear-gradient(180deg, rgba(30,41,59,.88), rgba(15,23,42,.68)) !important;
@@ -2406,7 +2406,7 @@ input:focus, textarea:focus, select:focus {
     background:rgba(255,255,255,.06) !important;
   }
 
-  /* Tablas: efecto app de gestión, cabecera fija, más respiración. */
+  /* Tablas: efecto app de gestiÃ³n, cabecera fija, mÃ¡s respiraciÃ³n. */
   table{
     border-collapse:separate !important;
     border-spacing:0 !important;
@@ -2473,7 +2473,7 @@ input:focus, textarea:focus, select:focus {
     transform:translateY(-2px);
   }
 
-  /* Modales y toasts más consistentes. */
+  /* Modales y toasts mÃ¡s consistentes. */
   .modal-overlay{
     background:rgba(2,6,23,.56) !important;
     backdrop-filter:blur(10px);
@@ -2508,7 +2508,7 @@ input:focus, textarea:focus, select:focus {
     box-shadow:var(--v3-shadow-focus) !important;
   }
 
-  /* Estado vacío: más amable. */
+  /* Estado vacÃ­o: mÃ¡s amable. */
   .text-center.py-24.bg-white.rounded-2xl{
     border-radius:var(--v3-radius-xl) !important;
     background:var(--v3-panel) !important;
@@ -2516,7 +2516,7 @@ input:focus, textarea:focus, select:focus {
     box-shadow:var(--v3-shadow-1) !important;
   }
 
-  /* Móvil: cabeceras y tarjetas con menos padding para ganar pantalla útil. */
+  /* MÃ³vil: cabeceras y tarjetas con menos padding para ganar pantalla Ãºtil. */
   @media (max-width:640px){
     #root .max-w-7xl.mx-auto.p-6,
     #root .max-w-7xl.mx-auto.p-6.md\:p-10{
@@ -2546,7 +2546,7 @@ input:focus, textarea:focus, select:focus {
     }
   }
 
-  /* Respeta usuarios con reducción de movimiento. */
+  /* Respeta usuarios con reducciÃ³n de movimiento. */
   @media (prefers-reduced-motion: reduce){
     *, *::before, *::after{
       scroll-behavior:auto !important;
@@ -2563,14 +2563,14 @@ input:focus, textarea:focus, select:focus {
    ========================================================= */
 
 /* =========================================================
-   DISEÑO V4 — PREMIUM VISUAL SYSTEM
+   DISEÃ‘O V4 â€” PREMIUM VISUAL SYSTEM
    ---------------------------------------------------------
    Sistema visual de nivel enterprise. Se carga al final como
-   capa de presentación definitiva. Principios de diseño:
-   ·  Claridad absoluta: cada elemento tiene propósito visual
-   ·  Profundidad con sobriedad: sombras en capas, no ruido
-   ·  Motion con intención: animaciones que orientan la mirada
-   ·  Adaptativo: luz/oscuro, móvil/escritorio, movimiento
+   capa de presentaciÃ³n definitiva. Principios de diseÃ±o:
+   Â·  Claridad absoluta: cada elemento tiene propÃ³sito visual
+   Â·  Profundidad con sobriedad: sombras en capas, no ruido
+   Â·  Motion con intenciÃ³n: animaciones que orientan la mirada
+   Â·  Adaptativo: luz/oscuro, mÃ³vil/escritorio, movimiento
    ========================================================= */
 
 /* ==========================================================
@@ -2592,11 +2592,11 @@ input:focus, textarea:focus, select:focus {
     radial-gradient(ellipse 1000px 700px at 92% 4%, rgba(99,102,241,.08) 0%, transparent 52%),
     radial-gradient(ellipse 700px 500px at 48% 110%, rgba(8,136,200,.07) 0%, transparent 50%);
 
-  /* Superficies (escalonadas por jerarquía) */
+  /* Superficies (escalonadas por jerarquÃ­a) */
   --v4-s0: rgba(255,255,255,.96);   /* tarjeta elevada */
   --v4-s1: rgba(255,255,255,.88);   /* tarjeta base */
   --v4-s2: rgba(255,255,255,.74);   /* superficie secundaria */
-  --v4-s3: rgba(248,250,252,.68);   /* fondo de sección */
+  --v4-s3: rgba(248,250,252,.68);   /* fondo de secciÃ³n */
 
   /* Bordes */
   --v4-b0: rgba(15,23,42,.055);
@@ -2610,7 +2610,7 @@ input:focus, textarea:focus, select:focus {
   --v4-t2: #475569;
   --v4-t3: #94a3b8;
 
-  /* Semánticos */
+  /* SemÃ¡nticos */
   --v4-success: #10b981;
   --v4-warn:    #f59e0b;
   --v4-danger:  #ef4444;
@@ -2694,7 +2694,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ==========================================================
-   2. BASE — BODY, TIPOGRAFÍA, ANTIALIASING
+   2. BASE â€” BODY, TIPOGRAFÃA, ANTIALIASING
    ========================================================== */
 @media screen {
   html {
@@ -2713,7 +2713,7 @@ input:focus, textarea:focus, select:focus {
     font-feature-settings: "cv02","cv03","cv04","cv11","ss01";
   }
 
-  /* Entrada suave de la app cuando JS está listo */
+  /* Entrada suave de la app cuando JS estÃ¡ listo */
   .gp-js-ready #root {
     animation: v4PageIn .45s cubic-bezier(0.22,1,0.36,1) both;
   }
@@ -2723,7 +2723,7 @@ input:focus, textarea:focus, select:focus {
     to   { opacity:1; transform:translateY(0); }
   }
 
-  /* === Tipografía principal === */
+  /* === TipografÃ­a principal === */
   h1, h2, h3, h4, h5 {
     font-feature-settings: "cv02","cv03","cv04","cv11";
     -webkit-font-smoothing: antialiased;
@@ -2783,7 +2783,7 @@ input:focus, textarea:focus, select:focus {
     opacity: .9;
   }
 
-  /* Resplandor decorativo de fondo en la cabecera — contenido dentro del elemento */
+  /* Resplandor decorativo de fondo en la cabecera â€” contenido dentro del elemento */
   #root .max-w-7xl > .flex.flex-col.md\:flex-row.justify-between.items-start.md\:items-center.mb-10::after {
     content: "";
     position: absolute;
@@ -2803,7 +2803,7 @@ input:focus, textarea:focus, select:focus {
     box-shadow: var(--v4-sh-xl), var(--v4-shine) !important;
   }
 
-  /* Logo / ícono en cabecera */
+  /* Logo / Ã­cono en cabecera */
   #root .w-14.h-14.rounded-2xl {
     background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(232,242,255,.80)) !important;
     border-radius: 20px !important;
@@ -3013,7 +3013,7 @@ input:focus, textarea:focus, select:focus {
     box-shadow: var(--v4-sh-lg) !important;
   }
 
-  /* Acento superior por estado — reemplaza el inset lateral */
+  /* Acento superior por estado â€” reemplaza el inset lateral */
   .section-tapiz.section--ejecucion {
     border-top: 3px solid rgba(59,130,246,.65) !important;
     box-shadow: var(--v4-sh-md), 0 0 0 0 transparent !important;
@@ -3081,7 +3081,7 @@ input:focus, textarea:focus, select:focus {
 
   .project-card[data-estado="Completado"]::before   { background: #10b981 !important; }
   .project-card[data-estado="En Pausa"]::before     { background: #ef4444 !important; }
-  .project-card[data-estado="En Revisión"]::before  { background: #8b5cf6 !important; }
+  .project-card[data-estado="En RevisiÃ³n"]::before  { background: #8b5cf6 !important; }
 
   .project-card:hover {
     transform: translateY(-9px) scale(1.008) !important;
@@ -3090,9 +3090,9 @@ input:focus, textarea:focus, select:focus {
 
   .project-card:hover::before { opacity: 1 !important; }
 
-  .project-card[data-estado="En Ejecución"]:hover  { border-color: rgba(59,130,246,.28) !important; box-shadow: var(--v4-sh-2xl), 0 0 0 1px rgba(59,130,246,.12) !important; }
+  .project-card[data-estado="En EjecuciÃ³n"]:hover  { border-color: rgba(59,130,246,.28) !important; box-shadow: var(--v4-sh-2xl), 0 0 0 1px rgba(59,130,246,.12) !important; }
   .project-card[data-estado="Completado"]:hover    { border-color: rgba(16,185,129,.28) !important; box-shadow: var(--v4-sh-2xl), 0 0 0 1px rgba(16,185,129,.12) !important; }
-  .project-card[data-estado="En Revisión"]:hover   { border-color: rgba(139,92,246,.28) !important; box-shadow: var(--v4-sh-2xl), 0 0 0 1px rgba(139,92,246,.12) !important; }
+  .project-card[data-estado="En RevisiÃ³n"]:hover   { border-color: rgba(139,92,246,.28) !important; box-shadow: var(--v4-sh-2xl), 0 0 0 1px rgba(139,92,246,.12) !important; }
   .project-card[data-estado="En Pausa"]:hover      { border-color: rgba(239,68,68,.28) !important;  box-shadow: var(--v4-sh-2xl), 0 0 0 1px rgba(239,68,68,.12) !important;  }
 
   .theme-dark .project-card {
@@ -3477,7 +3477,7 @@ input:focus, textarea:focus, select:focus {
   }
 
   /* ==========================================================
-     15. PANELES BLANCOS GENÉRICOS (Tailwind)
+     15. PANELES BLANCOS GENÃ‰RICOS (Tailwind)
      ========================================================== */
   .bg-white.rounded-xl.shadow-sm.border,
   .bg-white.p-6.rounded-xl.shadow-sm.border,
@@ -3504,7 +3504,7 @@ input:focus, textarea:focus, select:focus {
   }
 
   /* ==========================================================
-     16. FAB — BOTÓN FLOTANTE TEMA DÍA/NOCHE
+     16. FAB â€” BOTÃ“N FLOTANTE TEMA DÃA/NOCHE
      ========================================================== */
   .theme-fab {
     border-radius: var(--v4-r-pill) !important;
@@ -3556,7 +3556,7 @@ input:focus, textarea:focus, select:focus {
   }
 
   /* ==========================================================
-     18. ESTADOS VACÍOS
+     18. ESTADOS VACÃOS
      ========================================================== */
   .text-center.py-24.bg-white.rounded-2xl {
     border-radius: var(--v4-r-2xl) !important;
@@ -3597,7 +3597,7 @@ input:focus, textarea:focus, select:focus {
   }
 
   /* ==========================================================
-     20. ACCESIBILIDAD — FOCUS VISIBLE
+     20. ACCESIBILIDAD â€” FOCUS VISIBLE
      ========================================================== */
   :focus-visible {
     outline: none !important;
@@ -3605,7 +3605,7 @@ input:focus, textarea:focus, select:focus {
   }
 
   /* ==========================================================
-     21. COLORES MODO OSCURO — PARCHES TAILWIND
+     21. COLORES MODO OSCURO â€” PARCHES TAILWIND
      ========================================================== */
   .theme-dark .text-gray-900,
   .theme-dark .text-gray-800,
@@ -3657,7 +3657,7 @@ input:focus, textarea:focus, select:focus {
   }
 
   /* ==========================================================
-     24. MÓVIL
+     24. MÃ“VIL
      ========================================================== */
   @media (max-width:640px) {
     #root .max-w-7xl.mx-auto.p-6,
@@ -3685,7 +3685,7 @@ input:focus, textarea:focus, select:focus {
   }
 
   /* ==========================================================
-     25. REDUCCIÓN DE MOVIMIENTO
+     25. REDUCCIÃ“N DE MOVIMIENTO
      ========================================================== */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -3698,7 +3698,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ==========================================================
-   26. BOTÓN DÍA / NOCHE — REDISEÑO PREMIUM
+   26. BOTÃ“N DÃA / NOCHE â€” REDISEÃ‘O PREMIUM
    ========================================================== */
 @media screen {
   /* Base: pill ancho con icono + etiqueta */
@@ -3733,7 +3733,7 @@ input:focus, textarea:focus, select:focus {
     z-index: 2 !important;
     transition: opacity var(--v4-t-base) !important;
   }
-  .theme-fab.day::after   { content: "Día" !important; }
+  .theme-fab.day::after   { content: "DÃ­a" !important; }
   .theme-fab.night::after { content: "Noche" !important; }
 
   /* Icono */
@@ -3743,7 +3743,7 @@ input:focus, textarea:focus, select:focus {
     transition: transform var(--v4-t-spring), filter var(--v4-t-base) !important;
   }
 
-  /* ── MODO DÍA ── */
+  /* â”€â”€ MODO DÃA â”€â”€ */
   .theme-fab.day {
     background: linear-gradient(135deg,
       rgba(255,251,235,.97) 0%,
@@ -3776,7 +3776,7 @@ input:focus, textarea:focus, select:focus {
     to   { transform: rotate(360deg); }
   }
 
-  /* Resplandor cálido de fondo */
+  /* Resplandor cÃ¡lido de fondo */
   .theme-fab.day::before {
     content: "" !important;
     position: absolute !important;
@@ -3788,7 +3788,7 @@ input:focus, textarea:focus, select:focus {
     z-index: 0 !important;
   }
 
-  /* ── MODO NOCHE ── */
+  /* â”€â”€ MODO NOCHE â”€â”€ */
   .theme-fab.night {
     background: linear-gradient(135deg,
       rgba(2,6,23,.96) 0%,
@@ -3829,7 +3829,7 @@ input:focus, textarea:focus, select:focus {
     z-index: 1 !important;
   }
 
-  /* ── HOVER / ACTIVE ── */
+  /* â”€â”€ HOVER / ACTIVE â”€â”€ */
   .theme-fab:hover {
     transform: translateY(-4px) scale(1.05) !important;
   }
@@ -3858,11 +3858,11 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ==========================================================
-   27. RESUMEN EJECUTIVO — MEJORAS DE IMPACTO
+   27. RESUMEN EJECUTIVO â€” MEJORAS DE IMPACTO
    ========================================================== */
 @media screen {
 
-  /* Cabecera del resumen: más dramática */
+  /* Cabecera del resumen: mÃ¡s dramÃ¡tica */
   .exec-summary {
     padding: 28px !important;
   }
@@ -3873,7 +3873,7 @@ input:focus, textarea:focus, select:focus {
     margin-bottom: 20px !important;
   }
 
-  /* Título con gradiente de texto */
+  /* TÃ­tulo con gradiente de texto */
   .exec-title-text {
     background: linear-gradient(135deg, var(--v4-brand) 0%, var(--v4-accent) 100%) !important;
     -webkit-background-clip: text !important;
@@ -3881,7 +3881,7 @@ input:focus, textarea:focus, select:focus {
     background-clip: text !important;
   }
 
-  /* Icono del título más grande y con color de marca */
+  /* Icono del tÃ­tulo mÃ¡s grande y con color de marca */
   .exec-title-icon {
     width: 46px !important;
     height: 46px !important;
@@ -3897,7 +3897,7 @@ input:focus, textarea:focus, select:focus {
     color: var(--v4-brand-light) !important;
   }
 
-  /* Números extra-grandes con color por tarjeta */
+  /* NÃºmeros extra-grandes con color por tarjeta */
   .exec-value {
     font-size: 48px !important;
     line-height: .95 !important;
@@ -3906,7 +3906,7 @@ input:focus, textarea:focus, select:focus {
   @media (max-width:1024px) { .exec-value { font-size: 38px !important; } }
   @media (max-width:640px)  { .exec-value { font-size: 30px !important; } }
 
-  /* Card 1: Proyectos — azul */
+  /* Card 1: Proyectos â€” azul */
   .exec-grid .exec-card:nth-child(1) {
     border-top: 3px solid rgba(59,130,246,.65) !important;
     border-left: 1px solid var(--v4-b1) !important;
@@ -3920,7 +3920,7 @@ input:focus, textarea:focus, select:focus {
     color: #3b82f6 !important;
   }
 
-  /* Card 2: Avance — verde */
+  /* Card 2: Avance â€” verde */
   .exec-grid .exec-card:nth-child(2) {
     border-top: 3px solid rgba(16,185,129,.65) !important;
     border-left: 1px solid var(--v4-b1) !important;
@@ -3937,7 +3937,7 @@ input:focus, textarea:focus, select:focus {
     background: linear-gradient(90deg, #10b981, #34d399) !important;
   }
 
-  /* Card 3: Tareas — naranja */
+  /* Card 3: Tareas â€” naranja */
   .exec-grid .exec-card:nth-child(3) {
     border-top: 3px solid rgba(245,158,11,.65) !important;
     border-left: 1px solid var(--v4-b1) !important;
@@ -3951,7 +3951,7 @@ input:focus, textarea:focus, select:focus {
     color: #f59e0b !important;
   }
 
-  /* Card 4: Incidencias — rojo */
+  /* Card 4: Incidencias â€” rojo */
   .exec-grid .exec-card:nth-child(4) {
     border-top: 3px solid rgba(239,68,68,.65) !important;
     border-left: 1px solid var(--v4-b1) !important;
@@ -3960,7 +3960,7 @@ input:focus, textarea:focus, select:focus {
   }
   .exec-grid .exec-card:nth-child(4) .exec-value { color: #dc2626 !important; }
 
-  /* Card 5: Workload — índigo */
+  /* Card 5: Workload â€” Ã­ndigo */
   .exec-grid .exec-card:nth-child(5) {
     border-top: 3px solid rgba(99,102,241,.65) !important;
     border-left: 1px solid var(--v4-b1) !important;
@@ -3973,7 +3973,7 @@ input:focus, textarea:focus, select:focus {
     color: #6366f1 !important;
   }
 
-  /* Card 6: Vencimientos — cian */
+  /* Card 6: Vencimientos â€” cian */
   .exec-grid .exec-card:nth-child(6) {
     border-top: 3px solid rgba(6,182,212,.65) !important;
     border-left: 1px solid var(--v4-b1) !important;
@@ -4000,7 +4000,7 @@ input:focus, textarea:focus, select:focus {
   .exec-grid .exec-card:nth-child(5):hover { border-color: rgba(99,102,241,.30) !important; }
   .exec-grid .exec-card:nth-child(6):hover { border-color: rgba(6,182,212,.30)  !important; }
 
-  /* Exec pill más estilizada */
+  /* Exec pill mÃ¡s estilizada */
   .exec-pill {
     font-size: 11px !important;
     font-weight: 700 !important;
@@ -4021,17 +4021,17 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ==========================================================
-   28. VISTA DE GRÁFICOS — CONTENEDORES Y CANVAS
+   28. VISTA DE GRÃFICOS â€” CONTENEDORES Y CANVAS
    ========================================================== */
 @media screen {
-  /* Paneles de gráfico: excluimos exec-summary que tiene las mismas clases */
+  /* Paneles de grÃ¡fico: excluimos exec-summary que tiene las mismas clases */
   .section-tapiz.p-6.rounded-2xl.border:not(.exec-summary) {
     padding: 24px !important;
     display: flex !important;
     flex-direction: column !important;
   }
 
-  /* Título del gráfico (solo hijos directos de paneles de gráfico, no del exec-summary) */
+  /* TÃ­tulo del grÃ¡fico (solo hijos directos de paneles de grÃ¡fico, no del exec-summary) */
   .section-tapiz:not(.exec-summary) > .font-bold.mb-3 {
     font-size: 14px !important;
     font-weight: 800 !important;
@@ -4046,7 +4046,7 @@ input:focus, textarea:focus, select:focus {
     min-height: 240px !important;
   }
 
-  /* Cabecera de la vista de gráficos */
+  /* Cabecera de la vista de grÃ¡ficos */
   .wl-header-sticky .text-xl.font-extrabold {
     font-size: 1.3rem !important;
     font-weight: 800 !important;
@@ -4056,11 +4056,11 @@ input:focus, textarea:focus, select:focus {
 }
 
 /* ==========================================================
-   29. VISTA INCIDENCIAS / ALERTAS — ESTILO PREMIUM HOMOGÉNEO
+   29. VISTA INCIDENCIAS / ALERTAS â€” ESTILO PREMIUM HOMOGÃ‰NEO
    ========================================================== */
 @media screen {
 
-  /* Contenedor de sección de alerta (h3 con icono + badge) */
+  /* Contenedor de secciÃ³n de alerta (h3 con icono + badge) */
   .max-w-7xl .space-y-10 > div > h3.text-lg.font-bold {
     font-size: 1rem !important;
     font-weight: 800 !important;
@@ -4072,7 +4072,7 @@ input:focus, textarea:focus, select:focus {
     margin-bottom: 16px !important;
   }
 
-  /* ── Tarjeta de proyecto en alertas ── */
+  /* â”€â”€ Tarjeta de proyecto en alertas â”€â”€ */
   .wl-person-card.alert-critical-card,
   .wl-person-card.alert-urgent-card,
   .wl-person-card {
@@ -4105,7 +4105,7 @@ input:focus, textarea:focus, select:focus {
     box-shadow: var(--v4-sh-xl) !important;
   }
 
-  /* Título y cliente dentro de la tarjeta */
+  /* TÃ­tulo y cliente dentro de la tarjeta */
   .wl-person-card .font-bold.text-gray-800 {
     color: var(--v4-t0) !important;
     font-size: .975rem !important;
@@ -4121,7 +4121,7 @@ input:focus, textarea:focus, select:focus {
     text-transform: uppercase !important;
   }
 
-  /* ── Items de alerta crítica ── */
+  /* â”€â”€ Items de alerta crÃ­tica â”€â”€ */
   .alert-critical-item {
     display: flex !important;
     align-items: center !important;
@@ -4148,7 +4148,7 @@ input:focus, textarea:focus, select:focus {
     flex-shrink: 0 !important;
   }
 
-  /* ── Items urgentes ── */
+  /* â”€â”€ Items urgentes â”€â”€ */
   .alert-urgent-item {
     display: flex !important;
     align-items: center !important;
@@ -4174,7 +4174,7 @@ input:focus, textarea:focus, select:focus {
     flex-shrink: 0 !important;
   }
 
-  /* ── Bloqueos (naranja) ── */
+  /* â”€â”€ Bloqueos (naranja) â”€â”€ */
   .wl-person-card .text-xs.bg-orange-50 {
     background: rgba(245,158,11,.08) !important;
     color: var(--v4-t1) !important;
@@ -4187,7 +4187,7 @@ input:focus, textarea:focus, select:focus {
     background: rgba(245,158,11,.10) !important;
   }
 
-  /* ── Vencimientos (cian) ── */
+  /* â”€â”€ Vencimientos (cian) â”€â”€ */
   .wl-person-card .text-xs.bg-cyan-50\/50 {
     display: flex !important;
     justify-content: space-between !important;
@@ -4217,7 +4217,7 @@ input:focus, textarea:focus, select:focus {
     color: #67e8f9 !important;
   }
 
-  /* ── Estado vacío dentro de alertas ── */
+  /* â”€â”€ Estado vacÃ­o dentro de alertas â”€â”€ */
   .p-6.text-center.text-gray-400.bg-white.rounded-xl.border.border-dashed,
   .p-6.text-center.text-gray-400.bg-white.rounded-xl.border-dashed {
     background: var(--v4-s1) !important;
@@ -4227,7 +4227,7 @@ input:focus, textarea:focus, select:focus {
     box-shadow: none !important;
   }
 
-  /* ── Alert count badge ── */
+  /* â”€â”€ Alert count badge â”€â”€ */
   .alert-count-badge {
     background: var(--v4-s1) !important;
     border: 1px solid var(--v4-b1) !important;
@@ -4238,7 +4238,7 @@ input:focus, textarea:focus, select:focus {
     font-weight: 800 !important;
   }
 
-  /* ── Barra de búsqueda en alertas ── */
+  /* â”€â”€ Barra de bÃºsqueda en alertas â”€â”€ */
   .flex.flex-col.sm\:flex-row.gap-3.bg-gray-50.p-2.rounded-lg {
     background: var(--v4-s1) !important;
     border: 1px solid var(--v4-b0) !important;
@@ -4248,12 +4248,12 @@ input:focus, textarea:focus, select:focus {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   § 30 · SIDEBAR – LAYOUT PANEL CORPORATIVO
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Â§ 30 Â· SIDEBAR â€“ LAYOUT PANEL CORPORATIVO
    Tokens propios; compatible con modo claro, oscuro y media print.
-   ═══════════════════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Variables del sidebar ── */
+/* â”€â”€ Variables del sidebar â”€â”€ */
 :root {
   --sb-w:        260px;
   --sb-bg:       #ffffff;
@@ -4283,14 +4283,14 @@ input:focus, textarea:focus, select:focus {
   --sb-badge:    #38bdf8;
 }
 
-/* ── Layout raíz ── */
+/* â”€â”€ Layout raÃ­z â”€â”€ */
 .app-layout {
   display: flex;
   min-height: 100vh;
   position: relative;
 }
 
-/* ── Sidebar ── */
+/* â”€â”€ Sidebar â”€â”€ */
 .sidebar {
   position: fixed;
   top: 0;
@@ -4307,7 +4307,7 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 2px 0 24px rgba(0,0,0,.06);
 }
 
-/* ── Contenido principal ── */
+/* â”€â”€ Contenido principal â”€â”€ */
 .sidebar-main {
   flex: 1 1 auto;
   min-width: 0;
@@ -4315,7 +4315,7 @@ input:focus, textarea:focus, select:focus {
   position: relative;
 }
 
-/* ── Cabecera del sidebar ── */
+/* â”€â”€ Cabecera del sidebar â”€â”€ */
 .sidebar-head {
   display: flex;
   align-items: center;
@@ -4382,7 +4382,7 @@ input:focus, textarea:focus, select:focus {
 }
 .sidebar-close-btn:hover { background: var(--sb-hover); color: var(--sb-text); }
 
-/* ── Navegación ── */
+/* â”€â”€ NavegaciÃ³n â”€â”€ */
 .sidebar-nav {
   flex: 1 1 auto;
   overflow-y: auto;
@@ -4441,7 +4441,7 @@ input:focus, textarea:focus, select:focus {
   flex-shrink: 0;
 }
 
-/* ── Grupo Proyectos ── */
+/* â”€â”€ Grupo Proyectos â”€â”€ */
 .sidebar-group { margin-bottom: 1px; }
 .sidebar-group-btn {
   display: flex;
@@ -4473,14 +4473,14 @@ input:focus, textarea:focus, select:focus {
 }
 .sidebar-chevron.open { transform: rotate(180deg); }
 
-/* ── Divisor ── */
+/* â”€â”€ Divisor â”€â”€ */
 .sidebar-divider {
   height: 1px;
   background: var(--sb-border);
   margin: 8px 6px;
 }
 
-/* ── Pie del sidebar ── */
+/* â”€â”€ Pie del sidebar â”€â”€ */
 .sidebar-foot {
   border-top: 1px solid var(--sb-border);
   padding: 12px 14px;
@@ -4539,7 +4539,7 @@ input:focus, textarea:focus, select:focus {
 .sfab.active { background: var(--sb-active-bg); color: var(--sb-active); border-color: var(--sb-active); }
 .sfab--danger:hover { background: rgba(239,68,68,.1); color: #ef4444; border-color: rgba(239,68,68,.3); }
 
-/* ── Hamburguesa (mobile only) ── */
+/* â”€â”€ Hamburguesa (mobile only) â”€â”€ */
 .sidebar-hamburger {
   display: none;
   position: fixed;
@@ -4561,7 +4561,7 @@ input:focus, textarea:focus, select:focus {
 }
 .sidebar-hamburger:hover { background: var(--sb-hover); box-shadow: 0 4px 18px rgba(0,0,0,.14); }
 
-/* ── Overlay (mobile) ── */
+/* â”€â”€ Overlay (mobile) â”€â”€ */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -4577,7 +4577,7 @@ input:focus, textarea:focus, select:focus {
   opacity: 1;
 }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 1023px) {
   .sidebar {
     transform: translateX(-100%);
@@ -4596,12 +4596,12 @@ input:focus, textarea:focus, select:focus {
   .sidebar-overlay    { display: block; }
 }
 
-/* ── Ocultar theme-fab flotante en desktop (lo tiene la sidebar) ── */
+/* â”€â”€ Ocultar theme-fab flotante en desktop (lo tiene la sidebar) â”€â”€ */
 @media (min-width: 1024px) {
   .sidebar-hide-fab { display: none !important; }
 }
 
-/* ── Páginas placeholder y perfil ── */
+/* â”€â”€ PÃ¡ginas placeholder y perfil â”€â”€ */
 .sb-page {
   max-width: 780px;
   margin: 0 auto;
@@ -4707,7 +4707,7 @@ input:focus, textarea:focus, select:focus {
   transition: background .2s, color .2s !important;
 }
 
-/* ── Impresión: ocultar sidebar ── */
+/* â”€â”€ ImpresiÃ³n: ocultar sidebar â”€â”€ */
 @media print {
   .sidebar,
   .sidebar-overlay,
@@ -5623,10 +5623,10 @@ input:focus, textarea:focus, select:focus {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   § 31 · HOME EJECUTIVA UNITECHNIC
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Â§ 31 Â· HOME EJECUTIVA UNITECHNIC
    Vista independiente del listado de proyectos.
-   ═══════════════════════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .project-list-view .exec-summary {
   display: none !important;
 }
@@ -6114,7 +6114,7 @@ input:focus, textarea:focus, select:focus {
   .home-quick-grid { grid-template-columns: 1fr; }
 }
 
-/* Variante clara de Home: el resto de la app ya cambia de tema, esta vista también. */
+/* Variante clara de Home: el resto de la app ya cambia de tema, esta vista tambiÃ©n. */
 html:not(.theme-dark) .home-dashboard {
   color: #142033;
   background:
@@ -6210,7 +6210,7 @@ html:not(.theme-dark) .home-progress {
   background: rgba(15,23,42,.10);
 }
 
-/* Refinamiento ejecutivo: menos brillo, más SaaS operativo. */
+/* Refinamiento ejecutivo: menos brillo, mÃ¡s SaaS operativo. */
 .home-dashboard {
   padding: 28px;
   background:
@@ -6620,9 +6620,9 @@ html:not(.theme-dark) .home-list-row time {
   background: rgba(6,182,212,.12);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   § 32 · CARGA DE TRABAJO EJECUTIVA
-   ═══════════════════════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Â§ 32 Â· CARGA DE TRABAJO EJECUTIVA
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .workload-page {
   min-height: 100vh;
   padding: 28px;
@@ -7137,7 +7137,7 @@ html:not(.theme-dark) .workload-back {
   border-color: rgba(15,23,42,.11);
 }
 
-/* Imputaciones: primera versión funcional */
+/* Imputaciones: primera versiÃ³n funcional */
 .imput-page { max-width: 1280px; margin: 0 auto; }
 .imput-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
 .imput-header .btn-apple { margin-bottom: 14px; }
@@ -7707,4 +7707,76 @@ html:not(.theme-dark) .imput-header {
     max-width: none;
     white-space: normal;
   }
+}
+
+/* =========================================================
+   Ficha proyecto Â· capa final sobria
+   ========================================================= */
+.project-detail-page { width: min(1220px, calc(100% - 32px)); padding-top: 22px; }
+.project-detail-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .58fr);
+  gap: 16px 22px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(0,0,0,.07);
+}
+.project-detail-title h1 { margin: 8px 0 6px; font-size: 28px; line-height: 1.12; font-weight: 820; }
+.project-detail-title p { font-size: 13px; }
+.project-status-pill { min-height: 24px; padding: 3px 9px; background: color-mix(in srgb, var(--surface) 88%, #0888C8 12%); font-size: 11px; }
+.project-detail-meta { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.project-detail-meta span { border-color: color-mix(in srgb, var(--border) 78%, transparent 22%); border-radius: 9px; padding: 8px 9px; font-size: 12px; box-shadow: none; }
+.project-detail-actions { justify-content: flex-end; gap: 7px; padding-top: 0; }
+.project-detail-actions button, .project-panel-head button { min-height: 34px; border-radius: 8px; padding: 0 10px; font-size: 12px; box-shadow: none; }
+.project-detail-actions button:not(:first-child) { border-color: var(--border); color: var(--muted); }
+.project-detail-kpis { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin: 12px 0 10px; }
+.project-detail-kpis article { align-items: center; gap: 8px; min-height: 70px; border-color: color-mix(in srgb, var(--border) 82%, transparent 18%); border-radius: 10px; padding: 10px; box-shadow: none; }
+.project-detail-kpis i { flex-basis: 26px; width: 26px; height: 26px; border-radius: 7px; font-size: 12px; background: color-mix(in srgb, var(--surface) 90%, #0888C8 10%); }
+.project-detail-kpis strong { font-size: 17px; }
+.project-detail-kpis span, .project-detail-kpis small { font-size: 10.5px; }
+.project-detail-tabs { gap: 4px; padding: 4px; margin: 2px 0 14px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--surface) 94%, #0888C8 6%); }
+.project-detail-tabs button { min-height: 34px; border: 0; border-radius: 9px; background: transparent; padding: 0 11px; font-size: 12px; }
+.project-detail-tabs button.active { background: var(--surface); color: #0888C8; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+.project-panel, .project-health-card { border-color: color-mix(in srgb, var(--border) 86%, transparent 14%); border-radius: 12px; padding: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.055); }
+.project-panel-head { align-items: center; margin-bottom: 10px; }
+.project-panel-head h2 { font-size: 16px; }
+.project-health-chips span, .project-chip-row span { border-radius: 7px; padding: 4px 7px; font-size: 10.5px; background: color-mix(in srgb, var(--surface) 92%, #0888C8 8%); }
+.project-task-filters { grid-template-columns: minmax(260px, 1fr) repeat(3, minmax(126px, 160px)); gap: 8px; align-items: center; margin: -2px 0 14px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: color-mix(in srgb, var(--surface) 96%, #0888C8 4%); }
+.project-task-filters input, .project-task-filters select { min-height: 36px; border-radius: 8px; font-size: 12px; }
+.project-task-list { gap: 7px; }
+.project-task-card { grid-template-columns: minmax(0, 1fr) minmax(430px, auto); align-items: center; gap: 18px; border-color: color-mix(in srgb, var(--border) 82%, transparent 18%); border-radius: 10px; background: var(--surface); padding: 12px 14px; box-shadow: none; }
+.project-task-card:hover { border-color: color-mix(in srgb, var(--border) 55%, #0888C8 45%); background: color-mix(in srgb, var(--surface) 97%, #0888C8 3%); }
+.project-task-card.blocked { background: color-mix(in srgb, var(--surface) 96%, #f59e0b 4%); border-left: 3px solid #f59e0b; }
+.project-task-area { display: inline-flex; color: #0888C8 !important; font-size: 10.5px !important; font-weight: 850; text-transform: uppercase; letter-spacing: 0; }
+.project-task-card-main strong { margin-top: 2px; font-size: 14px; line-height: 1.25; }
+.project-task-card-main small { max-width: 740px; font-size: 12px; }
+.project-task-blocked { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; color: #b45309; font-size: 11px; font-weight: 750; }
+.project-task-card-meta { display: grid; grid-template-columns: 112px 78px minmax(120px, 1fr) 112px; align-items: center; gap: 8px; max-width: none; min-width: 0; }
+.project-task-card-meta span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; }
+.task-state { justify-self: start; border-radius: 999px; padding: 3px 8px; font-weight: 800; background: color-mix(in srgb, var(--surface) 88%, #64748b 12%); color: var(--muted); }
+.task-state--completado { color: #047857; background: color-mix(in srgb, var(--surface) 82%, #10b981 18%); }
+.task-state--en-curso { color: #0369a1; background: color-mix(in srgb, var(--surface) 82%, #0ea5e9 18%); }
+.task-state--pendiente { color: #92400e; background: color-mix(in srgb, var(--surface) 82%, #f59e0b 18%); }
+.task-priority { color: var(--muted); font-weight: 800; }
+.task-priority--urgente, .task-priority--alta { color: #e11d48; }
+.task-priority--baja { color: #64748b; }
+.task-assignee { display: inline-flex; align-items: center; gap: 7px; color: var(--text); font-weight: 650; }
+.task-assignee b { flex: 0 0 22px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: color-mix(in srgb, var(--surface) 82%, #0888C8 18%); color: #0888C8; font-size: 10px; }
+.task-due { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; color: var(--muted); font-weight: 700; }
+.task-due--soon { color: #b45309; }
+.task-due--overdue { color: #e11d48; font-weight: 850; }
+.theme-dark .project-detail-hero, .theme-dark .project-detail-tabs, .theme-dark .project-task-filters, .theme-dark .project-task-card { background: var(--surface); }
+@media (max-width: 1180px) {
+  .project-detail-hero { grid-template-columns: 1fr; }
+  .project-detail-actions { justify-content: flex-start; }
+  .project-detail-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .project-task-card { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .project-detail-page { width: min(100% - 20px, 680px); }
+  .project-detail-title h1 { font-size: 23px; }
+  .project-detail-kpis, .project-detail-meta, .project-task-filters { grid-template-columns: 1fr; }
+  .project-detail-actions button { flex: 1 1 calc(50% - 8px); }
+  .project-task-card-meta { grid-template-columns: 1fr 1fr; gap: 7px 10px; }
+  .task-due { justify-content: flex-start; }
 }

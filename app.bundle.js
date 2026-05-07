@@ -986,17 +986,32 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
         React.createElement("span", null, text)));
     const renderTaskList = (items) => (items.length ? React.createElement("div", { className: "project-task-list" }, items.map(task => {
         const blocked = isTaskBlocked(task, model.idx);
+        const effective = effectiveEstado(task, model.idx);
         const due = task.fechaLimite ? (window.formatFechaES ? window.formatFechaES(task.fechaLimite) : task.fechaLimite) : 'Sin fecha';
+        const dueDate = parseDateOnly(task.fechaLimite);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const soon = new Date(today);
+        soon.setDate(today.getDate() + 7);
+        const dueTone = dueDate && dueDate < today && effective !== 'Completado' ? 'overdue' : (dueDate && dueDate <= soon && effective !== 'Completado' ? 'soon' : 'normal');
+        const initials = String(task.asignadoA || 'Sin asignar').trim().slice(0, 1).toUpperCase() || '-';
         return React.createElement("article", { className: `project-task-card ${blocked ? 'blocked' : ''}`, key: task.id },
             React.createElement("div", { className: "project-task-card-main" },
-                React.createElement("span", null, task.area || 'General'),
+                React.createElement("span", { className: "project-task-area" }, task.area || 'General'),
                 React.createElement("strong", null, task.tarea || 'Tarea sin título'),
-                React.createElement("small", null, task.detalles || 'Sin detalles')),
+                React.createElement("small", null, task.detalles || 'Sin detalles'),
+                blocked && React.createElement("div", { className: "project-task-blocked" },
+                    React.createElement("i", { className: "fas fa-lock" }),
+                    "Bloqueada por una dependencia pendiente")),
             React.createElement("div", { className: "project-task-card-meta" },
-                React.createElement("em", null, effectiveEstado(task, model.idx)),
-                React.createElement("em", null, task.prioridad || 'Media'),
-                React.createElement("em", null, task.asignadoA || 'Sin asignar'),
-                React.createElement("em", null, due)));
+                React.createElement("span", { className: `task-state task-state--${String(effective).toLowerCase().replace(/\s+/g, '-')}` }, effective),
+                React.createElement("span", { className: `task-priority task-priority--${String(task.prioridad || 'Media').toLowerCase()}` }, task.prioridad || 'Media'),
+                React.createElement("span", { className: "task-assignee" },
+                    React.createElement("b", null, initials),
+                    task.asignadoA || 'Sin asignar'),
+                React.createElement("span", { className: `task-due task-due--${dueTone}` },
+                    React.createElement("i", { className: "fas fa-calendar-day" }),
+                    due)));
     })) : renderEmpty('fa-list-check', 'Sin tareas', 'No hay tareas que coincidan con los filtros seleccionados.'));
     const renderSummary = () => (React.createElement("div", { className: "project-summary-grid" },
         React.createElement("section", { className: `project-health-card project-health-card--${model.health.tone}` },

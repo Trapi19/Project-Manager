@@ -1403,18 +1403,27 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
         items.length ? <div className="project-task-list">
             {items.map(task => {
                 const blocked = isTaskBlocked(task, model.idx);
+                const effective = effectiveEstado(task, model.idx);
                 const due = task.fechaLimite ? (window.formatFechaES ? window.formatFechaES(task.fechaLimite) : task.fechaLimite) : 'Sin fecha';
+                const dueDate = parseDateOnly(task.fechaLimite);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const soon = new Date(today);
+                soon.setDate(today.getDate() + 7);
+                const dueTone = dueDate && dueDate < today && effective !== 'Completado' ? 'overdue' : (dueDate && dueDate <= soon && effective !== 'Completado' ? 'soon' : 'normal');
+                const initials = String(task.asignadoA || 'Sin asignar').trim().slice(0, 1).toUpperCase() || '-';
                 return <article className={`project-task-card ${blocked ? 'blocked' : ''}`} key={task.id}>
                     <div className="project-task-card-main">
-                        <span>{task.area || 'General'}</span>
+                        <span className="project-task-area">{task.area || 'General'}</span>
                         <strong>{task.tarea || 'Tarea sin título'}</strong>
                         <small>{task.detalles || 'Sin detalles'}</small>
+                        {blocked && <div className="project-task-blocked"><i className="fas fa-lock"></i>Bloqueada por una dependencia pendiente</div>}
                     </div>
                     <div className="project-task-card-meta">
-                        <em>{effectiveEstado(task, model.idx)}</em>
-                        <em>{task.prioridad || 'Media'}</em>
-                        <em>{task.asignadoA || 'Sin asignar'}</em>
-                        <em>{due}</em>
+                        <span className={`task-state task-state--${String(effective).toLowerCase().replace(/\s+/g, '-')}`}>{effective}</span>
+                        <span className={`task-priority task-priority--${String(task.prioridad || 'Media').toLowerCase()}`}>{task.prioridad || 'Media'}</span>
+                        <span className="task-assignee"><b>{initials}</b>{task.asignadoA || 'Sin asignar'}</span>
+                        <span className={`task-due task-due--${dueTone}`}><i className="fas fa-calendar-day"></i>{due}</span>
                     </div>
                 </article>;
             })}
