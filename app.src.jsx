@@ -2907,7 +2907,7 @@ const ChartsView = ({ projects, onBack }) => {
 
         filteredProjects.forEach(project => {
             const tasks = Array.isArray(project && project.tasks) ? project.tasks : [];
-            const stats = calculateProjectStats(tasks);
+            const stats = computeProjectStats(tasks);
             const title = getProjectTitle(project);
             const status = getProjectStatus(project);
             const owner = (project && project.meta && (project.meta.responsableProyecto || project.meta.ejecutorProyecto)) || 'Sin responsable';
@@ -3058,7 +3058,7 @@ const ChartsView = ({ projects, onBack }) => {
             <article><i className="fas fa-gauge-high"></i><div><strong>{model.avgProgress}%</strong><span>Progreso medio</span></div></article>
         </section>
         <section className="charts-filters">
-            <label>Estado<select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}><option>Todos</option><option>En Ejecuci?n</option><option>En Revisi?n</option><option>Completado</option><option>En Pausa</option></select></label>
+            <label>Estado<select value={filters.status} onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}><option>Todos</option><option value="En Ejecución">En Ejecucion</option><option value="En Revisión">En Revision</option><option>Completado</option><option>En Pausa</option></select></label>
             <label>Cliente<select value={filters.client} onChange={e => setFilters(f => ({ ...f, client: e.target.value }))}><option>Todos</option>{model.clients.map(c => <option key={c}>{c}</option>)}</select></label>
             <label>Responsable<select value={filters.owner} onChange={e => setFilters(f => ({ ...f, owner: e.target.value }))}><option>Todos</option>{model.owners.map(o => <option key={o}>{o}</option>)}</select></label>
             <label>Mes<input type="month" value={filters.month} onChange={e => setFilters(f => ({ ...f, month: e.target.value }))} /></label>

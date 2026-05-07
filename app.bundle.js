@@ -2246,7 +2246,7 @@ const ChartsView = ({ projects, onBack }) => {
         filteredProjects.forEach(project => {
             var _g;
             const tasks = Array.isArray(project && project.tasks) ? project.tasks : [];
-            const stats = calculateProjectStats(tasks);
+            const stats = computeProjectStats(tasks);
             const title = getProjectTitle(project);
             const status = getProjectStatus(project);
             const owner = (project && project.meta && (project.meta.responsableProyecto || project.meta.ejecutorProyecto)) || 'Sin responsable';
@@ -2457,8 +2457,8 @@ const ChartsView = ({ projects, onBack }) => {
                 "Estado",
                 React.createElement("select", { value: filters.status, onChange: e => setFilters(f => ({ ...f, status: e.target.value })) },
                     React.createElement("option", null, "Todos"),
-                    React.createElement("option", null, "En Ejecuci?n"),
-                    React.createElement("option", null, "En Revisi?n"),
+                    React.createElement("option", { value: "En Ejecuci\u00F3n" }, "En Ejecucion"),
+                    React.createElement("option", { value: "En Revisi\u00F3n" }, "En Revision"),
                     React.createElement("option", null, "Completado"),
                     React.createElement("option", null, "En Pausa"))),
             React.createElement("label", null,
