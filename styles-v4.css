@@ -5951,9 +5951,60 @@ input:focus, textarea:focus, select:focus {
   color: #fff;
   border-color: #0888C8;
 }
+.project-more-actions {
+  position: relative;
+}
+.project-more-actions summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 94%, #0888C8 6%);
+  color: var(--muted);
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+.project-more-actions summary::-webkit-details-marker {
+  display: none;
+}
+.project-more-actions[open] summary {
+  color: #0888C8;
+  border-color: color-mix(in srgb, var(--border) 62%, #0888C8 38%);
+}
+.project-more-actions > div {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  display: grid;
+  gap: 6px;
+  min-width: 210px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 16px 42px rgba(0,0,0,.16);
+}
+.project-more-actions > div button {
+  justify-content: flex-start;
+  width: 100%;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
+}
+.project-more-actions > div button:hover {
+  background: color-mix(in srgb, var(--surface) 90%, #0888C8 10%);
+}
 .project-detail-kpis {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin: 14px 0;
 }
@@ -6035,6 +6086,84 @@ input:focus, textarea:focus, select:focus {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+.project-summary-grid--executive {
+  align-items: start;
+}
+.project-summary-grid--executive .project-panel,
+.project-summary-grid--executive .project-health-card {
+  padding: 14px;
+}
+.project-summary-risks {
+  grid-column: 1 / -1;
+}
+.project-summary-risks .project-task-list {
+  gap: 8px;
+}
+.project-summary-risks .project-task-card,
+.project-summary-next .project-task-card {
+  padding: 12px;
+  box-shadow: none;
+}
+.project-summary-risks .project-task-card-main small,
+.project-summary-next .project-task-card-main small {
+  -webkit-line-clamp: 1;
+}
+.project-summary-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.project-summary-mini-grid button {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  min-height: 62px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 96%, #0888C8 4%);
+  color: var(--text);
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+.project-summary-mini-grid button:hover {
+  border-color: color-mix(in srgb, var(--border) 58%, #0888C8 42%);
+}
+.project-summary-mini-grid strong,
+.project-summary-mini-grid span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-summary-mini-grid strong {
+  font-size: 13px;
+  font-weight: 850;
+}
+.project-summary-mini-grid span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.project-summary-action {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.project-summary-action i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(8, 136, 200, .12);
+  color: #0888C8;
 }
 .project-panel,
 .project-health-card {
@@ -6451,6 +6580,15 @@ input:focus, textarea:focus, select:focus {
   background: color-mix(in srgb, var(--surface-2) 88%, #0888C8 12%);
   border-color: var(--app-border, rgba(148,163,184,.18));
 }
+.theme-dark .project-more-actions summary,
+.theme-dark .project-more-actions > div,
+.theme-dark .project-summary-mini-grid button {
+  background: var(--surface-2);
+}
+.theme-dark .project-more-actions > div button:hover,
+.theme-dark .project-summary-mini-grid button:hover {
+  background: color-mix(in srgb, var(--surface-2) 88%, #0888C8 12%);
+}
 .theme-dark .project-health-card {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--surface) 94%, #10b981 6%), var(--surface));
@@ -6532,6 +6670,9 @@ input:focus, textarea:focus, select:focus {
   .project-task-card-meta {
     grid-template-columns: repeat(4, minmax(120px, 1fr));
   }
+  .project-summary-mini-grid {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 640px) {
   .project-detail-page {
@@ -6563,6 +6704,15 @@ input:focus, textarea:focus, select:focus {
   }
   .project-detail-actions button {
     flex: 1 1 100%;
+  }
+  .project-more-actions,
+  .project-more-actions summary {
+    width: 100%;
+  }
+  .project-more-actions > div {
+    position: static;
+    margin-top: 8px;
+    width: 100%;
   }
   .project-task-card {
     grid-template-columns: 1fr;

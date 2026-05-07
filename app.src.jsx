@@ -1401,9 +1401,6 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
         ['Progreso', `${model.progress}%`, `${model.completedTasks.length} de ${model.tasks.length} tareas`, 'fa-gauge-high'],
         ['Tareas abiertas', model.openTasks.length, `${model.overdueTasks.length} vencidas`, 'fa-list-check'],
         ['Incidencias', model.incidentItems.length, `${model.blockedTasks.length} bloqueadas`, 'fa-shield-halved'],
-        ['Horas imputadas', model.totals.hours.toLocaleString('es-ES'), `${model.rows.length} registros`, 'fa-clock'],
-        ['Kilómetros', model.totals.km.toLocaleString('es-ES'), 'Km registrados', 'fa-route'],
-        ['Dietas', model.totals.allowanceCount.toLocaleString('es-ES'), `${model.totals.allowance.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`, 'fa-utensils'],
         ['Próximo vencimiento', model.nextDueTask ? (window.formatFechaES ? window.formatFechaES(model.nextDueTask.fechaLimite) : model.nextDueTask.fechaLimite) : 'Sin datos', model.nextDueTask ? (model.nextDueTask.tarea || 'Tarea') : 'No hay fechas próximas', 'fa-calendar-day']
     ];
     const renderEmpty = (icon, titleText, text) => (
@@ -1443,8 +1440,10 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
             })}
         </div> : renderEmpty('fa-list-check', 'Sin tareas', 'No hay tareas que coincidan con los filtros seleccionados.')
     );
-    const renderSummary = () => (
-        <div className="project-summary-grid">
+    const renderSummary = () => {
+        const riskItems = [...model.overdueTasks, ...model.blockedTasks, ...model.urgentTasks];
+        const hasDocuments = !!meta.sharepointUrl;
+        return <div className="project-summary-grid project-summary-grid--executive">
             <section className={`project-health-card project-health-card--${model.health.tone}`}>
                 <div className="project-panel-head">
                     <div><span>Salud del proyecto</span><h2>{model.health.label}</h2></div>
@@ -1453,35 +1452,34 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
                 <p>{model.health.text}</p>
                 <div className="project-health-chips">
                     <span>{model.openTasks.length} tareas abiertas</span>
-                    <span>{model.overdueTasks.length} vencida{model.overdueTasks.length === 1 ? '' : 's'}</span>
-                    <span>{model.totals.hours.toLocaleString('es-ES')} h imputadas</span>
+                    <span>{model.incidentItems.length ? `${model.incidentItems.length} incidencias` : 'Sin incidencias'}</span>
                     <span>{model.wikiDocumented ? 'Wiki documentada' : 'Wiki pendiente'}</span>
-                    <span>{model.incidentItems.length ? `${model.incidentItems.length} incidencias` : 'Sin incidencias críticas'}</span>
+                    <span>{model.totals.hours.toLocaleString('es-ES')} h imputadas</span>
                 </div>
             </section>
-            <section className="project-panel">
-                <div className="project-panel-head"><div><span>Próximos vencimientos</span><h2>Agenda inmediata</h2></div></div>
-                {model.upcomingTasks.length ? renderTaskList(model.upcomingTasks.slice(0, 4)) : renderEmpty('fa-calendar-check', 'Sin vencimientos próximos', 'No hay tareas con fecha límite en los próximos 14 días.')}
+            <section className="project-panel project-summary-next">
+                <div className="project-panel-head"><div><span>Proximo hito</span><h2>Vencimiento inmediato</h2></div><button type="button" onClick={() => setActiveTab('tasks')}>Ver tareas</button></div>
+                {model.upcomingTasks.length ? renderTaskList(model.upcomingTasks.slice(0, 2)) : renderEmpty('fa-calendar-check', 'Sin vencimientos proximos', 'No hay tareas con fecha limite en los proximos 14 dias.')}
             </section>
-            <section className="project-panel">
-                <div className="project-panel-head"><div><span>Riesgos</span><h2>Tareas críticas o bloqueadas</h2></div></div>
-                {(model.overdueTasks.length || model.blockedTasks.length || model.urgentTasks.length) ? renderTaskList([...model.overdueTasks, ...model.blockedTasks, ...model.urgentTasks].slice(0, 5)) : renderEmpty('fa-shield-heart', 'Sin riesgos destacados', 'No hay tareas vencidas, bloqueadas o urgentes.')}
+            <section className="project-panel project-summary-risks">
+                <div className="project-panel-head"><div><span>Riesgos principales</span><h2>Tareas criticas o bloqueadas</h2></div>{riskItems.length > 3 && <button type="button" onClick={() => setActiveTab('tasks')}>Ver todas</button>}</div>
+                {riskItems.length ? renderTaskList(riskItems.slice(0, 3)) : renderEmpty('fa-shield-heart', 'Sin riesgos destacados', 'No hay tareas vencidas, bloqueadas o urgentes.')}
             </section>
-            <section className="project-panel">
-                <div className="project-panel-head"><div><span>Últimas imputaciones</span><h2>Trabajo registrado</h2></div><button type="button" onClick={() => onAddTimeEntry(project.id)}>+ Añadir</button></div>
-                <AdvancedTimeEntriesTable rows={model.rows.slice(0, 4)} compact onEdit={onEditTimeEntry} onDelete={onDeleteTimeEntry} emptyText="No hay imputaciones registradas en este proyecto." />
+            <section className="project-panel project-summary-status">
+                <div className="project-panel-head"><div><span>Estado operativo</span><h2>Documentacion e imputaciones</h2></div></div>
+                <div className="project-summary-mini-grid">
+                    <button type="button" onClick={() => setActiveTab('imputations')}><strong>{model.totals.hours.toLocaleString('es-ES')} h registradas</strong><span>{model.totals.km.toLocaleString('es-ES')} km · {model.totals.allowanceCount.toLocaleString('es-ES')} dieta{model.totals.allowanceCount === 1 ? '' : 's'}</span></button>
+                    <button type="button" onClick={() => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}`}><strong>{model.wikiDocumented ? 'Wiki documentada' : 'Wiki pendiente'}</strong><span>{formatWikiDate(model.wiki.updatedAt)}</span></button>
+                    <button type="button" onClick={() => setActiveTab('incidents')}><strong>{model.incidentItems.length ? `${model.incidentItems.length} incidencias` : 'Sin incidencias'}</strong><span>Ver detalle operativo</span></button>
+                    <button type="button" onClick={() => setActiveTab('documents')}><strong>{hasDocuments ? 'Documentos vinculados' : 'Sin documentos'}</strong><span>{hasDocuments ? 'SharePoint disponible' : 'Sin enlaces'}</span></button>
+                </div>
             </section>
-            <section className="project-panel">
-                <div className="project-panel-head"><div><span>Wiki</span><h2>Documentación</h2></div><button type="button" onClick={() => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}`}>Ver wiki</button></div>
-                <p className="project-panel-text">{model.wikiDocumented ? buildWikiExcerpt(project) : 'Este proyecto todavía no tiene documentación técnica.'}</p>
-                <div className="project-chip-row">{(model.wiki.tags || []).length ? model.wiki.tags.map(tag => <span key={tag}>{tag}</span>) : <span>Sin categorías</span>}</div>
+            <section className="project-panel project-summary-action-panel">
+                <div className="project-panel-head"><div><span>Siguiente accion</span><h2>Recomendacion principal</h2></div></div>
+                <div className="project-summary-action"><i className="fas fa-lightbulb"></i><span>{model.recommendations[0] || 'No hay acciones urgentes.'}</span></div>
             </section>
-            <section className="project-panel">
-                <div className="project-panel-head"><div><span>Acciones recomendadas</span><h2>Siguientes pasos</h2></div></div>
-                <div className="project-recommendations">{model.recommendations.map((item, idx) => <div key={idx}><i className="fas fa-lightbulb"></i><span>{item}</span></div>)}</div>
-            </section>
-        </div>
-    );
+        </div>;
+    };
     return <div className="project-detail-page">
         <header className="project-detail-hero">
             <div className="project-detail-title">
@@ -1503,9 +1501,14 @@ const ProjectDetailDashboard = ({ project, onEdit, onAddTask, onAddTimeEntry, on
             <div className="project-detail-actions no-print">
                 <button type="button" onClick={onEdit}><i className="fas fa-pen"></i>Editar proyecto</button>
                 <button type="button" onClick={() => { onAddTask(); setActiveTab('tasks'); }}><i className="fas fa-plus"></i>Añadir tarea</button>
-                <button type="button" onClick={() => onAddTimeEntry(project.id)}><i className="fas fa-business-time"></i>Añadir imputación</button>
-                <button type="button" onClick={() => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}`}><i className="fas fa-book"></i>Ver wiki</button>
-                <button type="button" onClick={onPrint}><i className="fas fa-print"></i>Imprimir</button>
+                <details className="project-more-actions">
+                    <summary><i className="fas fa-ellipsis"></i>Mas acciones</summary>
+                    <div>
+                        <button type="button" onClick={() => onAddTimeEntry(project.id)}><i className="fas fa-business-time"></i>Anadir imputacion</button>
+                        <button type="button" onClick={() => window.location.hash = `#/wiki/${encodeURIComponent(String(project.id || ''))}`}><i className="fas fa-book"></i>Ver wiki</button>
+                        <button type="button" onClick={onPrint}><i className="fas fa-print"></i>Imprimir</button>
+                    </div>
+                </details>
             </div>
         </header>
         <div className="project-detail-kpis">{kpis.map(k => <article key={k[0]}><i className={`fas ${k[3]}`}></i><div><strong>{k[1]}</strong><span>{k[0]}</span><small>{k[2]}</small></div></article>)}</div>
@@ -5108,5 +5111,4 @@ class ErrorBoundary extends React.Component {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(ErrorBoundary, null, React.createElement(MainApp, null)));
-
 
