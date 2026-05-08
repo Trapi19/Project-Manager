@@ -1,3 +1,4 @@
+"use strict";
 // @ts-nocheck
 // Fuente editable de la aplicación React.
 // ---------------------------------------------------------
@@ -2291,47 +2292,168 @@ const AlertsView = ({ projects, onBack }) => {
         ? React.createElement("div", { className: "control-card-list" }, alertsData.upcomingProjects.map(proj => renderAlertProject(proj, "upcoming", proj.items || [], t => React.createElement("div", { key: t.id, className: "control-alert-item control-alert-item--date" }, React.createElement("i", { className: "fas fa-calendar-day" }), React.createElement("div", null, React.createElement("strong", null, t.tarea || 'Tarea sin titulo'), React.createElement("span", null, t.area || 'General')), React.createElement("time", null, formatDue(t.fechaLimite))))))
         : renderControlEmpty("fa-calendar-check", "No hay vencimientos esta semana", "No hay tareas con fecha limite en los proximos 7 dias.")), renderControlSection("control-panel--summary", "fa-shield-heart", "Resumen de atencion", "Lectura ejecutiva", riskProjectIds.size, React.createElement("div", { className: "control-summary-list" }, attentionItems.map((item, idx) => React.createElement("div", { key: idx, className: "control-summary-row" }, React.createElement("i", { className: 'fas ' + (idx === 0 ? 'fa-lock' : idx === 1 ? 'fa-bolt' : idx === 2 ? 'fa-calendar-day' : 'fa-circle-exclamation') }), React.createElement("span", null, item))), alertsData.redProjects.length ? React.createElement("div", { className: "control-risk-list" }, alertsData.redProjects.map(proj => React.createElement("button", { type: "button", key: proj.id, onClick: () => openProject(proj.id) }, React.createElement("strong", null, proj.title || 'Proyecto sin titulo'), React.createElement("span", null, (proj.reasons || []).join(' - ') || 'Requiere seguimiento')))) : null)))));
 };
-// --- VISTA: GRÁFICOS (Charts) ---
+// --- VISTA: GRÁFICOS Y ANALÍTICA (Charts) ---
 const ChartsView = ({ projects, onBack }) => {
     const didAnimateRef = React.useRef(false);
     const [themeTick, setThemeTick] = React.useState(0);
     const donutRef = React.useRef(null);
-    const byAreaRef = React.useRef(null);
-    const byPriorityRef = React.useRef(null);
+    const dueRef = React.useRef(null);
     const byAssigneeRef = React.useRef(null);
-    // Guardamos instancias para destruirlas al salir de la vista
+    const byPriorityRef = React.useRef(null);
+    const byAreaRef = React.useRef(null);
+    const dependenciesRef = React.useRef(null);
     const chartsRef = React.useRef([]);
-    const flattenTasks = () => {
+    const analytics = React.useMemo(() => {
         const list = Array.isArray(projects) ? projects : [];
-        const all = [];
-        for (const p of list) {
-            const tasks = (p && Array.isArray(p.tasks)) ? p.tasks : [];
-            for (const t of tasks)
-                all.push(t);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const soon = new Date(today);
+        soon.setDate(today.getDate() + 7);
+        const dayOfWeek = today.getDay() || 7;
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - dayOfWeek + 1);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        const nextWeekStart = new Date(weekStart);
+        nextWeekStart.setDate(weekStart.getDate() + 7);
+        const nextWeekEnd = new Date(weekStart);
+        nextWeekEnd.setDate(weekStart.getDate() + 13);
+        const rows = [];
+        let progressSum = 0;
+        let totalTasks = 0;
+        list.forEach(project => {
+            const tasks = Array.isArray(project && project.tasks) ? project.tasks : [];
+            const idx = buildTaskIndex(tasks);
+            const stats = computeProjectStats(tasks);
+            totalTasks += stats.total || 0;
+            progressSum += stats.progressSum || 0;
+            tasks.forEach(task => rows.push({
+                task,
+                taskIndex: idx,
+                projectTitle: (project && project.meta && project.meta.titulo) || 'Proyecto sin título'
+            }));
+        });
+        const estadoCounts = { Pendiente: 0, 'En Curso': 0, Completado: 0 };
+        const areaCounts = {};
+        const priorityCounts = {};
+        const assigneeMap = {};
+        const dueCounts = { Vencidas: 0, 'Esta semana': 0, 'Próxima semana': 0, 'Más adelante': 0, 'Sin fecha': 0 };
+        const dependencyCounts = { Bloqueadas: 0, 'No bloqueadas': 0, Completadas: 0, 'Sin dependencia': 0 };
+        const blockedItems = [];
+        rows.forEach(row => {
+            const task = row.task || {};
+            const normalized = normalizeEstado(effectiveEstado(task, row.taskIndex));
+            const isCompleted = normalized === 'Completado';
+            const blocked = !isCompleted && isTaskBlocked(task, row.taskIndex);
+            const due = parseDateOnly(task.fechaLimite);
+            if (normalized === 'Completado')
+                estadoCounts.Completado += 1;
+            else if (normalized === 'En Curso')
+                estadoCounts['En Curso'] += 1;
+            else
+                estadoCounts.Pendiente += 1;
+            const area = String(task.area || 'Sin área').trim() || 'Sin área';
+            areaCounts[area] = (areaCounts[area] || 0) + 1;
+            const priority = String(task.prioridad || 'Media').trim() || 'Media';
+            priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+            splitAssignees(task.asignadoA).forEach(name => {
+                if (!assigneeMap[name])
+                    assigneeMap[name] = { Pendiente: 0, 'En Curso': 0, Completado: 0, total: 0 };
+                const key = normalized === 'Completado' ? 'Completado' : (normalized === 'En Curso' ? 'En Curso' : 'Pendiente');
+                assigneeMap[name][key] += 1;
+                assigneeMap[name].total += 1;
+            });
+            if (!isCompleted) {
+                if (!due)
+                    dueCounts['Sin fecha'] += 1;
+                else if (due < today)
+                    dueCounts.Vencidas += 1;
+                else if (due <= weekEnd)
+                    dueCounts['Esta semana'] += 1;
+                else if (due >= nextWeekStart && due <= nextWeekEnd)
+                    dueCounts['Próxima semana'] += 1;
+                else
+                    dueCounts['Más adelante'] += 1;
+            }
+            if (isCompleted) {
+                dependencyCounts.Completadas += 1;
+            }
+            else if (!task.dependsOn) {
+                dependencyCounts['Sin dependencia'] += 1;
+            }
+            else if (blocked) {
+                dependencyCounts.Bloqueadas += 1;
+                const dependency = row.taskIndex.get(String(task.dependsOn));
+                blockedItems.push({
+                    id: task.id || `${row.projectTitle}-${task.tarea || blockedItems.length}`,
+                    taskName: task.tarea || 'Tarea sin título',
+                    projectTitle: row.projectTitle,
+                    dependencyName: dependency ? (dependency.tarea || 'Tarea sin título') : 'Dependencia no encontrada'
+                });
+            }
+            else {
+                dependencyCounts['No bloqueadas'] += 1;
+            }
+        });
+        const assigneeRows = Object.entries(assigneeMap).map(([name, counts]) => ({ name, ...counts })).sort((a, b) => b.total - a.total);
+        const topAssignees = assigneeRows.slice(0, 8);
+        const restAssignees = assigneeRows.slice(8);
+        if (restAssignees.length) {
+            topAssignees.push(restAssignees.reduce((acc, row) => ({
+                name: 'Otros',
+                Pendiente: acc.Pendiente + row.Pendiente,
+                'En Curso': acc['En Curso'] + row['En Curso'],
+                Completado: acc.Completado + row.Completado,
+                total: acc.total + row.total
+            }), { name: 'Otros', Pendiente: 0, 'En Curso': 0, Completado: 0, total: 0 }));
         }
-        return all;
-    };
-    const countBy = (items, getter, fallbackLabel) => {
-        const map = {};
-        for (const it of items) {
-            const kRaw = getter(it);
-            const k = (kRaw == null || String(kRaw).trim() === "") ? fallbackLabel : String(kRaw).trim();
-            map[k] = (map[k] || 0) + 1;
-        }
-        // orden por cantidad desc
-        return Object.entries(map).sort((a, b) => b[1] - a[1]);
+        const activeRows = rows.filter(row => normalizeEstado(effectiveEstado(row.task, row.taskIndex)) !== 'Completado');
+        const overdueTasks = activeRows.filter(row => {
+            const due = parseDateOnly(row.task.fechaLimite);
+            return due && due < today;
+        }).length;
+        const upcomingTasks = activeRows.filter(row => {
+            const due = parseDateOnly(row.task.fechaLimite);
+            return due && due >= today && due <= soon;
+        }).length;
+        return {
+            totalProjects: list.length,
+            totalTasks,
+            progress: totalTasks ? Math.round((progressSum / totalTasks) * 100) : 0,
+            overdueTasks,
+            blockedTasks: dependencyCounts.Bloqueadas,
+            upcomingTasks,
+            estadoCounts,
+            dueCounts,
+            assignees: topAssignees,
+            priorityCounts,
+            areaCounts,
+            dependencyCounts,
+            blockedItems: blockedItems.slice(0, 5)
+        };
+    }, [projects]);
+    const seriesFromCounts = (counts, order, limit) => {
+        const base = order || Object.keys(counts || {});
+        const entries = base.filter(label => counts[label] != null).map(label => [label, counts[label] || 0]);
+        const extra = Object.entries(counts || {}).filter(([label]) => !entries.some(([known]) => known === label)).sort((a, b) => b[1] - a[1]);
+        const merged = entries.concat(extra).sort((a, b) => {
+            if (order && order.includes(a[0]) && order.includes(b[0]))
+                return order.indexOf(a[0]) - order.indexOf(b[0]);
+            if (order && order.includes(a[0]))
+                return -1;
+            if (order && order.includes(b[0]))
+                return 1;
+            return b[1] - a[1];
+        });
+        return typeof limit === 'number' ? merged.slice(0, limit) : merged;
     };
     React.useEffect(() => {
-        // Esto detecta cuando el <html> cambia de clase (por ejemplo: se añade o quita "theme-dark")
         const el = document.documentElement;
-        const obs = new MutationObserver(() => {
-            setThemeTick(t => t + 1);
-        });
+        const obs = new MutationObserver(() => setThemeTick(t => t + 1));
         obs.observe(el, { attributes: true, attributeFilter: ['class'] });
         return () => obs.disconnect();
     }, []);
     React.useEffect(() => {
-        // Limpia charts anteriores (si los hubiese)
         for (const ch of chartsRef.current) {
             try {
                 ch.destroy();
@@ -2339,66 +2461,10 @@ const ChartsView = ({ projects, onBack }) => {
             catch (e) { }
         }
         chartsRef.current = [];
-        // Solo animar la primera vez que entras en Gráficos
         const anim = didAnimateRef.current ? false : { duration: 650 };
-        const tasks = flattenTasks();
-        // 1) Donut por Estado
-        const byEstado = countBy(tasks, t => t.estado, "Pendiente");
-        const donutLabels = byEstado.map(x => x[0]);
-        const donutData = byEstado.map(x => x[1]);
-        // Colores por estado (fijos)
-        const estadoColor = (label) => {
-            const low = String(label || '').toLowerCase();
-            if (low === 'pendiente')
-                return '#ef4444'; // rojo
-            if (low === 'en curso' || low === 'en-curso')
-                return '#f59e0b'; // amarillo
-            if (low === 'completado')
-                return '#10b981'; // verde
-            return '#64748b'; // gris fallback
-        };
-        const donutColors = donutLabels.map(estadoColor);
-        // 2) Barras por Área
-        const byArea = countBy(tasks, t => t.area, "Sin área");
-        const areaLabels = byArea.slice(0, 15).map(x => x[0]); // top 15 para que no se sature
-        const areaData = byArea.slice(0, 15).map(x => x[1]);
-        // 3) Barras por Prioridad
-        // Orden lógico: Urgente, Alta, Media, Baja
-        const prioOrder = ["Urgente", "Alta", "Media", "Baja"];
-        const prioMap = {};
-        for (const t of tasks) {
-            const p = (t.prioridad || "Media");
-            prioMap[p] = (prioMap[p] || 0) + 1;
-        }
-        const prioLabels = prioOrder.filter(p => prioMap[p] != null);
-        const prioData = prioLabels.map(p => prioMap[p] || 0);
-        // 4) Barras por Asignado
-        // 4) Barras por Asignado (CORREGIDO: separa múltiples nombres)
-        const byAssignee = (() => {
-            const map = {};
-            for (const t of tasks) {
-                let raw = (t.asignadoA || '').trim();
-                if (!raw)
-                    raw = "Sin asignar";
-                // Separa por: / , ; &  o por " y " (con espacios)
-                const names = raw
-                    .split(/[\/,;&]|\s+y\s+/)
-                    .map(s => s.trim())
-                    .filter(Boolean);
-                const finalNames = names.length ? names : ["Sin asignar"];
-                // Cuenta 1 tarea para cada persona
-                for (const n of finalNames) {
-                    map[n] = (map[n] || 0) + 1;
-                }
-            }
-            return Object.entries(map).sort((a, b) => b[1] - a[1]);
-        })();
-        const assLabels = byAssignee.slice(0, 20).map(x => x[0]); // top 20
-        const assData = byAssignee.slice(0, 20).map(x => x[1]);
-        // Chart.js (UMD) disponible como window.Chart
         const ChartJS = (window && window.Chart) ? window.Chart : null;
         if (!ChartJS) {
-            console.error("Chart.js no está cargado. Revisa el PASO 1 (index.html).");
+            console.error("Chart.js no está cargado. Revisa index.html.");
             return;
         }
         const isDark = document.documentElement.classList.contains('theme-dark');
@@ -2411,106 +2477,64 @@ const ChartsView = ({ projects, onBack }) => {
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            animation: anim,
             plugins: {
                 legend: { labels: { color: theme.text } },
-                tooltip: {
-                    backgroundColor: theme.tooltipBg,
-                    titleColor: theme.text,
-                    bodyColor: theme.text
-                }
+                tooltip: { backgroundColor: theme.tooltipBg, titleColor: theme.text, bodyColor: theme.text }
             },
             scales: {
                 x: { ticks: { color: theme.text }, grid: { color: theme.grid } },
-                y: { ticks: { color: theme.text }, grid: { color: theme.grid } },
+                y: { beginAtZero: true, ticks: { color: theme.text, precision: 0 }, grid: { color: theme.grid } }
             }
         };
-        // Donut
-        if (donutRef.current) {
-            const isDark = document.documentElement.classList.contains('theme-dark');
-            const textColor = isDark ? '#e5e7eb' : '#111827';
-            const borderColor = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)';
-            const ch = new ChartJS(donutRef.current, {
-                type: 'doughnut',
-                data: {
-                    labels: donutLabels,
-                    datasets: [{
-                            data: donutData,
-                            backgroundColor: donutColors,
-                            borderColor: borderColor,
-                            borderWidth: 2
-                        }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: anim,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: textColor,
-                                boxWidth: 14,
-                                boxHeight: 10,
-                                padding: 14
-                            }
-                        },
-                        tooltip: {
-                            titleColor: textColor,
-                            bodyColor: textColor
-                        }
-                    }
-                }
-            });
+        const pushChart = (ref, config) => {
+            if (!ref.current)
+                return;
+            const ch = new ChartJS(ref.current, config);
             chartsRef.current.push(ch);
-        }
-        // Área
-        if (byAreaRef.current) {
-            const ch = new ChartJS(byAreaRef.current, {
-                type: 'bar',
-                data: {
-                    labels: areaLabels,
-                    datasets: [{ label: 'Tareas', data: areaData }]
-                },
-                options: {
-                    ...commonOptions,
-                    animation: anim,
-                    plugins: { ...commonOptions.plugins, legend: { display: false } }
-                }
-            });
-            chartsRef.current.push(ch);
-        }
-        // Prioridad
-        if (byPriorityRef.current) {
-            const ch = new ChartJS(byPriorityRef.current, {
-                type: 'bar',
-                data: {
-                    labels: prioLabels,
-                    datasets: [{ label: 'Tareas', data: prioData }]
-                },
-                options: {
-                    ...commonOptions,
-                    animation: anim,
-                    plugins: { ...commonOptions.plugins, legend: { display: false } }
-                }
-            });
-            chartsRef.current.push(ch);
-        }
-        // Asignado
-        if (byAssigneeRef.current) {
-            const ch = new ChartJS(byAssigneeRef.current, {
-                type: 'bar',
-                data: {
-                    labels: assLabels,
-                    datasets: [{ label: 'Tareas', data: assData }]
-                },
-                options: {
-                    ...commonOptions,
-                    animation: anim,
-                    plugins: { ...commonOptions.plugins, legend: { display: false } }
-                }
-            });
-            chartsRef.current.push(ch);
-        }
+        };
+        const estadoSeries = seriesFromCounts(analytics.estadoCounts, ['Pendiente', 'En Curso', 'Completado']);
+        pushChart(donutRef, {
+            type: 'doughnut',
+            data: { labels: estadoSeries.map(x => x[0]), datasets: [{ data: estadoSeries.map(x => x[1]), backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderColor: theme.border, borderWidth: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, animation: anim, plugins: { legend: { position: 'bottom', labels: { color: theme.text, boxWidth: 14, boxHeight: 10, padding: 14 } }, tooltip: commonOptions.plugins.tooltip } }
+        });
+        const dueSeries = seriesFromCounts(analytics.dueCounts, ['Vencidas', 'Esta semana', 'Próxima semana', 'Más adelante', 'Sin fecha']);
+        pushChart(dueRef, {
+            type: 'bar',
+            data: { labels: dueSeries.map(x => x[0]), datasets: [{ label: 'Tareas abiertas', data: dueSeries.map(x => x[1]), backgroundColor: ['#ef4444', '#f59e0b', '#0ea5e9', '#64748b', '#94a3b8'] }] },
+            options: { ...commonOptions, plugins: { ...commonOptions.plugins, legend: { display: false } } }
+        });
+        pushChart(byAssigneeRef, {
+            type: 'bar',
+            data: {
+                labels: analytics.assignees.map(row => row.name),
+                datasets: [
+                    { label: 'Pendientes', data: analytics.assignees.map(row => row.Pendiente), backgroundColor: '#ef4444' },
+                    { label: 'En curso', data: analytics.assignees.map(row => row['En Curso']), backgroundColor: '#f59e0b' },
+                    { label: 'Completadas', data: analytics.assignees.map(row => row.Completado), backgroundColor: '#10b981' }
+                ]
+            },
+            options: { ...commonOptions, scales: { x: { stacked: true, ticks: { color: theme.text }, grid: { color: theme.grid } }, y: { stacked: true, beginAtZero: true, ticks: { color: theme.text, precision: 0 }, grid: { color: theme.grid } } } }
+        });
+        const prioritySeries = seriesFromCounts(analytics.priorityCounts, ['Urgente', 'Alta', 'Media', 'Baja']);
+        pushChart(byPriorityRef, {
+            type: 'bar',
+            data: { labels: prioritySeries.map(x => x[0]), datasets: [{ label: 'Tareas', data: prioritySeries.map(x => x[1]), backgroundColor: '#0ea5e9' }] },
+            options: { ...commonOptions, plugins: { ...commonOptions.plugins, legend: { display: false } } }
+        });
+        const areaSeries = seriesFromCounts(analytics.areaCounts, null, 15);
+        pushChart(byAreaRef, {
+            type: 'bar',
+            data: { labels: areaSeries.map(x => x[0]), datasets: [{ label: 'Tareas', data: areaSeries.map(x => x[1]), backgroundColor: '#8b5cf6' }] },
+            options: { ...commonOptions, indexAxis: 'y', plugins: { ...commonOptions.plugins, legend: { display: false } } }
+        });
+        const dependencySeries = seriesFromCounts(analytics.dependencyCounts, ['Bloqueadas', 'No bloqueadas', 'Completadas', 'Sin dependencia']);
+        pushChart(dependenciesRef, {
+            type: 'doughnut',
+            data: { labels: dependencySeries.map(x => x[0]), datasets: [{ data: dependencySeries.map(x => x[1]), backgroundColor: ['#ef4444', '#0ea5e9', '#10b981', '#94a3b8'], borderColor: theme.border, borderWidth: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, animation: anim, plugins: { legend: { position: 'bottom', labels: { color: theme.text, boxWidth: 14, boxHeight: 10, padding: 14 } }, tooltip: commonOptions.plugins.tooltip } }
+        });
         didAnimateRef.current = true;
         return () => {
             for (const ch of chartsRef.current) {
@@ -2521,17 +2545,18 @@ const ChartsView = ({ projects, onBack }) => {
             }
             chartsRef.current = [];
         };
-    }, [projects, themeTick]);
-    const total = flattenTasks().length;
-    return React.createElement("div", { className: "min-h-screen bg-gray-50 pb-20" }, React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } }, React.createElement("div", { className: "max-w-7xl mx-auto px-6 py-4 flex items-center justify-between" }, React.createElement("div", { className: "flex items-center gap-3" }, React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } }, React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"), React.createElement("div", null, React.createElement("div", { className: "text-xl font-extrabold" }, "Gráficos"), React.createElement("div", { className: "text-xs opacity-70" }, `Resumen global · ${total} tareas`))))), React.createElement("div", { className: "max-w-7xl mx-auto p-6 space-y-6" }, React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-3 gap-6" },
-    // Donut
-    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Estado"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: donutRef }))),
-    // Área
-    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border lg:col-span-2" }, React.createElement("div", { className: "font-bold mb-3" }, "Áreas (Top 15)"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byAreaRef })))), React.createElement("div", { className: "grid grid-cols-1 lg:grid-cols-2 gap-6" },
-    // Prioridad
-    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Prioridad"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byPriorityRef }))),
-    // Asignado
-    React.createElement("div", { className: "section-tapiz p-6 rounded-2xl border" }, React.createElement("div", { className: "font-bold mb-3" }, "Tareas por Persona"), React.createElement("div", { style: { height: '260px' } }, React.createElement("canvas", { ref: byAssigneeRef }))))));
+    }, [analytics, themeTick]);
+    const kpis = [
+        { icon: 'fa-folder-open', label: 'Total proyectos', value: analytics.totalProjects, helper: 'Cartera visible' },
+        { icon: 'fa-list-check', label: 'Total tareas', value: analytics.totalTasks, helper: 'Todas las tareas' },
+        { icon: 'fa-chart-line', label: 'Progreso global', value: `${analytics.progress}%`, helper: 'Media ponderada' },
+        { icon: 'fa-calendar-xmark', label: 'Tareas vencidas', value: analytics.overdueTasks, helper: 'Abiertas y fuera de plazo' },
+        { icon: 'fa-lock', label: 'Bloqueadas', value: analytics.blockedTasks, helper: 'Por dependencias activas' },
+        { icon: 'fa-calendar-week', label: 'Próximos 7 días', value: analytics.upcomingTasks, helper: 'Vencimientos abiertos' }
+    ];
+    return React.createElement("div", { className: "min-h-screen pb-20", style: { background: 'var(--app-bg)' } }, React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } }, React.createElement("div", { className: "app-page py-4" }, React.createElement("div", { className: "app-page-header", style: { marginBottom: 0 } }, React.createElement("div", { className: "flex items-start gap-3" }, React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } }, React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"), React.createElement("div", null, React.createElement("h1", { className: "app-page-title" }, "Gráficos y analítica"), React.createElement("p", { className: "app-page-subtitle" }, "Vista ejecutiva del estado, carga y riesgos de los proyectos")))))), React.createElement("main", { className: "app-page charts-analytics-page" }, React.createElement("section", { className: "app-kpi-grid charts-kpi-grid" }, kpis.map(kpi => React.createElement("article", { className: "app-kpi-card", key: kpi.label }, React.createElement("span", { className: "app-kpi-icon" }, React.createElement("i", { className: `fas ${kpi.icon}` })), React.createElement("div", null, React.createElement("div", { className: "app-kpi-label" }, kpi.label), React.createElement("div", { className: "app-kpi-value" }, kpi.value), React.createElement("div", { className: "app-kpi-helper" }, kpi.helper))))), React.createElement("section", { className: "charts-main-grid" }, React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Estado y progreso"), React.createElement("p", { className: "app-card-subtitle" }, "Distribución global de tareas por estado efectivo")), React.createElement("span", { className: "charts-progress-pill" }, `${analytics.progress}%`)), React.createElement("div", { className: "charts-canvas charts-canvas--donut" }, React.createElement("canvas", { ref: donutRef }))), React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Vencimientos por semana"), React.createElement("p", { className: "app-card-subtitle" }, "Tareas abiertas agrupadas por riesgo de fecha"))), React.createElement("div", { className: "charts-canvas" }, React.createElement("canvas", { ref: dueRef })))), React.createElement("section", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Carga por responsable"), React.createElement("p", { className: "app-card-subtitle" }, "Top responsables por volumen, separado por estado"))), React.createElement("div", { className: "charts-canvas charts-canvas--wide" }, React.createElement("canvas", { ref: byAssigneeRef }))), React.createElement("section", { className: "charts-main-grid" }, React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Prioridad"), React.createElement("p", { className: "app-card-subtitle" }, "Distribución por criticidad declarada"))), React.createElement("div", { className: "charts-canvas" }, React.createElement("canvas", { ref: byPriorityRef }))), React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Área"), React.createElement("p", { className: "app-card-subtitle" }, "Top áreas con más tareas"))), React.createElement("div", { className: "charts-canvas" }, React.createElement("canvas", { ref: byAreaRef })))), React.createElement("section", { className: "charts-dependency-grid" }, React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Dependencias"), React.createElement("p", { className: "app-card-subtitle" }, "Bloqueos, desbloqueos y tareas sin dependencia"))), React.createElement("div", { className: "charts-canvas charts-canvas--donut" }, React.createElement("canvas", { ref: dependenciesRef }))), React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Bloqueos activos"), React.createElement("p", { className: "app-card-subtitle" }, "Máximo 5 tareas pendientes de una dependencia"))), analytics.blockedItems.length
+        ? React.createElement("div", { className: "charts-blocked-list" }, analytics.blockedItems.map(item => React.createElement("div", { className: "charts-blocked-item", key: item.id }, React.createElement("i", { className: "fas fa-lock" }), React.createElement("div", null, React.createElement("strong", null, item.taskName), React.createElement("span", null, item.projectTitle), React.createElement("small", null, `Depende de: ${item.dependencyName}`)))))
+        : React.createElement("div", { className: "control-empty charts-empty" }, React.createElement("i", { className: "fas fa-unlock" }), React.createElement("strong", null, "No hay tareas bloqueadas"), React.createElement("span", null, "Las dependencias activas no están frenando tareas abiertas."))))));
 };
 // --- Seguridad: saneado básico de HTML antes de mostrar/guardar la Wiki ---
 // Evita que un backup manipulado o contenido pegado en Quill pueda ejecutar scripts.

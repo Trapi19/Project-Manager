@@ -290,6 +290,129 @@ body {
     line-height: 1.35;
 }
 
+.charts-analytics-page {
+    display: grid;
+    gap: var(--app-space-5);
+}
+
+.charts-kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.charts-main-grid,
+.charts-dependency-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--app-space-5);
+}
+
+.charts-dependency-grid {
+    align-items: stretch;
+}
+
+.charts-card {
+    min-width: 0;
+}
+
+.charts-canvas {
+    position: relative;
+    height: 300px;
+    min-height: 260px;
+}
+
+.charts-canvas--wide {
+    height: 340px;
+}
+
+.charts-canvas--donut {
+    height: 280px;
+}
+
+.charts-progress-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-pill);
+    background: rgba(var(--app-brand-rgb), 0.12);
+    color: var(--app-brand);
+    font-weight: 800;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.charts-blocked-list {
+    display: grid;
+    gap: var(--app-space-3);
+}
+
+.charts-blocked-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--app-space-3);
+    align-items: start;
+    padding: var(--app-space-3);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-md);
+    background: var(--app-surface-soft);
+}
+
+.charts-blocked-item i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--app-radius-md);
+    background: var(--app-danger-soft);
+    color: var(--app-danger);
+}
+
+.charts-blocked-item strong,
+.charts-blocked-item span,
+.charts-blocked-item small {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.charts-blocked-item strong {
+    color: var(--app-text);
+    font-size: 0.92rem;
+}
+
+.charts-blocked-item span {
+    margin-top: 2px;
+    color: var(--app-muted);
+    font-size: 0.82rem;
+}
+
+.charts-blocked-item small {
+    margin-top: 5px;
+    color: var(--app-text-soft);
+    font-size: 0.78rem;
+}
+
+.charts-empty {
+    min-height: 250px;
+}
+
+@media (max-width: 900px) {
+    .charts-main-grid,
+    .charts-dependency-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-canvas,
+    .charts-canvas--wide,
+    .charts-canvas--donut {
+        height: 280px;
+    }
+}
+
 /* Botones */
 .app-btn {
     display: inline-flex;
