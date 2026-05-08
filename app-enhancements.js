@@ -420,10 +420,12 @@
         var labels = chart.data.labels || [];
         var isDark = document.documentElement.classList.contains('theme-dark');
         var isPrio = isPrioChart(labels);
+        var pluginOpts = (chart.options && chart.options.plugins && chart.options.plugins.v4Premium) || {};
+        var preserveDatasetColors = !!pluginOpts.preserveDatasetColors;
 
         /* Degradado reutilizable (uno por chart, no por barra) */
         var gradient = null;
-        if (!isPrio) {
+        if (!isPrio && !preserveDatasetColors) {
           gradient = ctx.createLinearGradient(0, area.top, 0, area.bottom);
           if (isDark) {
             gradient.addColorStop(0,   'rgba(56,189,248,.90)');
@@ -456,6 +458,11 @@
             if (isPrio) {
               var lbl = labels[j];
               el.options.backgroundColor = (PRIO_COLORS[lbl] && PRIO_COLORS[lbl].bg) || 'rgba(99,102,241,.78)';
+            } else if (preserveDatasetColors) {
+              var baseColor = dataset.backgroundColor;
+              if (Array.isArray(baseColor)) baseColor = baseColor[j] || baseColor[0];
+              el.options.backgroundColor = baseColor || 'rgba(99,102,241,.78)';
+              el.options.hoverBackgroundColor = dataset.hoverBackgroundColor || baseColor || 'rgba(99,102,241,.88)';
             } else {
               el.options.backgroundColor = gradient;
             }
