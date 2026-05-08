@@ -9948,6 +9948,83 @@ html:not(.theme-dark) .imput-header {
   border-left: 4px solid var(--app-warning) !important;
 }
 
+/* Corrección final KPI Imputaciones: proyecto/persona no deben parecer titulares gigantes */
+.imput-kpis--six .imput-kpi {
+  min-height: 88px !important;
+  padding: 12px !important;
+}
+.imput-kpis--six .imput-kpi strong {
+  font-size: clamp(1.2rem, 1.45vw, 1.55rem) !important;
+  line-height: 1.05 !important;
+}
+.imput-kpis--six .imput-kpi:nth-child(5),
+.imput-kpis--six .imput-kpi:nth-child(6) {
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, auto) auto !important;
+  grid-template-areas:
+    "icon label"
+    "icon value"
+    "icon note" !important;
+  column-gap: 10px !important;
+  row-gap: 2px !important;
+  align-content: center !important;
+  min-height: 88px !important;
+  padding: 11px 12px !important;
+}
+.imput-kpis--six .imput-kpi:nth-child(5) i,
+.imput-kpis--six .imput-kpi:nth-child(6) i {
+  grid-area: icon !important;
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 13px !important;
+  align-self: start !important;
+}
+.imput-kpis--six .imput-kpi:nth-child(5) span,
+.imput-kpis--six .imput-kpi:nth-child(6) span {
+  grid-area: label !important;
+  font-size: 0.68rem !important;
+  line-height: 1.12 !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+}
+.imput-kpis--six .imput-kpi:nth-child(5) strong,
+.imput-kpis--six .imput-kpi:nth-child(6) strong {
+  grid-area: value !important;
+  font-size: 1.02rem !important;
+  line-height: 1.16 !important;
+  font-weight: 800 !important;
+  max-height: 2.35em !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+.imput-kpis--six .imput-kpi:nth-child(5) small,
+.imput-kpis--six .imput-kpi:nth-child(6) small {
+  grid-area: note !important;
+  justify-self: start !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-height: 20px !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  color: var(--app-brand) !important;
+  background: rgba(var(--app-brand-rgb), 0.10) !important;
+  border: 1px solid rgba(var(--app-brand-rgb), 0.14) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+}
+@media (max-width: 540px) {
+  .imput-kpis--six .imput-kpi:nth-child(5) strong,
+  .imput-kpis--six .imput-kpi:nth-child(6) strong {
+    font-size: 0.98rem !important;
+  }
+}
+
 /* Modo claro: superficies mas limpias */
 html:not(.theme-dark) .app-layout {
   background:
