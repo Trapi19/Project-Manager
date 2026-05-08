@@ -2047,6 +2047,91 @@ table td {
   }
 }
 
+/* Imputaciones: equilibrio fino de KPIs, especialmente proyecto/persona */
+.imput-kpis--six .imput-kpi {
+  min-height: 102px;
+  grid-template-rows: auto auto 1fr;
+}
+.imput-kpis--six .imput-kpi strong {
+  font-size: clamp(18px, 1.35vw, 23px);
+}
+.imput-kpis--six .imput-kpi:nth-child(5),
+.imput-kpis--six .imput-kpi:nth-child(6) {
+  min-height: 102px;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, auto) auto;
+  grid-template-areas:
+    "icon label"
+    "icon value"
+    "icon note";
+  column-gap: 10px;
+  row-gap: 3px;
+  align-content: center;
+  padding: 12px;
+  border-top: 1px solid rgba(56, 189, 248, 0.22);
+}
+.imput-kpis--six .imput-kpi:nth-child(5) i,
+.imput-kpis--six .imput-kpi:nth-child(6) i {
+  grid-area: icon;
+  align-self: start;
+}
+.imput-kpis--six .imput-kpi:nth-child(5) span,
+.imput-kpis--six .imput-kpi:nth-child(6) span {
+  grid-area: label;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.imput-kpis--six .imput-kpi:nth-child(5) strong,
+.imput-kpis--six .imput-kpi:nth-child(6) strong {
+  grid-area: value;
+  font-size: 14px;
+  line-height: 1.22;
+  font-weight: 820;
+  -webkit-line-clamp: 2;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.imput-kpis--six .imput-kpi:nth-child(5) small,
+.imput-kpis--six .imput-kpi:nth-child(6) small {
+  grid-area: note;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 22px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #bae6fd;
+  background: rgba(14, 165, 233, 0.10);
+  border: 1px solid rgba(14, 165, 233, 0.14);
+  font-weight: 800;
+}
+html:not(.theme-dark) .imput-kpis--six .imput-kpi:nth-child(5),
+html:not(.theme-dark) .imput-kpis--six .imput-kpi:nth-child(6) {
+  border-top-color: rgba(14, 165, 233, 0.20);
+}
+html:not(.theme-dark) .imput-kpis--six .imput-kpi:nth-child(5) small,
+html:not(.theme-dark) .imput-kpis--six .imput-kpi:nth-child(6) small {
+  color: #0369a1;
+  background: rgba(14, 165, 233, 0.08);
+  border-color: rgba(14, 165, 233, 0.15);
+}
+@media (max-width: 860px) {
+  .imput-kpis--six .imput-kpi,
+  .imput-kpis--six .imput-kpi:nth-child(5),
+  .imput-kpis--six .imput-kpi:nth-child(6) {
+    min-height: 96px;
+  }
+}
+@media (max-width: 540px) {
+  .imput-kpis--six .imput-kpi:nth-child(5),
+  .imput-kpis--six .imput-kpi:nth-child(6) {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+}
+
 .exec-card{
   border-radius: 20px;
   padding: 16px;
