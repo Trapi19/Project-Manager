@@ -10660,3 +10660,78 @@ html:not(.theme-dark) .imput-page {
     grid-column: 2;
   }
 }
+
+/* Ajuste definitivo KPIs Imputaciones: misma alineación vertical en las 6 tarjetas */
+.imput-kpis--six .imput-kpi,
+.imput-kpis--six .imput-kpi:nth-child(5),
+.imput-kpis--six .imput-kpi:nth-child(6) {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 30px auto minmax(42px, auto) auto !important;
+  grid-template-areas: none !important;
+  align-content: start !important;
+  gap: 7px !important;
+  min-height: 118px !important;
+  padding: 14px !important;
+}
+
+.imput-kpis--six .imput-kpi i,
+.imput-kpis--six .imput-kpi:nth-child(5) i,
+.imput-kpis--six .imput-kpi:nth-child(6) i {
+  grid-area: auto !important;
+  width: 30px !important;
+  height: 30px !important;
+  align-self: start !important;
+}
+
+.imput-kpis--six .imput-kpi span,
+.imput-kpis--six .imput-kpi:nth-child(5) span,
+.imput-kpis--six .imput-kpi:nth-child(6) span {
+  grid-area: auto !important;
+  min-height: 28px !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  font-size: 0.72rem !important;
+  line-height: 1.18 !important;
+  white-space: normal !important;
+}
+
+.imput-kpis--six .imput-kpi strong {
+  grid-area: auto !important;
+  align-self: start !important;
+  font-size: clamp(1.45rem, 1.8vw, 1.75rem) !important;
+  line-height: 1.06 !important;
+}
+
+.imput-kpis--six .imput-kpi:nth-child(5) strong,
+.imput-kpis--six .imput-kpi:nth-child(6) strong {
+  grid-area: auto !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  font-size: 1.16rem !important;
+  line-height: 1.18 !important;
+  font-weight: 800 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.imput-kpis--six .imput-kpi small,
+.imput-kpis--six .imput-kpi:nth-child(5) small,
+.imput-kpis--six .imput-kpi:nth-child(6) small {
+  grid-area: auto !important;
+  justify-self: stretch !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-height: 18px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--app-muted) !important;
+  font-size: 0.78rem !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+}
