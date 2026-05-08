@@ -10735,3 +10735,101 @@ html:not(.theme-dark) .imput-page {
   font-weight: 650 !important;
   line-height: 1.25 !important;
 }
+
+/* Imputaciones: filtros compactos, expandibles y sin solapes */
+.imput-filters {
+  display: grid !important;
+  grid-template-columns: 150px minmax(170px, 1fr) minmax(150px, .85fr) minmax(160px, .85fr) minmax(180px, 1fr) auto !important;
+  gap: 10px !important;
+  align-items: end !important;
+  overflow: visible !important;
+}
+
+.imput-filters label {
+  min-width: 0 !important;
+  position: relative !important;
+  z-index: 1;
+}
+
+.imput-filters input,
+.imput-filters select {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 14px !important;
+  font-size: 0.86rem !important;
+  font-weight: 720 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease, background .16s ease;
+}
+
+.imput-filters label > span,
+.imput-filters label {
+  font-size: 0.72rem !important;
+  line-height: 1.1 !important;
+}
+
+.imput-filters label:focus-within {
+  z-index: 5;
+}
+
+.imput-filters label:focus-within input,
+.imput-filters label:focus-within select {
+  transform: translateY(-1px) !important;
+  border-color: rgba(var(--app-brand-rgb), .48) !important;
+  box-shadow: 0 0 0 4px rgba(var(--app-brand-rgb), .14), 0 14px 28px rgba(2, 6, 23, .20) !important;
+  background: var(--app-surface) !important;
+}
+
+.imput-filters label:nth-child(2):focus-within,
+.imput-filters label:nth-child(3):focus-within,
+.imput-filters label:nth-child(4):focus-within,
+.imput-filters label:nth-child(5):focus-within {
+  grid-column: span 2;
+}
+
+.imput-filters .btn-apple {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 13px !important;
+  border-radius: 14px !important;
+  font-size: 0.86rem !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 1180px) {
+  .imput-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .imput-filters label:focus-within {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 720px) {
+  .imput-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .imput-filters label:focus-within {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .imput-filters {
+    grid-template-columns: 1fr !important;
+  }
+
+  .imput-filters label,
+  .imput-filters label:focus-within,
+  .imput-filters .btn-apple {
+    grid-column: 1 / -1 !important;
+  }
+}
