@@ -534,87 +534,81 @@ const ProjectCard = ({ p, onSelect, onDelete, dnd }) => {
     const projectEstado = normalizeProjectEstado((_a = p === null || p === void 0 ? void 0 : p.meta) === null || _a === void 0 ? void 0 : _a.estado);
     const total = stats.total || 1;
     const w = (n) => `${Math.max(0, Math.round((n / total) * 100))}%`;
-    const meta = p.meta || {};
-    const cleanSubtitle = String(meta.subtitulo || '').trim();
-    const displaySubtitle = cleanSubtitle && cleanSubtitle !== 'Informe de Inicio' && cleanSubtitle !== 'Tareas Proyecto'
-        ? cleanSubtitle
-        : (meta.cliente ? `Proyecto para ${meta.cliente}` : 'Resumen operativo del proyecto');
-    const responsible = meta.responsableProyecto || meta.ejecutorProyecto || 'Sin asignar';
     return (React.createElement("div", { "data-estado": projectEstado, draggable: !!onDragStart, onDragStart: (e) => { e.stopPropagation(); onDragStart && onDragStart(e, p); }, onDragEnd: (e) => { e.stopPropagation(); onDragEnd && onDragEnd(e); }, onDragOver: (e) => { onDragOver && onDragOver(e, p); }, onDrop: (e) => { onDrop && onDrop(e, p); }, className: `project-card bg-white rounded-xl shadow-sm border border-gray-200 p-6 card-hover transition-all cursor-pointer group relative flex flex-col justify-between ${isDragging ? 'opacity-60' : ''} ${isDragOver ? 'ring-2 ring-[color:rgba(8,136,200,0.35)]' : ''}`, onClick: () => { if (blockClickRef && blockClickRef.current)
             return; onSelect(p); } },
-        React.createElement("div", { className: "project-card-body" },
-            React.createElement("div", { className: "project-card-top" },
-                React.createElement("div", { className: `project-card-logo ${projectEstado === 'Completado' ? 'bg-emerald-100 text-emerald-700'
+        React.createElement("div", null,
+            React.createElement("div", { className: "flex justify-between items-start" },
+                React.createElement("div", { className: `h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${projectEstado === 'Completado' ? 'bg-emerald-100 text-emerald-700'
                         : projectEstado === 'En Pausa' ? 'bg-slate-100 text-slate-700'
                             : projectEstado === 'En Revisión' ? 'bg-violet-100 text-violet-700'
                                 : 'bg-[color:rgba(8,136,200,0.12)] text-[color:var(--brand-dark)]'} overflow-hidden` }, p.meta.clientLogoData ? (React.createElement("img", { src: p.meta.clientLogoData, alt: "Logo cliente", className: "w-full h-full object-contain p-1" })) : (React.createElement("i", { className: `fas ${projectEstado === 'Completado' ? 'fa-check-circle' : projectEstado === 'En Pausa' ? 'fa-pause-circle' : projectEstado === 'En Revisión' ? 'fa-search' : 'fa-project-diagram'}` }))),
-                React.createElement("button", { onClick: (e) => { e.stopPropagation(); onDelete(p.id); }, className: "project-card-action", title: "Eliminar proyecto", "aria-label": "Eliminar proyecto" },
-                    React.createElement("i", { className: "fas fa-ellipsis-h" }))),
-            React.createElement("h3", { className: "project-card-title font-bold text-lg text-gray-800 mb-1" }, meta.titulo || "Sin Título"),
-            React.createElement("p", { className: "project-card-subtitle text-sm text-gray-500" }, displaySubtitle),
-            React.createElement("div", { className: "project-card-meta-grid" },
-                React.createElement("div", { className: "project-card-meta-item" },
-                    React.createElement("i", { className: "fas fa-building" }),
-                    React.createElement("div", null,
-                        React.createElement("span", null, "Cliente"),
-                        React.createElement("strong", { title: meta.cliente || "Sin cliente" }, meta.cliente || "Sin cliente"))),
-                React.createElement("div", { className: "project-card-meta-item" },
-                    React.createElement("i", { className: "fas fa-user-gear" }),
-                    React.createElement("div", null,
-                        React.createElement("span", null, "Responsable"),
-                        React.createElement("strong", { title: responsible }, responsible))),
-                React.createElement("div", { className: "project-card-meta-item internal-only" },
-                    React.createElement("i", { className: "fas fa-hashtag" }),
-                    React.createElement("div", null,
-                        React.createElement("span", null, "PEP"),
-                        React.createElement("strong", { title: meta.pep || "Sin PEP" }, meta.pep || "Sin PEP")))),
+                React.createElement("button", { onClick: (e) => { e.stopPropagation(); onDelete(p.id); }, className: "text-gray-300 hover:text-red-500 p-2 transition-colors opacity-0 group-hover:opacity-100", title: "Eliminar proyecto" },
+                    React.createElement("i", { className: "fas fa-trash" }))),
+            React.createElement("h3", { className: "font-bold text-lg text-gray-800 mb-1 truncate" }, p.meta.titulo || "Sin Título"),
+            React.createElement("p", { className: "text-sm text-gray-500 truncate" }, p.meta.subtitulo || "Sin descripción"),
+            p.meta.cliente && (React.createElement("div", { className: "mt-2" },
+                React.createElement("span", { className: "apple-chip apple-chip--muted apple-chip--small" },
+                    React.createElement("i", { className: "fas fa-building text-[10px]" }),
+                    p.meta.cliente))),
+            // SECCIÓN DE METADATOS (Responsable y PEP con etiquetas claras)
+            (p.meta.responsableProyecto || p.meta.pep) && (React.createElement("div", { className: "mt-3 flex flex-wrap gap-2" },
+                p.meta.responsableProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" },
+                    React.createElement("i", { className: "fas fa-user-gear text-[10px]" }),
+                    React.createElement("span", { className: "font-semibold mr-1" }, "Resp:"),
+                    p.meta.responsableProyecto)),
+                    p.meta.ejecutorProyecto && (React.createElement("span", { className: "apple-chip apple-chip--muted" },
+    React.createElement("i", { className: "fas fa-hard-hat text-[10px]" }),
+    React.createElement("span", { className: "font-semibold mr-1" }, "Ejec:"),
+    p.meta.ejecutorProyecto)),
+                p.meta.pep && (React.createElement("span", { className: "apple-chip apple-chip--muted internal-only" },
+                    React.createElement("i", { className: "fas fa-hashtag text-[10px]" }),
+                    React.createElement("span", { className: "font-semibold mr-1" }, "PEP:"),
+                    p.meta.pep)))),
 
             // SECCIÓN DE DOCUMENTACIÓN (Botón independiente para evitar amontonamiento)
-            meta.sharepointUrl && (React.createElement("div", { className: "project-card-doc-wrap" },
+            p.meta.sharepointUrl && (React.createElement("div", { className: "mt-3" },
                 React.createElement("a", {
-                    href: meta.sharepointUrl,
+                    href: p.meta.sharepointUrl,
                     target: "_blank",
                     rel: "noopener noreferrer",
                     onClick: (e) => e.stopPropagation(),
-                    className: "project-card-doc-link"
+                    className: "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 text-[11px] font-bold hover:bg-blue-100 transition-colors"
                 },
-                    React.createElement("span", null,
-                        React.createElement("i", { className: "fas fa-folder-open" }),
-                        "Documentación SharePoint"),
-                    React.createElement("i", { className: "fas fa-arrow-up-right-from-square" })
+                    React.createElement("i", { className: "fas fa-folder-open" }),
+                    "Documentación SharePoint"
                 ))),
 
-            React.createElement("div", { className: "project-card-progress" },
-                React.createElement("div", { className: "project-card-progress-head" },
-                    React.createElement("strong", null,
+            React.createElement("div", { className: "mt-5 space-y-2" },
+                React.createElement("div", { className: "flex items-center justify-between text-xs text-gray-500" },
+                    React.createElement("span", { className: "font-semibold text-[color:var(--brand-dark)]" },
                         stats.progress,
                         "%"),
                     React.createElement("span", null,
                         stats.total,
-                        stats.total === 1 ? " tarea" : " tareas")),
-                React.createElement("div", { className: "project-card-progress-bar", "aria-hidden": "true" },
-                    React.createElement("span", { className: "is-ok", style: { width: w(stats.completed) } }),
-                    React.createElement("span", { className: "is-progress", style: { width: w(stats.inProgress) } }),
-                    React.createElement("span", { className: "is-pending", style: { width: w(stats.pending) } })),
-                React.createElement("div", { className: "project-card-progress-legend" },
-                    React.createElement("span", null,
-                        React.createElement("i", { className: "is-ok" }),
+                        " tareas")),
+                React.createElement("div", { className: "w-full h-2 rounded-full bg-gray-100 overflow-hidden flex" },
+                    React.createElement("div", { className: "h-full bg-emerald-500", style: { width: w(stats.completed) } }),
+                    React.createElement("div", { className: "h-full bg-amber-500", style: { width: w(stats.inProgress) } }),
+                    React.createElement("div", { className: "h-full bg-rose-500", style: { width: w(stats.pending) } })),
+                React.createElement("div", { className: "flex flex-wrap gap-2 text-[11px] text-gray-500" },
+                    React.createElement("span", { className: "inline-flex items-center gap-1" },
+                        React.createElement("span", { className: "h-2 w-2 rounded-full bg-emerald-500" }),
                         "OK ",
                         stats.completed),
-                    React.createElement("span", null,
-                        React.createElement("i", { className: "is-progress" }),
+                    React.createElement("span", { className: "inline-flex items-center gap-1" },
+                        React.createElement("span", { className: "h-2 w-2 rounded-full bg-amber-500" }),
                         "En curso ",
                         stats.inProgress),
-                    React.createElement("span", null,
-                        React.createElement("i", { className: "is-pending" }),
+                    React.createElement("span", { className: "inline-flex items-center gap-1" },
+                        React.createElement("span", { className: "h-2 w-2 rounded-full bg-rose-500" }),
                         "Pend. ",
                         stats.pending)))),
-        React.createElement("div", { className: "project-card-footer" },
-            React.createElement("span", { className: "project-card-task-pill" },
-                stats.total,
-                stats.total === 1 ? " tarea" : " tareas"),
-            React.createElement("span", { className: "project-card-open" },
-                "Abrir",
+        React.createElement("div", { className: "mt-6 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500" },
+            React.createElement("span", { className: "apple-chip apple-chip--small" },
+                p.tasks.length,
+                " Tareas"),
+            React.createElement("span", { className: "apple-link" },
+                "Abrir ",
                 React.createElement("i", { className: "fas fa-arrow-right" })))));
 };
 
@@ -1048,10 +1042,10 @@ React.createElement("div", {
 
             // SECCIONES DE PROYECTOS
             showSectionActive && React.createElement("div", { className: "section-tapiz section--ejecucion p-6 rounded-2xl border", "data-estado-seccion": "En Ejecuci\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Ejecución') },
-                React.createElement("h2", { className: "project-section-heading text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" },
-                    React.createElement("span", { className: "project-section-dot bg-blue-500 w-2 h-2 rounded-full" }),
+                React.createElement("h2", { className: "text-lg font-bold text-blue-900 mb-6 flex items-center gap-2" },
+                    React.createElement("span", { className: "bg-blue-500 w-2 h-2 rounded-full" }),
                     " En Ejecuci\u00F3n",
-                    React.createElement("span", { className: "project-section-count ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs" }, activeProjects.length)),
+                    React.createElement("span", { className: "ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs" }, activeProjects.length)),
                 activeProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, activeProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
                         onDragStart: handleProjectDragStart,
                         onDragEnd: handleProjectDragEnd,
@@ -1063,10 +1057,10 @@ React.createElement("div", {
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en curso.")),
 
             showSectionPaused && React.createElement("div", { className: "section-tapiz section--pausa p-6 rounded-2xl border", "data-estado-seccion": "En Pausa", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Pausa') },
-                React.createElement("h2", { className: "project-section-heading text-lg font-bold text-slate-800 mb-6 flex items-center gap-2" },
-                    React.createElement("span", { className: "project-section-dot bg-slate-500 w-2 h-2 rounded-full" }),
+                React.createElement("h2", { className: "text-lg font-bold text-slate-800 mb-6 flex items-center gap-2" },
+                    React.createElement("span", { className: "bg-slate-500 w-2 h-2 rounded-full" }),
                     " En Pausa",
-                    React.createElement("span", { className: "project-section-count ml-2 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-xs" }, pausedProjects.length)),
+                    React.createElement("span", { className: "ml-2 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full text-xs" }, pausedProjects.length)),
                 pausedProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, pausedProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
                         onDragStart: handleProjectDragStart,
                         onDragEnd: handleProjectDragEnd,
@@ -1078,10 +1072,10 @@ React.createElement("div", {
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en pausa.")),
 
             showSectionReview && React.createElement("div", { className: "section-tapiz section--revision p-6 rounded-2xl border", "data-estado-seccion": "En Revisi\u00F3n", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'En Revisión') },
-                React.createElement("h2", { className: "project-section-heading text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" },
-                    React.createElement("span", { className: "project-section-dot bg-violet-500 w-2 h-2 rounded-full" }),
+                React.createElement("h2", { className: "text-lg font-bold text-violet-900 mb-6 flex items-center gap-2" },
+                    React.createElement("span", { className: "bg-violet-500 w-2 h-2 rounded-full" }),
                     " En Revisi\u00F3n",
-                    React.createElement("span", { className: "project-section-count ml-2 bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full text-xs" }, reviewProjects.length)),
+                    React.createElement("span", { className: "ml-2 bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full text-xs" }, reviewProjects.length)),
                 reviewProjects.length > 0 ? (React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" }, reviewProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
                         onDragStart: handleProjectDragStart,
                         onDragEnd: handleProjectDragEnd,
@@ -1093,10 +1087,9 @@ React.createElement("div", {
                     } })))) : React.createElement("p", { className: "text-gray-400 text-sm italic" }, "No hay proyectos en revisi\u00F3n.")),
 
             completedProjects.length > 0 && showSectionCompleted && (React.createElement("div", { className: "section-tapiz section--completado p-6 rounded-2xl border", "data-estado-seccion": "Completado", onDragOver: handleSectionDragOver, onDrop: (e) => handleSectionDrop(e, 'Completado') },
-                React.createElement("h2", { className: "project-section-heading text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 opacity-75" },
-                    React.createElement("span", { className: "project-section-dot bg-green-500 w-2 h-2 rounded-full" }),
-                    " Hist\u00F3rico / Completados",
-                    React.createElement("span", { className: "project-section-count ml-2 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs" }, completedProjects.length)),
+                React.createElement("h2", { className: "text-lg font-bold text-gray-700 mb-6 flex items-center gap-2 opacity-75" },
+                    React.createElement("span", { className: "bg-green-500 w-2 h-2 rounded-full" }),
+                    " Hist\u00F3rico / Completados"),
                 React.createElement("div", { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-75 hover:opacity-100 transition-opacity" }, completedProjects.map(p => React.createElement(ProjectCard, { key: p.id, p: p, onSelect: onSelect, onDelete: onDelete, dnd: {
                         onDragStart: handleProjectDragStart,
                         onDragEnd: handleProjectDragEnd,
