@@ -5705,7 +5705,7 @@ input:focus, textarea:focus, select:focus {
   position: fixed;
   top: 14px;
   left: 14px;
-  z-index: 290;
+  z-index: 301;
   width: 40px;
   height: 40px;
   border: 1px solid var(--sb-border);
@@ -5731,10 +5731,12 @@ input:focus, textarea:focus, select:focus {
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   opacity: 0;
+  pointer-events: none;
   transition: opacity .25s ease;
 }
 .sidebar-overlay--on {
   opacity: 1;
+  pointer-events: auto;
 }
 
 /* â”€â”€ Responsive â”€â”€ */
