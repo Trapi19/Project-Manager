@@ -448,7 +448,7 @@
           if (!dataset) continue;
 
           dataset.borderWidth   = 0;
-          dataset.borderRadius  = 8;
+          dataset.borderRadius  = preserveDatasetColors ? 0 : 8;
           dataset.borderSkipped = false;
 
           for (var j = 0; j < meta.data.length; j++) {
@@ -467,8 +467,24 @@
               el.options.backgroundColor = gradient;
             }
             el.options.borderWidth   = 0;
-            el.options.borderRadius  = 8;
             el.options.borderSkipped = false;
+            if (preserveDatasetColors) {
+              var hasVisibleSegmentAbove = false;
+              for (var k = i + 1; k < metas.length; k++) {
+                var aboveDataset = chart.data.datasets[k];
+                if (!aboveDataset || (chart.isDatasetVisible && !chart.isDatasetVisible(k))) continue;
+                var aboveValue = Number((aboveDataset.data || [])[j] || 0);
+                if (aboveValue > 0) {
+                  hasVisibleSegmentAbove = true;
+                  break;
+                }
+              }
+              el.options.borderRadius = hasVisibleSegmentAbove
+                ? 0
+                : { topLeft: 7, topRight: 7, bottomLeft: 0, bottomRight: 0 };
+            } else {
+              el.options.borderRadius = 8;
+            }
           }
         }
       }
