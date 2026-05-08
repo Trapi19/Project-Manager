@@ -2293,7 +2293,7 @@ const AlertsView = ({ projects, onBack }) => {
         : renderControlEmpty("fa-calendar-check", "No hay vencimientos esta semana", "No hay tareas con fecha limite en los proximos 7 dias.")), renderControlSection("control-panel--summary", "fa-shield-heart", "Resumen de atencion", "Lectura ejecutiva", riskProjectIds.size, React.createElement("div", { className: "control-summary-list" }, attentionItems.map((item, idx) => React.createElement("div", { key: idx, className: "control-summary-row" }, React.createElement("i", { className: 'fas ' + (idx === 0 ? 'fa-lock' : idx === 1 ? 'fa-bolt' : idx === 2 ? 'fa-calendar-day' : 'fa-circle-exclamation') }), React.createElement("span", null, item))), alertsData.redProjects.length ? React.createElement("div", { className: "control-risk-list" }, alertsData.redProjects.map(proj => React.createElement("button", { type: "button", key: proj.id, onClick: () => openProject(proj.id) }, React.createElement("strong", null, proj.title || 'Proyecto sin titulo'), React.createElement("span", null, (proj.reasons || []).join(' - ') || 'Requiere seguimiento')))) : null)))));
 };
 // --- VISTA: GRÁFICOS Y ANALÍTICA (Charts) ---
-const ChartsView = ({ projects, onBack }) => {
+const ChartsViewPhase1 = ({ projects, onBack }) => {
     const didAnimateRef = React.useRef(false);
     const [themeTick, setThemeTick] = React.useState(0);
     const donutRef = React.useRef(null);
@@ -2557,6 +2557,403 @@ const ChartsView = ({ projects, onBack }) => {
     return React.createElement("div", { className: "min-h-screen pb-20", style: { background: 'var(--app-bg)' } }, React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } }, React.createElement("div", { className: "app-page py-4" }, React.createElement("div", { className: "app-page-header", style: { marginBottom: 0 } }, React.createElement("div", { className: "flex items-start gap-3" }, React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } }, React.createElement("i", { className: "fas fa-arrow-left" }), " Volver"), React.createElement("div", null, React.createElement("h1", { className: "app-page-title" }, "Gráficos y analítica"), React.createElement("p", { className: "app-page-subtitle" }, "Vista ejecutiva del estado, carga y riesgos de los proyectos")))))), React.createElement("main", { className: "app-page charts-analytics-page" }, React.createElement("section", { className: "app-kpi-grid charts-kpi-grid" }, kpis.map(kpi => React.createElement("article", { className: "app-kpi-card", key: kpi.label }, React.createElement("span", { className: "app-kpi-icon" }, React.createElement("i", { className: `fas ${kpi.icon}` })), React.createElement("div", null, React.createElement("div", { className: "app-kpi-label" }, kpi.label), React.createElement("div", { className: "app-kpi-value" }, kpi.value), React.createElement("div", { className: "app-kpi-helper" }, kpi.helper))))), React.createElement("section", { className: "charts-main-grid" }, React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Estado y progreso"), React.createElement("p", { className: "app-card-subtitle" }, "Distribución global de tareas por estado efectivo")), React.createElement("span", { className: "charts-progress-pill" }, `${analytics.progress}%`)), React.createElement("div", { className: "charts-canvas charts-canvas--donut" }, React.createElement("canvas", { ref: donutRef }))), React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Vencimientos por semana"), React.createElement("p", { className: "app-card-subtitle" }, "Tareas abiertas agrupadas por riesgo de fecha"))), React.createElement("div", { className: "charts-canvas" }, React.createElement("canvas", { ref: dueRef })))), React.createElement("section", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Carga por responsable"), React.createElement("p", { className: "app-card-subtitle" }, "Top responsables por volumen, separado por estado"))), React.createElement("div", { className: "charts-canvas charts-canvas--wide" }, React.createElement("canvas", { ref: byAssigneeRef }))), React.createElement("section", { className: "charts-main-grid" }, React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Prioridad"), React.createElement("p", { className: "app-card-subtitle" }, "Distribución por criticidad declarada"))), React.createElement("div", { className: "charts-canvas" }, React.createElement("canvas", { ref: byPriorityRef }))), React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Área"), React.createElement("p", { className: "app-card-subtitle" }, "Top áreas con más tareas"))), React.createElement("div", { className: "charts-canvas" }, React.createElement("canvas", { ref: byAreaRef })))), React.createElement("section", { className: "charts-dependency-grid" }, React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Dependencias"), React.createElement("p", { className: "app-card-subtitle" }, "Bloqueos, desbloqueos y tareas sin dependencia"))), React.createElement("div", { className: "charts-canvas charts-canvas--donut" }, React.createElement("canvas", { ref: dependenciesRef }))), React.createElement("article", { className: "app-section-card charts-card" }, React.createElement("div", { className: "app-card-header" }, React.createElement("div", null, React.createElement("h2", { className: "app-card-title" }, "Bloqueos activos"), React.createElement("p", { className: "app-card-subtitle" }, "Máximo 5 tareas pendientes de una dependencia"))), analytics.blockedItems.length
         ? React.createElement("div", { className: "charts-blocked-list" }, analytics.blockedItems.map(item => React.createElement("div", { className: "charts-blocked-item", key: item.id }, React.createElement("i", { className: "fas fa-lock" }), React.createElement("div", null, React.createElement("strong", null, item.taskName), React.createElement("span", null, item.projectTitle), React.createElement("small", null, `Depende de: ${item.dependencyName}`)))))
         : React.createElement("div", { className: "control-empty charts-empty" }, React.createElement("i", { className: "fas fa-unlock" }), React.createElement("strong", null, "No hay tareas bloqueadas"), React.createElement("span", null, "Las dependencias activas no están frenando tareas abiertas."))))));
+};
+const ChartsView = ({ projects, onBack }) => {
+    const didAnimateRef = React.useRef(false);
+    const [themeTick, setThemeTick] = React.useState(0);
+    const [filters, setFilters] = React.useState({ projectId: 'Todos', client: 'Todos', status: 'Todos', assignee: 'Todos', range: 'all' });
+    const donutRef = React.useRef(null);
+    const dueRef = React.useRef(null);
+    const byAssigneeRef = React.useRef(null);
+    const byPriorityRef = React.useRef(null);
+    const byAreaRef = React.useRef(null);
+    const dependenciesRef = React.useRef(null);
+    const chartsRef = React.useRef([]);
+    const today = React.useMemo(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }, []);
+    const filterOptions = React.useMemo(() => {
+        const list = Array.isArray(projects) ? projects : [];
+        const clients = new Set();
+        const statuses = new Set();
+        const assignees = new Set();
+        list.forEach(project => {
+            const meta = (project && project.meta) || {};
+            const client = String(meta.cliente || '').trim();
+            if (client)
+                clients.add(client);
+            statuses.add(normalizeProjectEstado(meta.estado));
+            [meta.responsableProyecto, meta.ejecutorProyecto].forEach(name => {
+                const clean = String(name || '').trim();
+                if (clean)
+                    assignees.add(clean);
+            });
+            (Array.isArray(project && project.tasks) ? project.tasks : []).forEach(task => {
+                splitAssignees(task.asignadoA).forEach(name => assignees.add(name));
+            });
+        });
+        return {
+            projects: list.map(project => ({ id: String(project && project.id), title: (project && project.meta && project.meta.titulo) || 'Proyecto sin titulo' })).sort((a, b) => a.title.localeCompare(b.title, 'es')),
+            clients: Array.from(clients).sort((a, b) => a.localeCompare(b, 'es')),
+            statuses: Array.from(statuses).filter(Boolean).sort((a, b) => a.localeCompare(b, 'es')),
+            assignees: Array.from(assignees).filter(Boolean).sort((a, b) => a.localeCompare(b, 'es'))
+        };
+    }, [projects]);
+    const setFilter = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
+    const clearFilters = () => setFilters({ projectId: 'Todos', client: 'Todos', status: 'Todos', assignee: 'Todos', range: 'all' });
+    const hasActiveFilters = filters.projectId !== 'Todos' || filters.client !== 'Todos' || filters.status !== 'Todos' || filters.assignee !== 'Todos' || filters.range !== 'all';
+    const analytics = React.useMemo(() => {
+        const list = Array.isArray(projects) ? projects : [];
+        const allTasksCount = list.reduce((sum, project) => sum + (Array.isArray(project && project.tasks) ? project.tasks.length : 0), 0);
+        const soon7 = new Date(today);
+        soon7.setDate(today.getDate() + 7);
+        const soon30 = new Date(today);
+        soon30.setDate(today.getDate() + 30);
+        const dayOfWeek = today.getDay() || 7;
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - dayOfWeek + 1);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        const nextWeekStart = new Date(weekStart);
+        nextWeekStart.setDate(weekStart.getDate() + 7);
+        const nextWeekEnd = new Date(weekStart);
+        nextWeekEnd.setDate(weekStart.getDate() + 13);
+        const projectFiltered = [];
+        const rows = [];
+        let progressSum = 0;
+        const matchesDateRange = (task, isCompleted) => {
+            const due = parseDateOnly(task.fechaLimite);
+            if (filters.range === 'all')
+                return true;
+            if (filters.range === 'overdue')
+                return !isCompleted && due && due < today;
+            if (filters.range === 'next7')
+                return !isCompleted && due && due >= today && due <= soon7;
+            if (filters.range === 'next30')
+                return !isCompleted && due && due >= today && due <= soon30;
+            if (filters.range === 'nodate')
+                return !due;
+            return true;
+        };
+        list.forEach(project => {
+            const meta = (project && project.meta) || {};
+            const projectId = String(project && project.id);
+            const projectStatus = normalizeProjectEstado(meta.estado);
+            const projectClient = String(meta.cliente || '').trim() || 'Sin cliente';
+            if (filters.projectId !== 'Todos' && projectId !== filters.projectId)
+                return;
+            if (filters.client !== 'Todos' && projectClient !== filters.client)
+                return;
+            if (filters.status !== 'Todos' && projectStatus !== filters.status)
+                return;
+            const tasks = Array.isArray(project && project.tasks) ? project.tasks : [];
+            const idx = buildTaskIndex(tasks);
+            const projectRow = { title: meta.titulo || 'Proyecto sin titulo', client: projectClient, matchedTasks: 0 };
+            projectFiltered.push(projectRow);
+            tasks.forEach(task => {
+                const normalized = normalizeEstado(effectiveEstado(task, idx));
+                const isCompleted = normalized === 'Completado';
+                const taskAssignees = splitAssignees(task.asignadoA);
+                const projectPeople = [meta.responsableProyecto, meta.ejecutorProyecto].map(v => String(v || '').trim()).filter(Boolean);
+                if (filters.assignee !== 'Todos' && !taskAssignees.includes(filters.assignee) && !projectPeople.includes(filters.assignee))
+                    return;
+                if (!matchesDateRange(task, isCompleted))
+                    return;
+                projectRow.matchedTasks += 1;
+                rows.push({ task, taskIndex: idx, projectTitle: projectRow.title, projectClient, estado: normalized, isCompleted, due: parseDateOnly(task.fechaLimite) });
+            });
+        });
+        rows.forEach(row => {
+            if (row.isCompleted) {
+                progressSum += 1;
+                return;
+            }
+            const subs = Array.isArray(row.task.subtasks) ? row.task.subtasks : [];
+            if (subs.length)
+                progressSum += subs.filter(s => !!s.done).length / subs.length;
+        });
+        const totalTasks = rows.length;
+        const filteredProjectCount = (filters.assignee !== 'Todos' || filters.range !== 'all') ? new Set(rows.map(row => `${row.projectTitle}::${row.projectClient}`)).size : projectFiltered.length;
+        const estadoCounts = { Pendiente: 0, 'En Curso': 0, Completado: 0 };
+        const areaCounts = {};
+        const priorityCounts = {};
+        const assigneeMap = {};
+        const dueCounts = { Vencidas: 0, 'Esta semana': 0, 'Proxima semana': 0, 'Mas adelante': 0, 'Sin fecha': 0 };
+        const dependencyCounts = { Bloqueadas: 0, 'No bloqueadas': 0, Completadas: 0, 'Sin dependencia': 0 };
+        const blockedItems = [];
+        let tasksWithDate = 0, overdueTasks = 0, upcoming7 = 0, noDateTasks = 0;
+        rows.forEach(row => {
+            const task = row.task || {};
+            const normalized = row.estado;
+            const blocked = !row.isCompleted && isTaskBlocked(task, row.taskIndex);
+            const dependency = task.dependsOn ? row.taskIndex.get(String(task.dependsOn)) : null;
+            if (normalized === 'Completado')
+                estadoCounts.Completado += 1;
+            else if (normalized === 'En Curso')
+                estadoCounts['En Curso'] += 1;
+            else
+                estadoCounts.Pendiente += 1;
+            const area = String(task.area || 'Sin area').trim() || 'Sin area';
+            areaCounts[area] = (areaCounts[area] || 0) + 1;
+            const priority = String(task.prioridad || 'Media').trim() || 'Media';
+            priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+            splitAssignees(task.asignadoA).forEach(name => {
+                if (!assigneeMap[name])
+                    assigneeMap[name] = { Pendiente: 0, 'En Curso': 0, Completado: 0, total: 0 };
+                const key = normalized === 'Completado' ? 'Completado' : (normalized === 'En Curso' ? 'En Curso' : 'Pendiente');
+                assigneeMap[name][key] += 1;
+                assigneeMap[name].total += 1;
+            });
+            if (row.due)
+                tasksWithDate += 1;
+            else
+                noDateTasks += 1;
+            if (!row.isCompleted) {
+                if (!row.due)
+                    dueCounts['Sin fecha'] += 1;
+                else if (row.due < today) {
+                    dueCounts.Vencidas += 1;
+                    overdueTasks += 1;
+                }
+                else if (row.due <= weekEnd)
+                    dueCounts['Esta semana'] += 1;
+                else if (row.due >= nextWeekStart && row.due <= nextWeekEnd)
+                    dueCounts['Proxima semana'] += 1;
+                else
+                    dueCounts['Mas adelante'] += 1;
+                if (row.due && row.due >= today && row.due <= soon7)
+                    upcoming7 += 1;
+            }
+            if (row.isCompleted) {
+                dependencyCounts.Completadas += 1;
+            }
+            else if (!task.dependsOn) {
+                dependencyCounts['Sin dependencia'] += 1;
+            }
+            else if (blocked) {
+                dependencyCounts.Bloqueadas += 1;
+                blockedItems.push({
+                    id: task.id || `${row.projectTitle}-${task.tarea || blockedItems.length}`,
+                    taskName: task.tarea || 'Tarea sin titulo',
+                    projectTitle: row.projectTitle,
+                    dependencyName: dependency ? (dependency.tarea || 'Tarea sin titulo') : 'Dependencia no encontrada',
+                    dependencyStatus: dependency ? normalizeEstado(dependency.estado) : 'No encontrada'
+                });
+            }
+            else {
+                dependencyCounts['No bloqueadas'] += 1;
+            }
+        });
+        const assigneeRows = Object.entries(assigneeMap).map(([name, counts]) => ({ name, ...counts })).sort((a, b) => b.total - a.total);
+        const topAssignees = assigneeRows.slice(0, 8);
+        const restAssignees = assigneeRows.slice(8);
+        if (restAssignees.length) {
+            topAssignees.push(restAssignees.reduce((acc, row) => ({ name: 'Otros', Pendiente: acc.Pendiente + row.Pendiente, 'En Curso': acc['En Curso'] + row['En Curso'], Completado: acc.Completado + row.Completado, total: acc.total + row.total }), { name: 'Otros', Pendiente: 0, 'En Curso': 0, Completado: 0, total: 0 }));
+        }
+        return { sourceProjects: list.length, sourceTasks: allTasksCount, totalProjects: filteredProjectCount, totalTasks, progress: totalTasks ? Math.round((progressSum / totalTasks) * 100) : 0, overdueTasks, blockedTasks: dependencyCounts.Bloqueadas, upcomingTasks: upcoming7, noDateTasks, tasksWithDate, estadoCounts, dueCounts, assignees: topAssignees, priorityCounts, areaCounts, dependencyCounts, blockedItems: blockedItems.slice(0, 5), blockedTotal: blockedItems.length };
+    }, [projects, filters, today]);
+    const seriesFromCounts = (counts, order, limit) => {
+        const base = order || Object.keys(counts || {});
+        const entries = base.filter(label => counts[label] != null).map(label => [label, counts[label] || 0]);
+        const extra = Object.entries(counts || {}).filter(([label]) => !entries.some(([known]) => known === label)).sort((a, b) => b[1] - a[1]);
+        const merged = entries.concat(extra).sort((a, b) => order && order.includes(a[0]) && order.includes(b[0]) ? order.indexOf(a[0]) - order.indexOf(b[0]) : order && order.includes(a[0]) ? -1 : order && order.includes(b[0]) ? 1 : b[1] - a[1]);
+        return typeof limit === 'number' ? merged.slice(0, limit) : merged;
+    };
+    const seriesTotal = (series) => series.reduce((sum, item) => sum + (item[1] || 0), 0);
+    const tooltipLabel = (context, suffix) => {
+        var _g;
+        const label = context.label || context.dataset.label || 'Valor';
+        const raw = typeof context.parsed === 'number' ? context.parsed : (context.parsed && ((_g = context.parsed.y) !== null && _g !== void 0 ? _g : context.parsed.x)) || 0;
+        const datasetTotal = (context.dataset.data || []).reduce((sum, value) => sum + Number(value || 0), 0);
+        const pct = datasetTotal ? ` (${Math.round((raw / datasetTotal) * 100)}%)` : '';
+        return `${label}: ${raw}${suffix || ' tareas'}${pct}`;
+    };
+    React.useEffect(() => {
+        const el = document.documentElement;
+        const obs = new MutationObserver(() => setThemeTick(t => t + 1));
+        obs.observe(el, { attributes: true, attributeFilter: ['class'] });
+        return () => obs.disconnect();
+    }, []);
+    React.useEffect(() => {
+        for (const ch of chartsRef.current) {
+            try {
+                ch.destroy();
+            }
+            catch (e) { }
+        }
+        chartsRef.current = [];
+        if (!analytics.totalTasks)
+            return;
+        const anim = didAnimateRef.current ? false : { duration: 650 };
+        const ChartJS = (window && window.Chart) ? window.Chart : null;
+        if (!ChartJS) {
+            console.error("Chart.js no esta cargado. Revisa index.html.");
+            return;
+        }
+        const isDark = document.documentElement.classList.contains('theme-dark');
+        const theme = { text: isDark ? '#e5e7eb' : '#111827', grid: isDark ? 'rgba(148,163,184,0.20)' : 'rgba(148,163,184,0.28)', tooltipBg: isDark ? 'rgba(15,23,42,0.96)' : 'rgba(255,255,255,0.98)', border: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.10)' };
+        const commonOptions = { responsive: true, maintainAspectRatio: false, animation: anim, plugins: { legend: { position: 'bottom', labels: { color: theme.text, boxWidth: 13, boxHeight: 9, padding: 14 } }, tooltip: { backgroundColor: theme.tooltipBg, titleColor: theme.text, bodyColor: theme.text, borderColor: theme.border, borderWidth: 1, padding: 10, callbacks: { label: (ctx) => tooltipLabel(ctx) } } }, scales: { x: { ticks: { color: theme.text }, grid: { color: theme.grid } }, y: { beginAtZero: true, ticks: { color: theme.text, precision: 0 }, grid: { color: theme.grid } } } };
+        const pushChart = (ref, config) => { if (!ref.current)
+            return; const ch = new ChartJS(ref.current, config); chartsRef.current.push(ch); };
+        const estadoSeries = seriesFromCounts(analytics.estadoCounts, ['Pendiente', 'En Curso', 'Completado']);
+        if (seriesTotal(estadoSeries))
+            pushChart(donutRef, { type: 'doughnut', data: { labels: estadoSeries.map(x => x[0]), datasets: [{ label: 'Estado', data: estadoSeries.map(x => x[1]), backgroundColor: ['#ef4444', '#f59e0b', '#10b981'], borderColor: theme.border, borderWidth: 2 }] }, options: { ...commonOptions, cutout: '62%', scales: undefined } });
+        const dueSeries = seriesFromCounts(analytics.dueCounts, ['Vencidas', 'Esta semana', 'Proxima semana', 'Mas adelante', 'Sin fecha']);
+        if (seriesTotal(dueSeries) && analytics.tasksWithDate)
+            pushChart(dueRef, { type: 'bar', data: { labels: dueSeries.map(x => x[0]), datasets: [{ label: 'Vencimientos', data: dueSeries.map(x => x[1]), backgroundColor: ['#ef4444', '#f59e0b', '#0ea5e9', '#64748b', '#94a3b8'], borderRadius: 8 }] }, options: { ...commonOptions, plugins: { ...commonOptions.plugins, legend: { display: false }, tooltip: { ...commonOptions.plugins.tooltip, callbacks: { label: (ctx) => tooltipLabel(ctx, ' tareas abiertas') } } } } });
+        if (analytics.assignees.length)
+            pushChart(byAssigneeRef, { type: 'bar', data: { labels: analytics.assignees.map(row => row.name), datasets: [{ label: 'Pendientes', data: analytics.assignees.map(row => row.Pendiente), backgroundColor: '#ef4444', borderRadius: 6 }, { label: 'En curso', data: analytics.assignees.map(row => row['En Curso']), backgroundColor: '#f59e0b', borderRadius: 6 }, { label: 'Completadas', data: analytics.assignees.map(row => row.Completado), backgroundColor: '#10b981', borderRadius: 6 }] }, options: { ...commonOptions, plugins: { ...commonOptions.plugins, tooltip: { ...commonOptions.plugins.tooltip, callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y || 0} tareas` } } }, scales: { x: { stacked: true, ticks: { color: theme.text }, grid: { display: false } }, y: { stacked: true, beginAtZero: true, ticks: { color: theme.text, precision: 0 }, grid: { color: theme.grid } } } } });
+        const prioritySeries = seriesFromCounts(analytics.priorityCounts, ['Urgente', 'Alta', 'Media', 'Baja']);
+        if (seriesTotal(prioritySeries))
+            pushChart(byPriorityRef, { type: 'bar', data: { labels: prioritySeries.map(x => x[0]), datasets: [{ label: 'Prioridad', data: prioritySeries.map(x => x[1]), backgroundColor: '#0ea5e9', borderRadius: 8 }] }, options: { ...commonOptions, plugins: { ...commonOptions.plugins, legend: { display: false } } } });
+        const areaSeries = seriesFromCounts(analytics.areaCounts, null, 12);
+        if (seriesTotal(areaSeries))
+            pushChart(byAreaRef, { type: 'bar', data: { labels: areaSeries.map(x => x[0]), datasets: [{ label: 'Area', data: areaSeries.map(x => x[1]), backgroundColor: '#8b5cf6', borderRadius: 8 }] }, options: { ...commonOptions, indexAxis: 'y', plugins: { ...commonOptions.plugins, legend: { display: false } } } });
+        const dependencySeries = seriesFromCounts(analytics.dependencyCounts, ['Bloqueadas', 'No bloqueadas', 'Completadas', 'Sin dependencia']);
+        if (seriesTotal(dependencySeries))
+            pushChart(dependenciesRef, { type: 'doughnut', data: { labels: dependencySeries.map(x => x[0]), datasets: [{ label: 'Dependencias', data: dependencySeries.map(x => x[1]), backgroundColor: ['#ef4444', '#0ea5e9', '#10b981', '#94a3b8'], borderColor: theme.border, borderWidth: 2 }] }, options: { ...commonOptions, cutout: '62%', scales: undefined } });
+        didAnimateRef.current = true;
+        return () => { for (const ch of chartsRef.current) {
+            try {
+                ch.destroy();
+            }
+            catch (e) { }
+        } chartsRef.current = []; };
+    }, [analytics, themeTick]);
+    const renderEmpty = (icon, title, text) => React.createElement("div", { className: "control-empty charts-empty" }, React.createElement("i", { className: `fas ${icon}` }), React.createElement("strong", null, title), React.createElement("span", null, text));
+    const kpis = [{ icon: 'fa-folder-open', label: 'Total proyectos', value: analytics.totalProjects, helper: hasActiveFilters ? 'Segun filtros' : 'Cartera visible' }, { icon: 'fa-list-check', label: 'Total tareas', value: analytics.totalTasks, helper: hasActiveFilters ? 'Tareas filtradas' : 'Todas las tareas' }, { icon: 'fa-chart-line', label: 'Progreso global', value: `${analytics.progress}%`, helper: 'Media ponderada' }, { icon: 'fa-calendar-xmark', label: 'Tareas vencidas', value: analytics.overdueTasks, helper: 'Abiertas y fuera de plazo' }, { icon: 'fa-lock', label: 'Bloqueadas', value: analytics.blockedTasks, helper: 'Por dependencias activas' }, { icon: 'fa-calendar-week', label: 'Proximos 7 dias', value: analytics.upcomingTasks, helper: 'Vencimientos abiertos' }];
+    const topEmpty = analytics.sourceProjects === 0 ? { icon: 'fa-folder-open', title: 'No hay proyectos disponibles.', text: 'Crea o importa proyectos para ver la analitica.' } : analytics.sourceTasks === 0 ? { icon: 'fa-list-check', title: 'No hay tareas para analizar.', text: 'Los proyectos existen, pero todavia no tienen tareas.' } : analytics.totalTasks === 0 ? { icon: 'fa-filter-circle-xmark', title: 'No hay resultados con los filtros actuales.', text: 'Prueba a limpiar filtros o ampliar el rango temporal.' } : null;
+    return (React.createElement("div", { className: "min-h-screen pb-20", style: { background: 'var(--app-bg)' } },
+        React.createElement("div", { className: "wl-header-sticky no-print", style: { height: 'auto', display: 'block', padding: 0 } },
+            React.createElement("div", { className: "app-page py-4" },
+                React.createElement("div", { className: "app-page-header charts-page-header" },
+                    React.createElement("div", { className: "charts-title-row" },
+                        React.createElement("button", { onClick: onBack, className: "btn-apple", style: { height: '36px', fontSize: '13px' } },
+                            React.createElement("i", { className: "fas fa-arrow-left" }),
+                            " Volver"),
+                        React.createElement("div", null,
+                            React.createElement("h1", { className: "app-page-title" }, "Graficos y analitica"),
+                            React.createElement("p", { className: "app-page-subtitle" }, "Vista ejecutiva del estado, carga y riesgos de los proyectos")))))),
+        React.createElement("main", { className: "app-page charts-analytics-page" },
+            React.createElement("section", { className: "app-section-card charts-filters" },
+                React.createElement("div", { className: "charts-filter-grid" },
+                    React.createElement("label", null,
+                        React.createElement("span", null, "Proyecto"),
+                        React.createElement("select", { value: filters.projectId, onChange: e => setFilter('projectId', e.target.value) },
+                            React.createElement("option", { value: "Todos" }, "Todos"),
+                            filterOptions.projects.map(project => React.createElement("option", { key: project.id, value: project.id }, project.title)))),
+                    React.createElement("label", null,
+                        React.createElement("span", null, "Cliente"),
+                        React.createElement("select", { value: filters.client, onChange: e => setFilter('client', e.target.value) },
+                            React.createElement("option", { value: "Todos" }, "Todos"),
+                            filterOptions.clients.map(client => React.createElement("option", { key: client, value: client }, client)))),
+                    React.createElement("label", null,
+                        React.createElement("span", null, "Estado proyecto"),
+                        React.createElement("select", { value: filters.status, onChange: e => setFilter('status', e.target.value) },
+                            React.createElement("option", { value: "Todos" }, "Todos"),
+                            filterOptions.statuses.map(status => React.createElement("option", { key: status, value: status }, status)))),
+                    React.createElement("label", null,
+                        React.createElement("span", null, "Responsable"),
+                        React.createElement("select", { value: filters.assignee, onChange: e => setFilter('assignee', e.target.value) },
+                            React.createElement("option", { value: "Todos" }, "Todos"),
+                            filterOptions.assignees.map(name => React.createElement("option", { key: name, value: name }, name)))),
+                    React.createElement("label", null,
+                        React.createElement("span", null, "Rango temporal"),
+                        React.createElement("select", { value: filters.range, onChange: e => setFilter('range', e.target.value) },
+                            React.createElement("option", { value: "all" }, "Todos"),
+                            React.createElement("option", { value: "overdue" }, "Vencidas"),
+                            React.createElement("option", { value: "next7" }, "Proximos 7 dias"),
+                            React.createElement("option", { value: "next30" }, "Proximos 30 dias"),
+                            React.createElement("option", { value: "nodate" }, "Sin fecha"))),
+                    React.createElement("button", { type: "button", className: "app-btn app-btn-secondary charts-clear-btn", onClick: clearFilters, disabled: !hasActiveFilters },
+                        React.createElement("i", { className: "fas fa-rotate-left" }),
+                        "Limpiar filtros"))),
+            topEmpty ? renderEmpty(topEmpty.icon, topEmpty.title, topEmpty.text) : (React.createElement(React.Fragment, null,
+                React.createElement("section", { className: "app-kpi-grid charts-kpi-grid" }, kpis.map(kpi => React.createElement("article", { className: "app-kpi-card", key: kpi.label },
+                    React.createElement("span", { className: "app-kpi-icon" },
+                        React.createElement("i", { className: `fas ${kpi.icon}` })),
+                    React.createElement("div", null,
+                        React.createElement("div", { className: "app-kpi-label" }, kpi.label),
+                        React.createElement("div", { className: "app-kpi-value" }, kpi.value),
+                        React.createElement("div", { className: "app-kpi-helper" }, kpi.helper))))),
+                React.createElement("section", { className: "charts-temporal-strip" },
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Riesgo temporal"),
+                        React.createElement("strong", null,
+                            analytics.overdueTasks,
+                            " vencidas")),
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Proximos 7 dias"),
+                        React.createElement("strong", null, analytics.upcomingTasks)),
+                    React.createElement("div", null,
+                        React.createElement("span", null, "Sin fecha"),
+                        React.createElement("strong", null, analytics.noDateTasks))),
+                React.createElement("section", { className: "charts-main-grid" },
+                    React.createElement("article", { className: "app-section-card charts-card" },
+                        React.createElement("div", { className: "app-card-header" },
+                            React.createElement("div", null,
+                                React.createElement("h2", { className: "app-card-title" }, "Estado y progreso"),
+                                React.createElement("p", { className: "app-card-subtitle" }, "Distribucion global de tareas por estado efectivo")),
+                            React.createElement("span", { className: "charts-progress-pill" },
+                                analytics.progress,
+                                "%")),
+                        React.createElement("div", { className: "charts-canvas charts-canvas--donut" },
+                            React.createElement("canvas", { ref: donutRef }))),
+                    React.createElement("article", { className: "app-section-card charts-card" },
+                        React.createElement("div", { className: "app-card-header" },
+                            React.createElement("div", null,
+                                React.createElement("h2", { className: "app-card-title" }, "Vencimientos por semana"),
+                                React.createElement("p", { className: "app-card-subtitle" }, "Tareas abiertas agrupadas por riesgo de fecha"))),
+                        analytics.tasksWithDate ? React.createElement("div", { className: "charts-canvas" },
+                            React.createElement("canvas", { ref: dueRef })) : renderEmpty("fa-calendar-minus", "No hay tareas con vencimiento definido.", "Las tareas filtradas no tienen fecha limite."))),
+                React.createElement("section", { className: "app-section-card charts-card" },
+                    React.createElement("div", { className: "app-card-header" },
+                        React.createElement("div", null,
+                            React.createElement("h2", { className: "app-card-title" }, "Carga por responsable"),
+                            React.createElement("p", { className: "app-card-subtitle" }, "Top responsables por volumen, separado por estado"))),
+                    React.createElement("div", { className: "charts-canvas charts-canvas--wide" },
+                        React.createElement("canvas", { ref: byAssigneeRef }))),
+                React.createElement("section", { className: "charts-main-grid" },
+                    React.createElement("article", { className: "app-section-card charts-card" },
+                        React.createElement("div", { className: "app-card-header" },
+                            React.createElement("div", null,
+                                React.createElement("h2", { className: "app-card-title" }, "Prioridad"),
+                                React.createElement("p", { className: "app-card-subtitle" }, "Distribucion por criticidad declarada"))),
+                        React.createElement("div", { className: "charts-canvas" },
+                            React.createElement("canvas", { ref: byPriorityRef }))),
+                    React.createElement("article", { className: "app-section-card charts-card" },
+                        React.createElement("div", { className: "app-card-header" },
+                            React.createElement("div", null,
+                                React.createElement("h2", { className: "app-card-title" }, "Area"),
+                                React.createElement("p", { className: "app-card-subtitle" }, "Top areas con mas tareas"))),
+                        React.createElement("div", { className: "charts-canvas" },
+                            React.createElement("canvas", { ref: byAreaRef })))),
+                React.createElement("section", { className: "charts-dependency-grid" },
+                    React.createElement("article", { className: "app-section-card charts-card" },
+                        React.createElement("div", { className: "app-card-header" },
+                            React.createElement("div", null,
+                                React.createElement("h2", { className: "app-card-title" }, "Dependencias"),
+                                React.createElement("p", { className: "app-card-subtitle" }, "Bloqueos, desbloqueos y tareas sin dependencia"))),
+                        React.createElement("div", { className: "charts-canvas charts-canvas--donut" },
+                            React.createElement("canvas", { ref: dependenciesRef }))),
+                    React.createElement("article", { className: "app-section-card charts-card" },
+                        React.createElement("div", { className: "app-card-header" },
+                            React.createElement("div", null,
+                                React.createElement("h2", { className: "app-card-title" }, "Bloqueos activos"),
+                                React.createElement("p", { className: "app-card-subtitle" }, analytics.blockedTotal > 5 ? `Mostrando 5 de ${analytics.blockedTotal} bloqueos` : "Tareas pendientes de una dependencia"))),
+                        analytics.blockedItems.length ? React.createElement("div", { className: "charts-blocked-list" }, analytics.blockedItems.map(item => React.createElement("div", { className: "charts-blocked-item", key: item.id },
+                            React.createElement("i", { className: "fas fa-lock" }),
+                            React.createElement("div", null,
+                                React.createElement("strong", null, item.taskName),
+                                React.createElement("span", null, item.projectTitle),
+                                React.createElement("small", null,
+                                    "Depende de: ",
+                                    item.dependencyName),
+                                React.createElement("em", null,
+                                    "Estado dependencia: ",
+                                    item.dependencyStatus))))) : renderEmpty("fa-unlock", "No hay tareas bloqueadas.", "Las dependencias activas no estan frenando tareas abiertas."))))))));
 };
 // --- Seguridad: saneado básico de HTML antes de mostrar/guardar la Wiki ---
 // Evita que un backup manipulado o contenido pegado en Quill pueda ejecutar scripts.
